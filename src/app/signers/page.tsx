@@ -77,7 +77,7 @@ export default function SignersPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground mb-1">On-Boarding Bonus: 50 LYNX</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-1">On-Boarding Bonus: 10 LYNX</h3>
                     <p className="text-gray-300 text-sm">Get started with an instant reward for completing identity verification</p>
                   </div>
                 </div>
