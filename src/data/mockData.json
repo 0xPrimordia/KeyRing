@@ -1,0 +1,163 @@
+{
+  "thresholdLists": [
+    {
+      "id": "tl-001",
+      "name": "DeFi Protocol Alpha",
+      "description": "Decentralized lending and borrowing protocol on Hedera",
+      "threshold": 3,
+      "totalMembers": 5,
+      "certified": true,
+      "certifiedAt": "2024-01-15T10:30:00Z",
+      "avgTenure": "8 months",
+      "reliability": 96,
+      "totalTransactions": 47,
+      "lastActivity": "2024-03-20T14:22:00Z",
+      "projectWebsite": "https://defiprotocolalpha.com",
+      "tokenAddress": "0.0.123456",
+      "contractAddress": "0.0.123457",
+      "members": [
+        {
+          "signerId": "s-001",
+          "codeName": "crimson-firefly-47",
+          "joinedAt": "2024-01-15T10:30:00Z",
+          "reputation": 98,
+          "status": "active"
+        },
+        {
+          "signerId": "s-002", 
+          "codeName": "azure-mountain-92",
+          "joinedAt": "2024-01-16T09:15:00Z",
+          "reputation": 95,
+          "status": "active"
+        },
+        {
+          "signerId": "s-003",
+          "codeName": "golden-river-18",
+          "joinedAt": "2024-01-17T11:45:00Z",
+          "reputation": 100,
+          "status": "active"
+        },
+        {
+          "signerId": "s-004",
+          "codeName": "violet-storm-63",
+          "joinedAt": "2024-01-18T16:20:00Z",
+          "reputation": 92,
+          "status": "active"
+        },
+        {
+          "signerId": "s-005",
+          "codeName": "silver-dawn-29",
+          "joinedAt": "2024-01-19T13:10:00Z",
+          "reputation": 78,
+          "status": "suspended"
+        }
+      ],
+      "recentTransactions": [
+        {
+          "id": "tx-001",
+          "type": "Token Supply Update",
+          "description": "Increase max supply from 1M to 2M tokens",
+          "timestamp": "2024-03-20T14:22:00Z",
+          "status": "approved",
+          "approvals": 4,
+          "rejections": 0,
+          "agentRecommendation": "approve"
+        },
+        {
+          "id": "tx-002",
+          "type": "Contract Upgrade",
+          "description": "Upgrade lending pool contract to v2.1",
+          "timestamp": "2024-03-18T09:15:00Z",
+          "status": "approved",
+          "approvals": 3,
+          "rejections": 1,
+          "agentRecommendation": "approve"
+        }
+      ]
+    }
+  ],
+  "signers": [
+    {
+      "id": "s-001",
+      "codeName": "crimson-firefly-47",
+      "accountId": "0.0.789123",
+      "publicKey": "302a300506032b6570032100...",
+      "status": "active",
+      "verifiedAt": "2024-01-10T08:30:00Z",
+      "reputation": 98,
+      "totalLists": 3,
+      "totalTransactions": 127,
+      "totalEarnings": "2,450 LYNX",
+      "responseRate": 98,
+      "avgResponseTime": "4.2 hours",
+      "listsJoined": [
+        {
+          "listId": "tl-001",
+          "listName": "DeFi Protocol Alpha",
+          "joinedAt": "2024-01-15T10:30:00Z",
+          "role": "signer"
+        },
+        {
+          "listId": "tl-002",
+          "listName": "NFT Marketplace Beta",
+          "joinedAt": "2024-02-03T14:20:00Z",
+          "role": "signer"
+        },
+        {
+          "listId": "tl-003",
+          "listName": "DAO Treasury Gamma",
+          "joinedAt": "2024-02-28T11:15:00Z",
+          "role": "signer"
+        }
+      ],
+      "recentActivity": [
+        {
+          "id": "act-001",
+          "type": "approval",
+          "listName": "DeFi Protocol Alpha",
+          "transactionType": "Token Supply Update",
+          "timestamp": "2024-03-20T14:22:00Z",
+          "reward": "15 LYNX"
+        },
+        {
+          "id": "act-002",
+          "type": "approval",
+          "listName": "NFT Marketplace Beta",
+          "transactionType": "Contract Upgrade",
+          "timestamp": "2024-03-19T16:45:00Z",
+          "reward": "12 LYNX"
+        },
+        {
+          "id": "act-003",
+          "type": "rejection",
+          "listName": "DAO Treasury Gamma",
+          "transactionType": "Treasury Spend",
+          "timestamp": "2024-03-18T10:30:00Z",
+          "reward": "20 LYNX",
+          "reason": "Spending amount exceeds monthly limit"
+        }
+      ],
+      "metadata": {
+        "region": "North America",
+        "verificationMethod": "Entrust KYC",
+        "specializations": ["DeFi", "Token Economics"],
+        "languages": ["English"],
+        "accountCreated": "2023-08-15T10:30:00Z",
+        "hbarBalance": "1,247.50",
+        "tokenHoldings": ["USDC", "SAUCE", "PACK"],
+        "stakingNode": "0.0.3",
+        "transactionCount": 1456,
+        "contractInteractions": 23,
+        "averageTransactionValue": "125.30 HBAR",
+        "mostActiveHours": "14:00-18:00 UTC",
+        "networkTenure": "18 months",
+        "domainVerification": "verified-signer.example.com",
+        "socialProof": {
+          "twitter": "@cryptosigner47",
+          "github": "github.com/signer47",
+          "linkedin": "linkedin.com/in/blockchain-expert"
+        }
+      }
+    }
+  ]
+}
