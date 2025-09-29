@@ -100,9 +100,9 @@ export default function RegistryPage() {
               />
             </div>
             <nav className="flex space-x-8">
-              <a href="/" className="text-primary hover:text-primary-dark transition-colors">Registry</a>
-              <a href="/signers" className="text-foreground hover:text-primary transition-colors">Become a Signer</a>
-              <a href="/register" className="text-foreground hover:text-primary transition-colors">Register List</a>
+              <Link href="/" className="text-primary hover:text-primary-dark transition-colors">Registry</Link>
+              <Link href="/signers" className="text-foreground hover:text-primary transition-colors">Become a Signer</Link>
+              <Link href="/register" className="text-foreground hover:text-primary transition-colors">Register List</Link>
             </nav>
           </div>
         </div>

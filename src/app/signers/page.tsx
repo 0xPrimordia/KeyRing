@@ -1,54 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
 
-const rewardStructure = [
-  {
-    action: "Onboarding Bonus",
-    reward: "50 LYNX",
-    description: "Welcome bonus for completing identity verification and joining KeyRing",
-    frequency: "One-time"
-  },
-  {
-    action: "List Addition Bonus",
-    reward: "Base Rate",
-    description: "Bonus when you're selected for a certified threshold list",
-    frequency: "Per list joined"
-  },
-  {
-    action: "Transaction Reviews",
-    reward: "Higher Rate",
-    description: "Primary earnings from reviewing admin transactions with AI agent assistance",
-    frequency: "Per transaction reviewed"
-  },
-  {
-    action: "Reputation Multiplier",
-    reward: "Up to 2x",
-    description: "Bonus multiplier based on your reliability score and response time",
-    frequency: "Applied to all rewards"
-  }
-];
-
-const requirements = [
-  {
-    title: "Identity Verification",
-    description: "Complete KYC through Entrust to prove you're a unique human",
-    icon: "shield"
-  },
-  {
-    title: "Hedera Account",
-    description: "Active Hedera account to receive rewards and participate in signing",
-    icon: "wallet"
-  },
-  {
-    title: "Reliable Participation",
-    description: "Maintain high response rates to admin transaction requests",
-    icon: "clock"
-  },
-  {
-    title: "Independent Operation",
-    description: "No conflicts of interest with projects you're signing for",
-    icon: "users"
-  }
-];
 
 export default function SignersPage() {
   return (
@@ -67,9 +19,9 @@ export default function SignersPage() {
               />
             </div>
             <nav className="flex space-x-8">
-              <a href="/" className="text-foreground hover:text-primary transition-colors">Registry</a>
-              <a href="/signers" className="text-primary hover:text-primary-dark transition-colors">Become a Signer</a>
-              <a href="/register" className="text-foreground hover:text-primary transition-colors">Register List</a>
+              <Link href="/" className="text-foreground hover:text-primary transition-colors">Registry</Link>
+              <Link href="/signers" className="text-primary hover:text-primary-dark transition-colors">Become a Signer</Link>
+              <Link href="/register" className="text-foreground hover:text-primary transition-colors">Register List</Link>
             </nav>
           </div>
         </div>
@@ -82,7 +34,7 @@ export default function SignersPage() {
             Become a Verified Signer
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Earn LYNX rewards by helping secure the Hedera ecosystem. Join KeyRing's network of 
+            Earn LYNX rewards by helping secure the Hedera ecosystem. Join KeyRing&apos;s network of 
             verified signers and get paid to review admin transactions with AI agent assistance.
           </p>
           <div className="flex items-center justify-center space-x-8 text-sm text-gray-400">
@@ -302,7 +254,7 @@ export default function SignersPage() {
         <div className="text-center bg-gradient-to-r from-primary/20 to-primary-dark/20 rounded-2xl p-12 border border-primary/30">
           <h2 className="text-3xl font-bold text-foreground mb-4">Ready to Start Earning?</h2>
           <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join KeyRing's network of verified signers and help secure the future of decentralized governance 
+            Join KeyRing&apos;s network of verified signers and help secure the future of decentralized governance 
             while earning LYNX rewards for your participation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

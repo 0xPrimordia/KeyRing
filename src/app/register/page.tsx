@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 const pricingTiers = [
   {
@@ -70,9 +71,9 @@ export default function RegisterListPage() {
               />
             </div>
             <nav className="flex space-x-8">
-              <a href="/" className="text-foreground hover:text-primary transition-colors">Registry</a>
-              <a href="/signers" className="text-foreground hover:text-primary transition-colors">Become a Signer</a>
-              <a href="/register" className="text-primary hover:text-primary-dark transition-colors">Register List</a>
+              <Link href="/" className="text-foreground hover:text-primary transition-colors">Registry</Link>
+              <Link href="/signers" className="text-foreground hover:text-primary transition-colors">Become a Signer</Link>
+              <Link href="/register" className="text-primary hover:text-primary-dark transition-colors">Register List</Link>
             </nav>
           </div>
         </div>
@@ -85,7 +86,7 @@ export default function RegisterListPage() {
             Certify Your Admin Keys
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Transform your project's trust profile with KeyRing-certified threshold lists. 
+            Transform your project&apos;s trust profile with KeyRing-certified threshold lists. 
             Show users your admin keys are controlled by verified, independent signers.
           </p>
           <div className="flex items-center justify-center space-x-8 text-sm text-gray-400">
@@ -128,7 +129,7 @@ export default function RegisterListPage() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">Instant Recognition</h3>
-            <p className="text-gray-400">Wallets and explorers display "KeyRing Certified" badges, building immediate user confidence.</p>
+              <p className="text-gray-400">Wallets and explorers display &quot;KeyRing Certified&quot; badges, building immediate user confidence.</p>
           </div>
           <div className="text-center">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
