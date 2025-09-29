@@ -140,7 +140,7 @@ async function decodeProtobufKeys(): Promise<void> {
   console.log("\nLooking for protobuf pattern 0a221220 (KeyList entry with 32-byte key):");
   
   const keyListPattern = /0a221220([a-f0-9]{64})/gi;
-  const keyMatches = [];
+  const keyMatches: string[] = [];
   let match;
   
   while ((match = keyListPattern.exec(protobufHex)) !== null) {

@@ -11,7 +11,7 @@ async function queryAccountData(): Promise<void> {
     console.log("📊 ACCOUNT INFORMATION");
     console.log("=" .repeat(50));
     const accountResponse = await fetch(`${MIRROR_NODE_BASE_URL}/accounts/${ACCOUNT_ID}`);
-    const accountData = await accountResponse.json();
+    const accountData = await accountResponse.json() as any;
     
     console.log("Raw Account Data:");
     console.log(JSON.stringify(accountData, null, 2));
@@ -21,7 +21,7 @@ async function queryAccountData(): Promise<void> {
     console.log("📋 RECENT TRANSACTIONS");
     console.log("=" .repeat(50));
     const transactionsResponse = await fetch(`${MIRROR_NODE_BASE_URL}/accounts/${ACCOUNT_ID}/transactions?limit=10`);
-    const transactionsData = await transactionsResponse.json();
+    const transactionsData = await transactionsResponse.json() as any;
     
     console.log("Recent Transactions:");
     console.log(JSON.stringify(transactionsData, null, 2));
@@ -31,7 +31,7 @@ async function queryAccountData(): Promise<void> {
     console.log("💰 ACCOUNT BALANCES");
     console.log("=" .repeat(50));
     const balancesResponse = await fetch(`${MIRROR_NODE_BASE_URL}/balances?account.id=${ACCOUNT_ID}`);
-    const balancesData = await balancesResponse.json();
+    const balancesData = await balancesResponse.json() as any;
     
     console.log("Balance Information:");
     console.log(JSON.stringify(balancesData, null, 2));
