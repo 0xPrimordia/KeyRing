@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         operatorId: operatorAccountId,
         privateKey: operatorPrivateKey,
       },
-      logLevel: 'info',
+      logLevel: 'error', // Reduce logging to avoid pino-pretty issues
     });
 
     // Generate scalable KeyRing ID from public key
