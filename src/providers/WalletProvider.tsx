@@ -124,7 +124,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                   const signer = connector.getSigner(AccountId.fromString(accountIdString));
                   if (signer && signer.getAccountKey) {
                     const key = await signer.getAccountKey();
-                    setPublicKey(key.toStringDer());
+                    setPublicKey(key?.toString() || '');
                   }
                 } catch (keyError) {
                   console.warn("[KEYRING WALLET] Could not restore public key:", keyError);

@@ -32,11 +32,11 @@ async function setupDatabase() {
       console.log(`${i + 1}/${statements.length} Executing: ${statement.substring(0, 50)}...`);
       
       try {
-        const { error } = await supabase.rpc('exec_sql', { sql: statement });
+        const { error } = await (supabase as any).rpc('exec_sql', { sql: statement });
         
         if (error) {
           // Try direct query execution as fallback
-          const { error: queryError } = await supabase.from('').select().limit(0);
+          const { error: queryError } = await supabase.from('keyring_signers').select().limit(0);
           
           if (queryError && queryError.message.includes('relation') && queryError.message.includes('does not exist')) {
             // Table doesn't exist, this is expected for CREATE TABLE statements
@@ -60,7 +60,7 @@ async function setupDatabase() {
     for (const table of tables) {
       try {
         const { count, error } = await supabase
-          .from(table)
+          .from(table as any)
           .select('*', { count: 'exact', head: true });
           
         if (error) {

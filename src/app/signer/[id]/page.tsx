@@ -4,6 +4,59 @@ import Link from "next/link";
 import Header from '@/components/Header';
 import { useState, useEffect, use } from 'react';
 
+interface ListMembership {
+  listId: string;
+  listName: string;
+  threshold: number;
+  totalMembers: number;
+  joinedAt: string;
+  role: string;
+}
+
+interface ActivityItem {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  status: string;
+  transactionType: string;
+  listName: string;
+  reason?: string;
+  rewardAmount?: string;
+  reward?: string;
+}
+
+interface SignerData {
+  id: string;
+  codeName: string;
+  publicKey: string;
+  accountId: string;
+  status: string;
+  verifiedAt: string;
+  verificationStatus: string;
+  verificationProvider: string;
+  verificationDate: string | null;
+  profileTopicId: string;
+  createdAt: string;
+  reputation: string;
+  totalLists: number;
+  totalTransactions: number;
+  totalEarnings: string;
+  responseRate: string;
+  avgResponseTime: string;
+  listsJoined: ListMembership[];
+  recentActivity: ActivityItem[];
+  metadata: {
+    verificationMethod: string;
+    networkTenure: string;
+    accountCreated: string;
+    transactionCount: number;
+    lastTransactionDate: string | null;
+    transactionTypes: string[];
+    recentTransactions: unknown[];
+  };
+}
+
 interface SignerPageProps {
   params: Promise<{
     id: string;
@@ -12,9 +65,9 @@ interface SignerPageProps {
 
 export default function SignerPage({ params }: SignerPageProps) {
   const resolvedParams = use(params);
-  const [signer, setSigner] = useState(null);
+  const [signer, setSigner] = useState<SignerData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSigner = async () => {

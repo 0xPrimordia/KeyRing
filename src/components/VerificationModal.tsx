@@ -27,7 +27,7 @@ interface CreatedProfile {
 export default function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
   const { getPublicKey, isConnected, accountId, publicKey, dAppConnector } = useWallet();
   const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null);
-  const [existingAccount, setExistingAccount] = useState<{ id: string; codeName: string; accountId: string } | null>(null);
+  const [existingAccount, setExistingAccount] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string } | null>(null);
   const [isCheckingAccount, setIsCheckingAccount] = useState(false);
   const [creationProgress, setCreationProgress] = useState<ProfileCreationProgress>({
     step: 'idle',

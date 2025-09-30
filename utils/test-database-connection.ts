@@ -38,7 +38,7 @@ async function testDatabaseConnection() {
     for (const table of tables) {
       try {
         const { count, error } = await supabase
-          .from(table)
+          .from(table as any)
           .select('*', { count: 'exact', head: true });
           
         if (error) {
