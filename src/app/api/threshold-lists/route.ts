@@ -45,7 +45,7 @@ export async function GET() {
         activeMembers: members.length,
         status: 'certified', // All active lists are considered certified
         createdAt: list.created_at,
-        members: members.map((member: any) => ({
+        members: members.map((member: { keyring_signers: { id: string; code_name: string; account_id: string }; added_at: string }) => ({
           signerId: member.keyring_signers.id,
           codeName: member.keyring_signers.code_name,
           accountId: member.keyring_signers.account_id,
@@ -63,8 +63,8 @@ export async function GET() {
       lists: transformedLists
     });
 
-  } catch (error: any) {
-    console.error('[API] Error fetching threshold lists:', error);
+  } catch (error: unknown) {
+    console.error('[API] Error fetching threshold lists:', error instanceof Error ? error.message : error);
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch threshold lists'

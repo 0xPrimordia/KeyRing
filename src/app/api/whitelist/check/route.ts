@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
       isWhitelisted
     });
 
-  } catch (error: any) {
-    console.error('[API] Error checking whitelist:', error);
+  } catch (error: unknown) {
+    console.error('[API] Error checking whitelist:', error instanceof Error ? error.message : error);
     return NextResponse.json({
       success: false,
       error: 'Failed to check whitelist status'
@@ -37,8 +37,8 @@ export async function GET() {
       success: true,
       accounts: whitelistedAccounts
     });
-  } catch (error: any) {
-    console.error('[API] Error getting whitelist:', error);
+  } catch (error: unknown) {
+    console.error('[API] Error getting whitelist:', error instanceof Error ? error.message : error);
     return NextResponse.json({
       success: false,
       error: 'Failed to get whitelist'

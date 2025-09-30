@@ -48,8 +48,8 @@ export async function GET() {
       signers: transformedSigners
     });
 
-  } catch (error: any) {
-    console.error('[API] Error fetching signers:', error);
+  } catch (error: unknown) {
+    console.error('[API] Error fetching signers:', error instanceof Error ? error.message : error);
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch signers'

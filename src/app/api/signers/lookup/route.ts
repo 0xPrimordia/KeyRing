@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error: any) {
-    console.error('[API] Error looking up signer:', error);
+  } catch (error: unknown) {
+    console.error('[API] Error looking up signer:', error instanceof Error ? error.message : error);
     return NextResponse.json({
       success: false,
       error: 'Failed to lookup signer'
@@ -62,8 +62,8 @@ export async function GET() {
       success: true,
       stats
     });
-  } catch (error: any) {
-    console.error('[API] Error getting signer stats:', error);
+  } catch (error: unknown) {
+    console.error('[API] Error getting signer stats:', error instanceof Error ? error.message : error);
     return NextResponse.json({
       success: false,
       error: 'Failed to get registry statistics'
