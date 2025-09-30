@@ -3,9 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Exclude pino-pretty from server-side builds to avoid transport errors in Vercel
-      config.externals = config.externals || [];
-      config.externals.push('pino-pretty');
+      // Replace pino-pretty with a no-op module to avoid transport errors in Vercel
+      config.resolve = config.resolve || {};
+      config.resolve.alias = config.resolve.alias || {};
+      config.resolve.alias['pino-pretty'] = false;
+      
+      // Also handle any other pino transports that might cause issues
+      config.resolve.alias['pino/file'] = false;
+      config.resolve.alias['thread-stream'] = false;
     }
     return config;
   },
