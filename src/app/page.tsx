@@ -4,6 +4,51 @@ import Link from "next/link";
 import Header from '../components/Header';
 import { useState, useEffect } from 'react';
 
+interface Signer {
+  id: string;
+  codeName: string;
+  status: string;
+  verifiedAt: string;
+  reputation: string;
+  totalLists: number;
+  totalTransactions: number;
+  totalEarnings: string;
+  responseRate: string;
+  avgResponseTime: string;
+  profileTopicId: string;
+  verificationProvider: string;
+  createdAt: string;
+  listsJoined: unknown[];
+  recentActivity: unknown[];
+  metadata: {
+    transactionCount: number;
+    contractInteractions: string;
+    mostActiveHours: string;
+  };
+}
+
+interface ThresholdListMember {
+  signerId: string;
+  codeName: string;
+  accountId: string;
+  joinedAt: string;
+  status: string;
+}
+
+interface ThresholdList {
+  id: string;
+  name: string;
+  accountId: string;
+  threshold: number;
+  totalMembers: number;
+  activeMembers: number;
+  status: string;
+  createdAt: string;
+  members: ThresholdListMember[];
+  reliability: number;
+  avgTenure: number;
+}
+
 // Mock data for the registry (unused - data now comes from API)
 // const mockVerifiers = [
 //   {
@@ -88,10 +133,10 @@ import { useState, useEffect } from 'react';
 
 export default function RegistryPage() {
   const [activeTab, setActiveTab] = useState('signers');
-  const [signers, setSigners] = useState([]);
-  const [thresholdLists, setThresholdLists] = useState([]);
+  const [signers, setSigners] = useState<Signer[]>([]);
+  const [thresholdLists, setThresholdLists] = useState<ThresholdList[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -216,7 +261,7 @@ export default function RegistryPage() {
               <tbody className="divide-y divide-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center">
+                    <td colSpan={5} className="px-6 py-8 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
                         <span className="text-gray-400">Loading signers...</span>
@@ -225,13 +270,13 @@ export default function RegistryPage() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center">
+                    <td colSpan={5} className="px-6 py-8 text-center">
                       <span className="text-red-400">{error}</span>
                     </td>
                   </tr>
                 ) : signers.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center">
+                    <td colSpan={5} className="px-6 py-8 text-center">
                       <span className="text-gray-400">No signers found</span>
                     </td>
                   </tr>
