@@ -477,9 +477,9 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">Coming Soon</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Get Whitelisted</h3>
             <p className="text-gray-400 mb-6">
-              Identity verification for new signers is currently being developed
+              Identity integration is coming soon. Contact us to get whitelisted for early access.
             </p>
             
             {/* 10 LYNX Reward Preview */}
@@ -511,6 +511,31 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                     <li>• Enhanced security protocols</li>
                   </ul>
                 </div>
+              </div>
+            </div>
+
+            {/* Contact Section */}
+            <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-300 mb-3 text-center">
+                Contact us to get whitelisted for early access:
+              </p>
+              <div className="flex gap-3">
+                <a
+                  href="https://x.com/lynifyxyz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-900 transition-colors text-center text-sm"
+                >
+                  Follow on X
+                </a>
+                <a
+                  href="https://discord.gg/GM5BfpPe2Y"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-[#5865F2] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#4752C4] transition-colors text-center text-sm"
+                >
+                  Join our Discord
+                </a>
               </div>
             </div>
 
