@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { HCS11Client, Logger } from '@hashgraphonline/standards-sdk';
+import { HCS11Client } from '@hashgraphonline/standards-sdk';
 import { AccountUpdateTransaction, AccountId } from '@hashgraph/sdk';
 import { KeyRingDB } from '../../../../lib/keyring-db';
 import { generateKeyRingId, getDisplayName } from '../../../../lib/codename-generator';
@@ -35,19 +35,12 @@ export async function POST(request: NextRequest) {
       : process.env.HEDERA_TESTNET_PRIVATE_KEY!;
 
 
-    // Create a logger that won't use pino-pretty in production
-    const logger = new Logger({ 
-      module: 'HCS11Client',
-      level: 'error' // Minimal logging to avoid transport issues
-    });
-
     const hcs11Client = new HCS11Client({
       network,
       auth: {
         operatorId: operatorAccountId,
         privateKey: operatorPrivateKey,
       },
-      logger: logger, // Use proper Logger instance
     });
 
     // Generate scalable KeyRing ID from public key

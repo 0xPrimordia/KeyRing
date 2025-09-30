@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { DAppConnector } from "@hashgraph/hedera-wallet-connect";
-import { LedgerId, AccountId } from "@hashgraph/sdk";
+import { LedgerId } from "@hashgraph/sdk";
 import { toast } from "sonner";
 
 interface WalletContextProps {
