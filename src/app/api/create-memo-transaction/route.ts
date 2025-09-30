@@ -49,11 +49,11 @@ export async function POST(request: NextRequest) {
       profileTopicId
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Error creating memo transaction:', error);
     return NextResponse.json({ 
       success: false, 
-      error: error.message || 'Failed to create memo update transaction' 
+      error: error instanceof Error ? error.message : 'Failed to create memo update transaction' 
     }, { status: 500 });
   }
 }

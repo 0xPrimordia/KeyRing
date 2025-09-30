@@ -46,9 +46,9 @@ export class KeyRingDB {
       await this.addReward(signer.id, 'onboarding', 10);
 
       return { success: true, signer };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error registering signer:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -150,9 +150,9 @@ export class KeyRingDB {
       }
 
       return { success: true, list };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error registering threshold list:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -183,9 +183,9 @@ export class KeyRingDB {
       }
 
       return { success: true, reward };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding reward:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -272,9 +272,9 @@ export class KeyRingDB {
       }
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding to whitelist:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -294,9 +294,9 @@ export class KeyRingDB {
       }
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing from whitelist:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Generate scalable KeyRing ID from public key
     const keyringId = generateKeyRingId(publicKey);
     const displayName = getDisplayName(publicKey, 'profile');
-    const avatarSeed = getAvatarSeed(publicKey);
+    // const avatarSeed = getAvatarSeed(publicKey); // Unused for now
 
     // Create KeyRing signer profile using HCS-11
     const keyringProfile = hcs11Client.createPersonalProfile(displayName, {
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       keyringProfile,
       {
         waitForConfirmation: true,
-        progressCallback: (progress: any) => {
+        progressCallback: (progress: { stage: string; message: string; progressPercent?: number }) => {
           console.log(`[API] Inscription progress: ${progress.stage} - ${progress.message} (${progress.progressPercent}%)`);
         }
       }
