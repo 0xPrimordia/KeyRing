@@ -1,6 +1,14 @@
 import fetch from 'node-fetch';
 
-const HASHSCAN_API_BASE = 'https://testnet.hashscan.io/api';
+// Get the correct HashScan URL based on network
+const getHashScanApiBase = (): string => {
+  const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+  return network === 'mainnet' 
+    ? 'https://hashscan.io/api'
+    : 'https://testnet.hashscan.io/api';
+};
+
+const HASHSCAN_API_BASE = getHashScanApiBase();
 const ACCOUNT_ID = '0.0.6919888'; // The threshold account we created
 
 async function queryHashScanData(): Promise<void> {
@@ -81,7 +89,10 @@ async function queryHashScanData(): Promise<void> {
     console.log("=" .repeat(50));
     
     // Try to mimic what the HashScan website does
-    const websiteUrl = `https://testnet.hashscan.io/adminKey/${ACCOUNT_ID}`;
+    const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+    const websiteUrl = network === 'mainnet' 
+      ? `https://hashscan.io/adminKey/${ACCOUNT_ID}`
+      : `https://testnet.hashscan.io/adminKey/${ACCOUNT_ID}`;
     console.log(`Website URL: ${websiteUrl}`);
     
     const websiteResponse = await fetch(websiteUrl, {

@@ -175,7 +175,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       // Extract account information from the session
       const namespace = Object.values(session.namespaces)[0];
       if (namespace?.accounts?.length) {
-        // Extract accountId from "hedera:testnet:0.0.XXXXX" format
+        // Extract accountId from "hedera:network:0.0.XXXXX" format
         const accountIdString = namespace.accounts[0].split(':')[2];
         setAccountId(accountIdString);
         setIsConnected(true);

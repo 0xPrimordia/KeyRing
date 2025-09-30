@@ -2,7 +2,15 @@
  * Utility to fetch real account data from Hedera Mirror Node
  */
 
-const MIRROR_NODE_BASE_URL = 'https://testnet.mirrornode.hedera.com/api/v1';
+// Get the correct Mirror Node URL based on network
+function getMirrorNodeBaseUrl(): string {
+  const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+  return network === 'mainnet' 
+    ? 'https://mainnet-public.mirrornode.hedera.com/api/v1'
+    : 'https://testnet.mirrornode.hedera.com/api/v1';
+}
+
+const MIRROR_NODE_BASE_URL = getMirrorNodeBaseUrl();
 
 export interface AccountData {
   accountId: string;

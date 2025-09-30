@@ -15,9 +15,16 @@ export async function POST(request: NextRequest) {
     const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
     const client = network === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
 
-    // Set operator using server-side environment variables
-    const operatorId = AccountId.fromString(process.env.HEDERA_TESTNET_ACCOUNT_ID!);
-    const operatorKey = PrivateKey.fromStringDer(process.env.HEDERA_TESTNET_PRIVATE_KEY!);
+    // Set operator using server-side environment variables based on network
+    const operatorAccountId = network === 'mainnet' 
+      ? process.env.HEDERA_MAINNET_ACCOUNT_ID!
+      : process.env.HEDERA_TESTNET_ACCOUNT_ID!;
+    const operatorPrivateKey = network === 'mainnet'
+      ? process.env.HEDERA_MAINNET_PRIVATE_KEY!
+      : process.env.HEDERA_TESTNET_PRIVATE_KEY!;
+      
+    const operatorId = AccountId.fromString(operatorAccountId);
+    const operatorKey = PrivateKey.fromStringDer(operatorPrivateKey);
     client.setOperator(operatorId, operatorKey);
 
     // Query account info to get the public key

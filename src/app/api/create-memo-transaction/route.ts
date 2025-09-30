@@ -16,11 +16,19 @@ export async function POST(request: NextRequest) {
     console.log('[API] Creating memo update transaction for:', { accountId, profileTopicId });
 
     // Initialize HCS-11 client
+    const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
+    const operatorAccountId = network === 'mainnet' 
+      ? process.env.HEDERA_MAINNET_ACCOUNT_ID!
+      : process.env.HEDERA_TESTNET_ACCOUNT_ID!;
+    const operatorPrivateKey = network === 'mainnet'
+      ? process.env.HEDERA_MAINNET_PRIVATE_KEY!
+      : process.env.HEDERA_TESTNET_PRIVATE_KEY!;
+
     const hcs11Client = new HCS11Client({
-      network: process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet',
+      network,
       auth: {
-        operatorId: process.env.HEDERA_TESTNET_ACCOUNT_ID!,
-        privateKey: process.env.HEDERA_TESTNET_PRIVATE_KEY!,
+        operatorId: operatorAccountId,
+        privateKey: operatorPrivateKey,
       },
       logLevel: 'info',
     });
