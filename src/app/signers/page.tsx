@@ -3,7 +3,7 @@
 import { useWallet } from '../../providers/WalletProvider';
 import { useState } from 'react';
 import VerificationModal from '../../components/VerificationModal';
-import Header from '../../components/Header';
+import Header from '@/components/Header';
 
 
 export default function SignersPage() {

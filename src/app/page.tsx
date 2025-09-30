@@ -1,6 +1,9 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
 import Header from '../components/Header';
+import { useState, useEffect } from 'react';
 
 // Mock data for the registry
 const mockVerifiers = [
@@ -85,6 +88,49 @@ const mockThresholdLists = [
 ];
 
 export default function RegistryPage() {
+  const [activeTab, setActiveTab] = useState('signers');
+  const [signers, setSigners] = useState([]);
+  const [thresholdLists, setThresholdLists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        if (activeTab === 'signers') {
+          const response = await fetch('/api/signers');
+          const data = await response.json();
+          
+          if (data.success) {
+            setSigners(data.signers);
+            setError(null);
+          } else {
+            setError(data.error);
+          }
+        } else {
+          const response = await fetch('/api/threshold-lists');
+          const data = await response.json();
+          
+          if (data.success) {
+            setThresholdLists(data.lists);
+            setError(null);
+          } else {
+            setError(data.error);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -92,7 +138,7 @@ export default function RegistryPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Title */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Verifier Registry</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Signer Registry</h2>
           <p className="text-gray-400">Search and verify threshold signers and certified lists</p>
         </div>
 
@@ -116,21 +162,37 @@ export default function RegistryPage() {
         <div className="mb-6">
           <div className="border-b border-gray-700">
             <nav className="-mb-px flex space-x-8">
-              <button className="border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium">
-                Verifiers
+              <button 
+                onClick={() => setActiveTab('signers')}
+                className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+                  activeTab === 'signers'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
+                }`}
+              >
+                Signers
               </button>
-              <button className="border-b-2 border-transparent text-gray-400 hover:text-foreground hover:border-gray-300 py-2 px-1 text-sm font-medium">
+              <button 
+                onClick={() => setActiveTab('lists')}
+                className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+                  activeTab === 'lists'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
+                }`}
+              >
                 Threshold Lists
               </button>
             </nav>
           </div>
         </div>
 
-        {/* Verifiers Table */}
-        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-foreground">Active Verifiers</h3>
-          </div>
+        {/* Content Area */}
+        {activeTab === 'signers' ? (
+          /* Signers Table */
+          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-foreground">Active Signers</h3>
+            </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-700">
@@ -140,9 +202,6 @@ export default function RegistryPage() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Account ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Lists Joined
@@ -156,102 +215,126 @@ export default function RegistryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {mockVerifiers.map((verifier) => (
-                  <tr key={verifier.id} className="hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link href={`/signer/s-00${verifier.id.slice(-1)}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                        {verifier.codeName}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        verifier.status === 'Active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {verifier.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 font-mono">
-                      {verifier.accountId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {verifier.listsJoined}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {verifier.startDate}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className="text-sm text-gray-300 mr-2">{verifier.reputation}%</span>
-                        <div className="w-16 bg-gray-600 rounded-full h-2">
-                          <div 
-                            className="bg-primary h-2 rounded-full" 
-                            style={{ width: `${verifier.reputation}%` }}
-                          ></div>
-                        </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+                        <span className="text-gray-400">Loading signers...</span>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : error ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center">
+                      <span className="text-red-400">{error}</span>
+                    </td>
+                  </tr>
+                ) : signers.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center">
+                      <span className="text-gray-400">No signers found</span>
+                    </td>
+                  </tr>
+                ) : (
+                  signers.map((signer) => (
+                    <tr key={signer.id} className="hover:bg-gray-700 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link href={`/signer/${signer.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                          {signer.codeName}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          signer.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {signer.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {signer.totalLists}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {new Date(signer.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-400 italic">Not yet determined</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
-
-        {/* Threshold Lists Section (hidden by default, would show when tab is clicked) */}
-        <div className="hidden mt-8">
+        ) : (
+          /* Threshold Lists Section */
           <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-700">
               <h3 className="text-lg font-semibold text-foreground">Certified Threshold Lists</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-              {mockThresholdLists.map((list) => (
-                <div key={list.id} className="bg-gray-700 rounded-lg p-6 border border-gray-600">
-                  <div className="flex items-center justify-between mb-4">
-                    <Link href="/list/tl-001" className="text-lg font-semibold text-foreground hover:text-primary transition-colors">
-                      {list.name}
-                    </Link>
-                    {list.certified && (
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+                <span className="text-gray-400">Loading threshold lists...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <span className="text-red-400">{error}</span>
+              </div>
+            ) : thresholdLists.length === 0 ? (
+              <div className="text-center py-16">
+                <span className="text-gray-400">No threshold lists found</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                {thresholdLists.map((list) => (
+                  <div key={list.id} className="bg-gray-700 rounded-lg p-6 border border-gray-600">
+                    <div className="flex items-center justify-between mb-4">
+                      <Link href={`/list/${list.id}`} className="text-lg font-semibold text-foreground hover:text-primary transition-colors">
+                        {list.name}
+                      </Link>
                       <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-primary/20 text-primary">
                         ✓ Certified
                       </span>
-                    )}
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Threshold:</span>
+                        <span className="text-foreground">{list.threshold} of {list.totalMembers}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Active Members:</span>
+                        <span className="text-foreground">{list.activeMembers}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Reliability:</span>
+                        <span className="text-foreground">{list.reliability}%</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-gray-600">
+                      <div className="text-xs text-gray-400 mb-2">Members:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {list.members.slice(0, 3).map((member, idx) => (
+                          <span key={idx} className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
+                            {member.codeName}
+                          </span>
+                        ))}
+                        {list.members.length > 3 && (
+                          <span className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
+                            +{list.members.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Threshold:</span>
-                      <span className="text-foreground">{list.threshold} of {list.totalMembers}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Avg Tenure:</span>
-                      <span className="text-foreground">{list.avgTenure}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Reliability:</span>
-                      <span className="text-foreground">{list.reliability}%</span>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-gray-600">
-                    <div className="text-xs text-gray-400 mb-2">Members:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {list.members.slice(0, 3).map((member, idx) => (
-                        <span key={idx} className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
-                          {member}
-                        </span>
-                      ))}
-                      {list.members.length > 3 && (
-                        <span className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
-                          +{list.members.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
