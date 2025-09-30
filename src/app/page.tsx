@@ -1,91 +1,90 @@
 'use client';
 
-import Image from "next/image";
 import Link from "next/link";
 import Header from '../components/Header';
 import { useState, useEffect } from 'react';
 
-// Mock data for the registry
-const mockVerifiers = [
-  {
-    id: "v1",
-    codeName: "crimson-firefly-47",
-    status: "Active",
-    listsJoined: 3,
-    startDate: "2024-01-15",
-    reputation: 98,
-    accountId: "0.0.123456"
-  },
-  {
-    id: "v2", 
-    codeName: "azure-mountain-92",
-    status: "Active",
-    listsJoined: 5,
-    startDate: "2024-02-03",
-    reputation: 95,
-    accountId: "0.0.234567"
-  },
-  {
-    id: "v3",
-    codeName: "golden-river-18",
-    status: "Active", 
-    listsJoined: 2,
-    startDate: "2024-03-12",
-    reputation: 100,
-    accountId: "0.0.345678"
-  },
-  {
-    id: "v4",
-    codeName: "violet-storm-63",
-    status: "Active",
-    listsJoined: 4,
-    startDate: "2024-01-28",
-    reputation: 92,
-    accountId: "0.0.456789"
-  },
-  {
-    id: "v5",
-    codeName: "silver-dawn-29",
-    status: "Suspended",
-    listsJoined: 1,
-    startDate: "2024-04-05",
-    reputation: 78,
-    accountId: "0.0.567890"
-  }
-];
+// Mock data for the registry (unused - data now comes from API)
+// const mockVerifiers = [
+//   {
+//     id: "v1",
+//     codeName: "crimson-firefly-47",
+//     status: "Active",
+//     listsJoined: 3,
+//     startDate: "2024-01-15",
+//     reputation: 98,
+//     accountId: "0.0.123456"
+//   },
+//   {
+//     id: "v2", 
+//     codeName: "azure-mountain-92",
+//     status: "Active",
+//     listsJoined: 5,
+//     startDate: "2024-02-03",
+//     reputation: 95,
+//     accountId: "0.0.234567"
+//   },
+//   {
+//     id: "v3",
+//     codeName: "golden-river-18",
+//     status: "Active", 
+//     listsJoined: 2,
+//     startDate: "2024-03-12",
+//     reputation: 100,
+//     accountId: "0.0.345678"
+//   },
+//   {
+//     id: "v4",
+//     codeName: "violet-storm-63",
+//     status: "Active",
+//     listsJoined: 4,
+//     startDate: "2024-01-28",
+//     reputation: 92,
+//     accountId: "0.0.456789"
+//   },
+//   {
+//     id: "v5",
+//     codeName: "silver-dawn-29",
+//     status: "Suspended",
+//     listsJoined: 1,
+//     startDate: "2024-04-05",
+//     reputation: 78,
+//     accountId: "0.0.567890"
+//   }
+// ];
 
-const mockThresholdLists = [
-  {
-    id: "tl1",
-    name: "DeFi Protocol Alpha",
-    threshold: 3,
-    totalMembers: 5,
-    certified: true,
-    avgTenure: "8 months",
-    reliability: 96,
-    members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18", "violet-storm-63", "silver-dawn-29"]
-  },
-  {
-    id: "tl2", 
-    name: "NFT Marketplace Beta",
-    threshold: 2,
-    totalMembers: 3,
-    certified: true,
-    avgTenure: "6 months", 
-    reliability: 98,
-    members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18"]
-  },
-  {
-    id: "tl3",
-    name: "DAO Treasury Gamma",
-    threshold: 4,
-    totalMembers: 7,
-    certified: true,
-    avgTenure: "5 months",
-    reliability: 94,
-    members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18", "violet-storm-63"]
-  }
-];
+// const mockThresholdLists = [
+//   {
+//     id: "tl1",
+//     name: "DeFi Protocol Alpha",
+//     threshold: 3,
+//     totalMembers: 5,
+//     certified: true,
+//     avgTenure: "8 months",
+//     reliability: 96,
+//     members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18", "violet-storm-63", "silver-dawn-29"]
+//   },
+//   {
+//     id: "tl2", 
+//     name: "NFT Marketplace Beta",
+//     threshold: 2,
+//     totalMembers: 3,
+//     certified: true,
+//     avgTenure: "6 months", 
+//     reliability: 98,
+//     members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18"]
+//   },
+//   {
+//     id: "tl3",
+//     name: "DAO Treasury Gamma",
+//     threshold: 4,
+//     totalMembers: 7,
+//     certified: true,
+//     avgTenure: "5 months",
+//     reliability: 94,
+//     members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18", "violet-storm-63"]
+//   }
+// ];
 
 export default function RegistryPage() {
   const [activeTab, setActiveTab] = useState('signers');

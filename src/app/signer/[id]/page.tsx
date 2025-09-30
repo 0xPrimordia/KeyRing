@@ -1,6 +1,5 @@
 'use client';
 
-import Image from "next/image";
 import Link from "next/link";
 import Header from '@/components/Header';
 import { useState, useEffect, use } from 'react';
@@ -187,8 +186,8 @@ export default function SignerPage({ params }: SignerPageProps) {
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">No Threshold Lists Yet</h3>
                     <p className="text-gray-400 text-sm mb-4">
-                      This signer hasn't joined any threshold lists yet. Once they're added to a list, 
-                      they'll be able to participate in multi-signature transactions and earn rewards.
+                      This signer hasn&apos;t joined any threshold lists yet. Once they&apos;re added to a list, 
+                      they&apos;ll be able to participate in multi-signature transactions and earn rewards.
                     </p>
                     <p className="text-xs text-gray-500">
                       Signers are randomly assigned to threshold lists to ensure decentralization and security.
@@ -240,7 +239,7 @@ export default function SignerPage({ params }: SignerPageProps) {
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">No Activity Yet</h3>
                     <p className="text-gray-400 text-sm mb-4">
-                      This signer hasn't participated in any transaction reviews yet. Once they join 
+                      This signer hasn&apos;t participated in any transaction reviews yet. Once they join 
                       threshold lists and start reviewing transactions, their activity will appear here.
                     </p>
                     <p className="text-xs text-gray-500">

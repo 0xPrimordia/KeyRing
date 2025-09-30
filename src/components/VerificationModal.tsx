@@ -27,7 +27,7 @@ interface CreatedProfile {
 export default function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
   const { getPublicKey, isConnected, accountId, publicKey, dAppConnector } = useWallet();
   const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null);
-  const [existingAccount, setExistingAccount] = useState<any | null>(null);
+  const [existingAccount, setExistingAccount] = useState<{ id: string; codeName: string; accountId: string } | null>(null);
   const [isCheckingAccount, setIsCheckingAccount] = useState(false);
   const [creationProgress, setCreationProgress] = useState<ProfileCreationProgress>({
     step: 'idle',
@@ -179,9 +179,9 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
       } else {
         throw new Error(registrationData.error || 'Failed to create profile');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create profile:', error);
-      setError(error.message || 'Failed to create profile. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to create profile. Please try again.');
       setCreationProgress({ step: 'error', message: 'Profile creation failed', progress: 0 });
     }
   };
@@ -272,11 +272,11 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                   <div className="space-y-2 text-xs text-gray-300">
                     <p className="flex items-start">
                       <span className="text-green-400 mr-2">•</span>
-                      You're now ready to participate in threshold signing
+                      You&apos;re now ready to participate in threshold signing
                     </p>
                     <p className="flex items-start">
                       <span className="text-green-400 mr-2">•</span>
-                      You'll start receiving LYNX rewards in your wallet when added to threshold lists
+                      You&apos;ll start receiving LYNX rewards in your wallet when added to threshold lists
                     </p>
                     <p className="flex items-start">
                       <span className="text-blue-400 mr-2">•</span>
@@ -414,7 +414,7 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                 
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
                   <p className="text-sm text-blue-400 mb-2">
-                    ✅ You're already registered as a KeyRing signer!
+                    ✅ You&apos;re already registered as a KeyRing signer!
                   </p>
                   <p className="text-xs text-gray-400">
                     You can participate in threshold signing and earn rewards.
@@ -461,7 +461,7 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                         <strong>Anonymous HCS-11 Profile:</strong> This creates a privacy-preserving identity on Hedera Consensus Service using the HCS-11 standard.
                       </p>
                       <p className="text-xs text-gray-400">
-                        Your profile is linked to your wallet but doesn't expose personal information publicly.
+                        Your profile is linked to your wallet but doesn&apos;t expose personal information publicly.
                       </p>
                     </div>
                   </div>
@@ -502,7 +502,7 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                 </svg>
                 <div>
                   <p className="text-sm text-gray-300 mb-2">
-                    <strong>What's Coming:</strong>
+                    <strong>What&apos;s Coming:</strong>
                   </p>
                   <ul className="text-xs text-gray-400 space-y-1">
                     <li>• Automated identity verification</li>

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import mockData from "@/data/mockData.json";
 import Header from '@/components/Header';

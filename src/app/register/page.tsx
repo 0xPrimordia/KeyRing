@@ -1,59 +1,57 @@
-import Image from "next/image";
-import Link from "next/link";
 import Header from '@/components/Header';
 
-const pricingTiers = [
-  {
-    name: "Starter",
-    description: "Perfect for new projects getting started",
-    verifiers: "3-10 verifiers",
-    price: "500 LYNX",
-    features: [
-      "Core registry listing",
-      "Email notifications",
-      "Basic verification checks",
-      "Public certification badge",
-      "Standard support"
-    ],
-    popular: false,
-    reliability: "Good redundancy - multiple backups prevent delays"
-  },
-  {
-    name: "Standard",
-    description: "Most popular for growing projects",
-    verifiers: "10-20 verifiers",
-    price: "1,200 LYNX",
-    features: [
-      "Everything in Starter",
-      "AI agent pre-flight analysis",
-      "Rich dashboard with diffs",
-      "Priority notifications",
-      "Enhanced reputation tracking",
-      "Priority support"
-    ],
-    popular: true,
-    reliability: "High redundancy - inactive signers rarely block approvals"
-  },
-  {
-    name: "DAO",
-    description: "Enterprise-grade for serious projects",
-    verifiers: "20-30+ verifiers",
-    price: "Coming Soon",
-    features: [
-      "Everything in Standard",
-      "Full DAO SaaS features",
-      "Proposal portal with analysis",
-      "Vote-to-sign bridge",
-      "Policy templates & guardrails",
-      "Treasury tooling & alerts",
-      "Analytics & reporting",
-      "Dedicated support"
-    ],
-    popular: false,
-    comingSoon: true,
-    reliability: "Maximum redundancy - approvals never stall due to inactive members"
-  }
-];
+// const pricingTiers = [
+//   {
+//     name: "Starter",
+//     description: "Perfect for new projects getting started",
+//     verifiers: "3-10 verifiers",
+//     price: "500 LYNX",
+//     features: [
+//       "Core registry listing",
+//       "Email notifications",
+//       "Basic verification checks",
+//       "Public certification badge",
+//       "Standard support"
+//     ],
+//     popular: false,
+//     reliability: "Good redundancy - multiple backups prevent delays"
+//   },
+//   {
+//     name: "Standard",
+//     description: "Most popular for growing projects",
+//     verifiers: "10-20 verifiers",
+//     price: "1,200 LYNX",
+//     features: [
+//       "Everything in Starter",
+//       "AI agent pre-flight analysis",
+//       "Rich dashboard with diffs",
+//       "Priority notifications",
+//       "Enhanced reputation tracking",
+//       "Priority support"
+//     ],
+//     popular: true,
+//     reliability: "High redundancy - inactive signers rarely block approvals"
+//   },
+//   {
+//     name: "DAO",
+//     description: "Enterprise-grade for serious projects",
+//     verifiers: "20-30+ verifiers",
+//     price: "Coming Soon",
+//     features: [
+//       "Everything in Standard",
+//       "Full DAO SaaS features",
+//       "Proposal portal with analysis",
+//       "Vote-to-sign bridge",
+//       "Policy templates & guardrails",
+//       "Treasury tooling & alerts",
+//       "Analytics & reporting",
+//       "Dedicated support"
+//     ],
+//     popular: false,
+//     comingSoon: true,
+//     reliability: "Maximum redundancy - approvals never stall due to inactive members"
+//   }
+// ];
 
 export default function RegisterListPage() {
   return (
@@ -134,7 +132,7 @@ export default function RegisterListPage() {
             <div className="mb-8">
               <h3 className="text-2xl font-semibold text-foreground mb-4">Contact Us</h3>
               <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-                We're currently working with select projects to onboard them to KeyRing Protocol. 
+                We&apos;re currently working with select projects to onboard them to KeyRing Protocol. 
                 Get in touch to discuss your certification needs and learn about our pricing tiers.
               </p>
             </div>
