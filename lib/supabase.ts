@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 import { Database } from './database.types';
 
 // Supabase configuration
@@ -20,6 +21,5 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey, 
 
 // Helper function to generate signer ID
 export function generateSignerId(): string {
-  const crypto = require('crypto');
-  return crypto.randomUUID();
+  return randomUUID();
 }

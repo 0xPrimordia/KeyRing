@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { HCS11Client } from '@hashgraphonline/standards-sdk';
 import { AccountUpdateTransaction, AccountId } from '@hashgraph/sdk';
 import { KeyRingDB } from '../../../../lib/keyring-db';
-import { generateKeyRingId, getDisplayName, getAvatarSeed } from '../../../../lib/codename-generator';
+import { generateKeyRingId, getDisplayName } from '../../../../lib/codename-generator';
 
 export async function POST(request: NextRequest) {
   try {

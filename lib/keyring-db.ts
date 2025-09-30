@@ -1,11 +1,11 @@
-import { supabase, generateSignerId } from './supabase';
+import { supabase } from './supabase';
 import { Database } from './database.types';
 
 type KeyringSigner = Database['public']['Tables']['keyring_signers']['Row'];
 type KeyringSignerInsert = Database['public']['Tables']['keyring_signers']['Insert'];
 type KeyringThresholdList = Database['public']['Tables']['keyring_threshold_lists']['Row'];
 type KeyringReward = Database['public']['Tables']['keyring_rewards']['Row'];
-type KeyringWhitelist = Database['public']['Tables']['keyring_whitelist']['Row'];
+// type KeyringWhitelist = Database['public']['Tables']['keyring_whitelist']['Row']; // Unused for now
 type KeyringWhitelistInsert = Database['public']['Tables']['keyring_whitelist']['Insert'];
 
 export class KeyRingDB {

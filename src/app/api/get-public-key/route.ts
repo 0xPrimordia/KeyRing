@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       .setAccountId(accountId)
       .execute(client);
 
-    const publicKeyDer = accountInfo.key.toStringDer();
+    const publicKeyDer = accountInfo.key?.toString() || '';
     
     console.log('[API] Public key obtained:', publicKeyDer.substring(0, 20) + '...');
 

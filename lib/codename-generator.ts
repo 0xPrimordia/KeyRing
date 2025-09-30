@@ -3,6 +3,8 @@
  * Scalable, deterministic identifiers for anonymous signers
  */
 
+import { createHash } from 'crypto';
+
 export type DisplayContext = 'list' | 'profile' | 'transaction' | 'registry';
 
 /**
@@ -10,8 +12,7 @@ export type DisplayContext = 'list' | 'profile' | 'transaction' | 'registry';
  * Infinitely scalable - no word list limitations
  */
 export function generateKeyRingId(publicKey: string): string {
-  const crypto = require('crypto');
-  const hash = crypto.createHash('sha256').update(publicKey).digest('hex');
+  const hash = createHash('sha256').update(publicKey).digest('hex');
   
   // Use first 8 characters for uniqueness while remaining readable
   return `KR-${hash.substring(0, 8).toUpperCase()}`;
@@ -48,8 +49,7 @@ export function getShortHash(publicKey: string): string {
  * Generate avatar seed for consistent visual identity
  */
 export function getAvatarSeed(publicKey: string): string {
-  const crypto = require('crypto');
-  const hash = crypto.createHash('sha256').update(publicKey).digest('hex');
+  const hash = createHash('sha256').update(publicKey).digest('hex');
   return hash.substring(0, 16); // Use for DiceBear or similar
 }
 
