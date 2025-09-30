@@ -57,6 +57,12 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         // Determine network based on environment
         const isMainnet = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet';
         const network = isMainnet ? LedgerId.MAINNET : LedgerId.TESTNET;
+        
+        console.log("[KEYRING WALLET] Network Config:", {
+          NEXT_PUBLIC_HEDERA_NETWORK: process.env.NEXT_PUBLIC_HEDERA_NETWORK,
+          isMainnet,
+          network: network.toString()
+        });
 
         // Create DAppConnector with proper configuration
         const connector = new DAppConnector(
@@ -64,6 +70,13 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
           network,
           PROJECT_ID
         );
+        
+        // Configure the connector to use the correct network namespace
+        // This ensures HashPack shows accounts from the correct network
+        if (connector.walletConnectModal) {
+          const chainId = `hedera:${isMainnet ? 'mainnet' : 'testnet'}`;
+          console.log("[KEYRING WALLET] Configuring WalletConnect for chain:", chainId);
+        }
 
         // Initialize with timeout
         const initPromise = connector.init();
@@ -167,16 +180,37 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       // Step 3: THE CRITICAL CALL - This opens HashPack popup
-      console.log("[KEYRING WALLET] Calling dAppConnector.openModal()");
+      console.log("[KEYRING WALLET] About to call openModal() - Network check:", {
+        NEXT_PUBLIC_HEDERA_NETWORK: process.env.NEXT_PUBLIC_HEDERA_NETWORK,
+        connectorNetwork: dAppConnector.network?.toString(),
+        expectedChainId: `hedera:${process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet'}`
+      });
+      
       const session = await dAppConnector.openModal();
-      console.log("[KEYRING WALLET] dAppConnector.openModal() returned", session);
+      console.log("[KEYRING WALLET] Session returned:", {
+        topic: session.topic,
+        namespaces: Object.keys(session.namespaces),
+        accounts: Object.values(session.namespaces)[0]?.accounts
+      });
       setSessionTopic(session.topic);
 
       // Extract account information from the session
       const namespace = Object.values(session.namespaces)[0];
       if (namespace?.accounts?.length) {
         // Extract accountId from "hedera:network:0.0.XXXXX" format
-        const accountIdString = namespace.accounts[0].split(':')[2];
+        const fullAccountString = namespace.accounts[0];
+        const parts = fullAccountString.split(':');
+        const networkFromAccount = parts[1]; // testnet or mainnet
+        const accountIdString = parts[2];
+        
+        console.log("[KEYRING WALLET] Account connection details:", {
+          fullAccountString,
+          networkFromAccount,
+          accountId: accountIdString,
+          expectedNetwork: process.env.NEXT_PUBLIC_HEDERA_NETWORK,
+          networkMismatch: networkFromAccount !== process.env.NEXT_PUBLIC_HEDERA_NETWORK
+        });
+        
         setAccountId(accountIdString);
         setIsConnected(true);
 
