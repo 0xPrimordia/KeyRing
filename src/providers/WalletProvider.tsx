@@ -132,17 +132,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                 setAccountId(accountIdString);
                 setIsConnected(true);
                 
-                // Try to get public key from restored session
-                try {
-                  const signer = connector.getSigner(AccountId.fromString(accountIdString));
-                  if (signer && signer.getAccountKey) {
-                    const key = await signer.getAccountKey();
-                    setPublicKey(key?.toString() || '');
-                  }
-                } catch (keyError) {
-                  console.warn("[KEYRING WALLET] Could not restore public key:", keyError);
-                }
-                
+                console.log("[KEYRING WALLET] Session restored for account:", accountIdString);
                 toast.success(`Reconnected to KeyRing: ${accountIdString}`);
               }
             } catch (error) {
@@ -214,37 +204,13 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         setAccountId(accountIdString);
         setIsConnected(true);
 
-        // Get the public key using API route (server-side)
-        try {
-          console.log("[KEYRING WALLET] Getting public key for account:", accountIdString);
-          
-          const response = await fetch('/api/get-public-key', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ accountId: accountIdString }),
-          });
-          
-          const data = await response.json();
-          
-          if (data.success && data.publicKey) {
-            setPublicKey(data.publicKey);
-            console.log("[KEYRING WALLET] Public key obtained via API:", data.publicKey.substring(0, 20) + "...");
-            
-            toast.success(`Connected to KeyRing: ${accountIdString}`);
-            return { 
-              accountId: accountIdString, 
-              publicKey: data.publicKey 
-            };
-          } else {
-            throw new Error(data.error || 'Failed to get public key');
-          }
-        } catch (queryError) {
-          console.error("[KEYRING WALLET] Failed to get public key:", queryError);
-          toast.error("Failed to get public key from Hedera network");
-          return null;
-        }
+        console.log("[KEYRING WALLET] Wallet connected successfully:", accountIdString);
+        toast.success(`Connected to KeyRing: ${accountIdString}`);
+        
+        return { 
+          accountId: accountIdString, 
+          publicKey: '' // Public key will be fetched when creating profile
+        };
       }
       return null;
     } catch (error) {
@@ -255,9 +221,38 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const getPublicKey = async (accountId: string): Promise<string | null> => {
+    if (!dAppConnector?.walletConnectClient) {
+      console.error("[KEYRING WALLET] No WalletConnect client available");
+      return null;
+    }
+
     try {
-      console.log("[KEYRING WALLET] Getting public key for account:", accountId);
+      console.log("[KEYRING WALLET] Getting public key from session for account:", accountId);
       
+      // Get the current session
+      const sessions = dAppConnector.walletConnectClient.session.getAll();
+      if (sessions.length === 0) {
+        console.error("[KEYRING WALLET] No active sessions");
+        return null;
+      }
+
+      const session = sessions[sessions.length - 1]; // Get the latest session
+      const namespace = Object.values(session.namespaces)[0];
+      
+      if (!namespace?.accounts?.length) {
+        console.error("[KEYRING WALLET] No accounts in session");
+        return null;
+      }
+
+      // Find the account in the session
+      const targetAccount = namespace.accounts.find(acc => acc.includes(accountId));
+      if (!targetAccount) {
+        console.error("[KEYRING WALLET] Account not found in session:", accountId);
+        return null;
+      }
+
+      // Try to get public key from session metadata or make a simple query
+      // For now, let's use the API route but with better error handling
       const response = await fetch('/api/get-public-key', {
         method: 'POST',
         headers: {
@@ -270,13 +265,15 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (data.success && data.publicKey) {
         setPublicKey(data.publicKey);
-        console.log("[KEYRING WALLET] Public key obtained via API:", data.publicKey.substring(0, 20) + "...");
+        console.log("[KEYRING WALLET] Public key obtained:", data.publicKey.substring(0, 20) + "...");
         return data.publicKey;
       } else {
-        throw new Error(data.error || 'Failed to get public key');
+        console.error("[KEYRING WALLET] API failed to get public key:", data.error);
+        return null;
       }
-    } catch (queryError) {
-      console.error("[KEYRING WALLET] Failed to get public key:", queryError);
+      
+    } catch (error) {
+      console.error("[KEYRING WALLET] Failed to get public key:", error);
       return null;
     }
   };

@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       ? process.env.HEDERA_MAINNET_PRIVATE_KEY!
       : process.env.HEDERA_TESTNET_PRIVATE_KEY!;
 
+
     const hcs11Client = new HCS11Client({
       network,
       auth: {

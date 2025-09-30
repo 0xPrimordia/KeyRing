@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, AccountInfoQuery, AccountId, PrivateKey } from '@hashgraph/sdk';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,34 +10,30 @@ export async function POST(request: NextRequest) {
 
     console.log('[API] Getting public key for account:', accountId);
 
-    // Create Hedera client with operator credentials (server-side only)
+    // Use Mirror Node API instead of Hedera SDK to avoid operator credentials
     const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
-    const client = network === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
+    const mirrorNodeUrl = network === 'mainnet' 
+      ? 'https://mainnet-public.mirrornode.hedera.com'
+      : 'https://testnet.mirrornode.hedera.com';
 
-    // Set operator using server-side environment variables based on network
-    const operatorAccountId = network === 'mainnet' 
-      ? process.env.HEDERA_MAINNET_ACCOUNT_ID!
-      : process.env.HEDERA_TESTNET_ACCOUNT_ID!;
-    const operatorPrivateKey = network === 'mainnet'
-      ? process.env.HEDERA_MAINNET_PRIVATE_KEY!
-      : process.env.HEDERA_TESTNET_PRIVATE_KEY!;
-      
-    const operatorId = AccountId.fromString(operatorAccountId);
-    const operatorKey = PrivateKey.fromStringDer(operatorPrivateKey);
-    client.setOperator(operatorId, operatorKey);
-
-    // Query account info to get the public key
-    const accountInfo = await new AccountInfoQuery()
-      .setAccountId(accountId)
-      .execute(client);
-
-    const publicKeyDer = accountInfo.key?.toString() || '';
+    const response = await fetch(`${mirrorNodeUrl}/api/v1/accounts/${accountId}`);
     
-    console.log('[API] Public key obtained:', publicKeyDer.substring(0, 20) + '...');
+    if (!response.ok) {
+      throw new Error(`Mirror Node API error: ${response.status} ${response.statusText}`);
+    }
+
+    const accountData = await response.json();
+    
+    if (!accountData.key || !accountData.key.key) {
+      throw new Error('No public key found in account data');
+    }
+
+    const publicKey = accountData.key.key;
+    console.log('[API] Public key obtained from Mirror Node:', publicKey.substring(0, 20) + '...');
 
     return NextResponse.json({ 
       success: true, 
-      publicKey: publicKeyDer 
+      publicKey: publicKey 
     });
 
   } catch (error) {
@@ -46,7 +41,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to get public key from Hedera network' 
+        error: 'Failed to get public key from Hedera Mirror Node' 
       }, 
       { status: 500 }
     );
