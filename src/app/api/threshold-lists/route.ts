@@ -45,7 +45,7 @@ export async function GET() {
         activeMembers: members.length,
         status: 'certified', // All active lists are considered certified
         createdAt: list.created_at,
-        members: members.map((member: { keyring_signers: { id: string; code_name: string; account_id: string }; added_at: string }) => ({
+        members: members.map((member: { keyring_signers: { id: string; code_name: string; account_id: string; verification_status: string }; added_at: string }) => ({
           signerId: member.keyring_signers.id,
           codeName: member.keyring_signers.code_name,
           accountId: member.keyring_signers.account_id,
