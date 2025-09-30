@@ -1,0 +1,16 @@
+{
+  "whitelistedAccounts": [
+    "0.0.4372449",
+    "0.0.1234567",
+    "0.0.2345678", 
+    "0.0.3456789",
+    "0.0.4567890",
+    "0.0.5678901",
+    "0.0.6789012",
+    "0.0.7890123",
+    "0.0.8901234",
+    "0.0.9012345",
+    "0.0.1023456"
+  ],
+  "description": "Stub data for whitelist functionality - accounts eligible for direct profile creation"
+}

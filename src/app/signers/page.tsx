@@ -1,31 +1,38 @@
-import Image from "next/image";
-import Link from "next/link";
+'use client';
+
+import { useWallet } from '../../providers/WalletProvider';
+import { useState } from 'react';
+import VerificationModal from '../../components/VerificationModal';
+import Header from '../../components/Header';
 
 
 export default function SignersPage() {
+  const { connectWallet, isConnected, isInitializing } = useWallet();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleStartVerification = async () => {
+    if (!isConnected) {
+      setIsConnecting(true);
+      try {
+        const walletData = await connectWallet();
+        if (walletData) {
+          // Successfully connected, now show modal
+          setIsModalOpen(true);
+        }
+      } catch (error) {
+        console.error('Failed to connect wallet:', error);
+      } finally {
+        setIsConnecting(false);
+      }
+    } else {
+      // Already connected, show modal directly
+      setIsModalOpen(true);
+    }
+  };
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="pt-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center">
-              <Image
-                src="/logo.png"
-                alt="KeyRing Protocol"
-                width={160}
-                height={53}
-                className="h-14 w-auto"
-              />
-            </div>
-            <nav className="flex space-x-8">
-              <Link href="/" className="text-foreground hover:text-primary transition-colors">Registry</Link>
-              <Link href="/signers" className="text-primary hover:text-primary-dark transition-colors">Become a Signer</Link>
-              <Link href="/register" className="text-foreground hover:text-primary transition-colors">Register List</Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
@@ -82,8 +89,19 @@ export default function SignersPage() {
                   </div>
                 </div>
                 <div className="ml-6">
-                  <button className="bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap">
-                    Start Verification
+                  <button 
+                    onClick={handleStartVerification}
+                    disabled={isInitializing || isConnecting}
+                    className="bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isInitializing 
+                      ? 'Initializing...' 
+                      : isConnecting 
+                        ? 'Connecting...' 
+                        : isConnected 
+                          ? 'Continue Verification' 
+                          : 'Start Verification'
+                    }
                   </button>
                 </div>
               </div>
@@ -258,8 +276,19 @@ export default function SignersPage() {
             while earning LYNX rewards for your participation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-primary text-background px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary-dark transition-colors">
-              Start Verification
+            <button 
+              onClick={handleStartVerification}
+              disabled={isInitializing || isConnecting}
+              className="bg-primary text-background px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isInitializing 
+                ? 'Initializing...' 
+                : isConnecting 
+                  ? 'Connecting...' 
+                  : isConnected 
+                    ? 'Continue Verification' 
+                    : 'Start Verification'
+              }
             </button>
             <button className="border border-primary text-primary px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary/10 transition-colors">
               Learn More
@@ -270,6 +299,12 @@ export default function SignersPage() {
           </div>
         </div>
       </div>
+
+      {/* Verification Modal */}
+      <VerificationModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 }

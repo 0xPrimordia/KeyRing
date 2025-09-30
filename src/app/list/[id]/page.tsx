@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import mockData from "@/data/mockData.json";
+import Header from '../../components/Header';
 
 interface ThresholdListPageProps {
   params: {
@@ -26,27 +27,7 @@ export default function ThresholdListPage({ params }: ThresholdListPageProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="pt-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center">
-              <Image
-                src="/logo.png"
-                alt="KeyRing Protocol"
-                width={160}
-                height={53}
-                className="h-14 w-auto"
-              />
-            </div>
-            <nav className="flex space-x-8">
-              <Link href="/" className="text-foreground hover:text-primary transition-colors">Registry</Link>
-              <Link href="/signers" className="text-foreground hover:text-primary transition-colors">Become a Signer</Link>
-              <Link href="/register" className="text-foreground hover:text-primary transition-colors">Register List</Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
