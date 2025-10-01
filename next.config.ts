@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['@hashgraphonline/standards-sdk'],
   webpack(config) {
     // resolve not found .next/worker.js issue
     config.externals.push({ 'thread-stream': 'commonjs thread-stream', pino: 'commonjs pino' });
