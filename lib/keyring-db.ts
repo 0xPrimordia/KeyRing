@@ -61,14 +61,14 @@ export class KeyRingDB {
         .from('keyring_signers')
         .select('*')
         .eq('account_id', accountId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows gracefully
 
       if (error) {
         console.error('Error fetching signer by account ID:', error);
         return null;
       }
 
-      return data;
+      return data; // Will be null if no rows found
     } catch (error) {
       console.error('Error in getSignerByAccountId:', error);
       return null;
