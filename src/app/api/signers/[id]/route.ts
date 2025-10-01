@@ -48,7 +48,7 @@ export async function GET(
       codeName: signer.code_name,
       accountId: signer.account_id,
       publicKey: publicKeyDisplay,
-      status: signer.verification_status === 'verified' ? 'active' : 'inactive',
+      status: signer.verification_status,
       verifiedAt: signer.verification_date || signer.created_at,
       reputation: 'Not yet determined',
       totalLists: 0, // Will be calculated when lists are implemented

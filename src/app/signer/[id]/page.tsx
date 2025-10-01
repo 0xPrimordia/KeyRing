@@ -31,7 +31,7 @@ interface SignerData {
   codeName: string;
   publicKey: string;
   accountId: string;
-  status: string;
+  status: 'pending' | 'verified' | 'suspended' | 'revoked';
   verifiedAt: string;
   verificationStatus: string;
   verificationProvider: string;
@@ -62,6 +62,22 @@ interface SignerPageProps {
     id: string;
   }>;
 }
+
+// Helper function to get status styling
+const getStatusStyling = (status: 'pending' | 'verified' | 'suspended' | 'revoked') => {
+  switch (status) {
+    case 'verified':
+      return 'bg-green-100 text-green-800';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'suspended':
+      return 'bg-orange-100 text-orange-800';
+    case 'revoked':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 export default function SignerPage({ params }: SignerPageProps) {
   const resolvedParams = use(params);
@@ -164,11 +180,7 @@ export default function SignerPage({ params }: SignerPageProps) {
               <div>
                 <div className="flex items-center mb-2">
                   <h1 className="text-3xl font-bold text-foreground mr-4">{signer.codeName}</h1>
-                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                    signer.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusStyling(signer.status)}`}>
                     {signer.status}
                   </span>
                 </div>

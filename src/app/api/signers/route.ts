@@ -22,7 +22,7 @@ export async function GET() {
     const transformedSigners = signers?.map(signer => ({
       id: signer.id,
       codeName: signer.code_name,
-      status: 'active', // All verified signers are active
+      status: signer.verification_status, // Use actual verification status
       verifiedAt: signer.verification_date || signer.created_at,
       reputation: 'Not yet determined',
       totalLists: 0, // Will be calculated when lists are implemented

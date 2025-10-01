@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 interface Signer {
   id: string;
   codeName: string;
-  status: string;
+  status: 'pending' | 'verified' | 'suspended' | 'revoked';
   verifiedAt: string;
   reputation: string;
   totalLists: number;
@@ -130,6 +130,22 @@ interface ThresholdList {
 //     members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18", "violet-storm-63"]
 //   }
 // ];
+
+// Helper function to get status styling
+const getStatusStyling = (status: 'pending' | 'verified' | 'suspended' | 'revoked') => {
+  switch (status) {
+    case 'verified':
+      return 'bg-green-100 text-green-800';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'suspended':
+      return 'bg-orange-100 text-orange-800';
+    case 'revoked':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 export default function RegistryPage() {
   const [activeTab, setActiveTab] = useState('signers');
@@ -289,11 +305,7 @@ export default function RegistryPage() {
                         </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          signer.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyling(signer.status)}`}>
                           {signer.status}
                         </span>
                       </td>
