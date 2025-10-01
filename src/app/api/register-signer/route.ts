@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
           hasKeyringData: !!keyringProfile.properties?.keyring
         });
 
-    // Inscribe the profile to Hedera and update account memo
-    // First, inscribe the profile without memo update (we'll handle memo separately)
+    // Inscribe the profile to Hedera (operator signs this)
+    // DO NOT update account memo here - that needs to be done client-side by the user's wallet
     const inscriptionResult = await hcs11Client.inscribeProfile(
       keyringProfile,
       {
