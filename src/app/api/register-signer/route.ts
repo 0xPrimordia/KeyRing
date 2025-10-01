@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
         operatorId: operatorAccountId,
         privateKey: operatorPrivateKey,
       },
+      keyType: 'ed25519', // Explicitly specify ED25519 key type
       silent: true, // Disable all logging to avoid pino-pretty transport issues
     });
 
