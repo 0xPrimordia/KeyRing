@@ -1,11 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useWallet } from '../../providers/WalletProvider';
 import SumsubWebSdk from '@sumsub/websdk-react';
 
-export default function VerifyPage() {
+// Sumsub message types
+interface SumsubMessagePayload {
+  message?: string;
+  [key: string]: unknown;
+}
+
+interface SumsubError {
+  message?: string;
+  [key: string]: unknown;
+}
+
+function VerifyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isConnected, accountId } = useWallet();
@@ -73,7 +84,7 @@ export default function VerifyPage() {
     return data.token;
   };
 
-  const handleMessage = (type: string, payload: any) => {
+  const handleMessage = (type: string, payload: SumsubMessagePayload) => {
     console.log('Sumsub message:', { type, payload });
     
     switch (type) {
@@ -217,7 +228,7 @@ export default function VerifyPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-foreground mb-4">Ready to Verify Your Identity</h2>
                 <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                  Click below to start the verification process. You'll be guided through document upload and identity confirmation.
+                  Click below to start the verification process. You&apos;ll be guided through document upload and identity confirmation.
                 </p>
                 <button
                   onClick={startVerification}
@@ -239,8 +250,8 @@ export default function VerifyPage() {
                   addViewportTag: false,
                   adaptIframeHeight: true,
                 }}
-                onMessage={(type: string, payload: any) => handleMessage(type, payload)}
-                onError={(error: any) => {
+                onMessage={(type: string, payload: SumsubMessagePayload) => handleMessage(type, payload)}
+                onError={(error: SumsubError) => {
                   console.error('Sumsub SDK error:', error);
                   setError('An error occurred during verification. Please try again.');
                 }}
@@ -257,13 +268,13 @@ export default function VerifyPage() {
 
         {/* Help Section */}
         <div className="mt-8 bg-gray-800 rounded-lg border border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">What You'll Need</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">What You&apos;ll Need</h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h4 className="font-semibold text-foreground mb-2">📄 Government-Issued ID</h4>
               <ul className="text-sm text-gray-400 space-y-1">
                 <li>• Passport</li>
-                <li>• Driver's License</li>
+                <li>• Driver&apos;s License</li>
                 <li>• National ID Card</li>
               </ul>
             </div>
@@ -279,5 +290,21 @@ export default function VerifyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Loading</h1>
+          <p className="text-gray-400">Preparing verification page...</p>
+        </div>
+      </div>
+    }>
+      <VerifyPageContent />
+    </Suspense>
   );
 }

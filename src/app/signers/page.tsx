@@ -41,7 +41,7 @@ export default function SignersPage() {
             Become a Verified Signer
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Earn LYNX rewards by helping secure the Hedera ecosystem. Join KeyRing&apos;s network of 
+            Earn KYRNG rewards by helping secure the Hedera ecosystem. Join KeyRing&apos;s network of 
             verified signers and get paid to review admin transactions with AI agent assistance.
           </p>
           <div className="flex items-center justify-center space-x-8 text-sm text-gray-400">
@@ -49,7 +49,7 @@ export default function SignersPage() {
               <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              Earn LYNX rewards
+              Earn KYRNG rewards
             </div>
             <div className="flex items-center">
               <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -84,7 +84,7 @@ export default function SignersPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground mb-1">On-Boarding Bonus: 10 LYNX</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-1">On-Boarding Bonus: 10 KYRNG</h3>
                     <p className="text-gray-300 text-sm">Get started with an instant reward for completing identity verification</p>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export default function SignersPage() {
                 5
               </div>
               <h4 className="font-semibold text-foreground mb-2">Earn Rewards</h4>
-              <p className="text-sm text-gray-400">Receive LYNX payments for each approval or rejection</p>
+              <p className="text-sm text-gray-400">Receive KYRNG payments for each approval or rejection</p>
             </div>
           </div>
         </div>
@@ -273,7 +273,7 @@ export default function SignersPage() {
           <h2 className="text-3xl font-bold text-foreground mb-4">Ready to Start Earning?</h2>
           <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
             Join KeyRing&apos;s network of verified signers and help secure the future of decentralized governance 
-            while earning LYNX rewards for your participation.
+            while earning KYRNG rewards for your participation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 

@@ -2,6 +2,44 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
 
+// Sumsub webhook types
+interface SumsubWebhookData {
+  type: string;
+  applicantId: string;
+  externalUserId: string;
+  reviewResult?: {
+    reviewAnswer: 'GREEN' | 'RED' | 'YELLOW';
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface SumsubApplicantData {
+  fixedInfo?: {
+    firstName?: string;
+    lastName?: string;
+    [key: string]: unknown;
+  };
+  info?: {
+    firstName?: string;
+    lastName?: string;
+    [key: string]: unknown;
+  };
+  requiredIdDocs?: {
+    docSets?: Array<{
+      idDocSetType?: string;
+      [key: string]: unknown;
+    }>;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface SumsubReviewResult {
+  reviewAnswer?: 'GREEN' | 'RED' | 'YELLOW';
+  [key: string]: unknown;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
@@ -51,7 +89,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleApplicantReviewed(webhookData: any) {
+async function handleApplicantReviewed(webhookData: SumsubWebhookData) {
   const { applicantId, externalUserId, reviewResult } = webhookData;
   const accountId = externalUserId; // We use Hedera account ID as external user ID
 
@@ -76,7 +114,7 @@ async function handleApplicantReviewed(webhookData: any) {
 
     // Generate privacy-preserving identifiers
     const uniqueId = generateUniqueId(applicantId);
-    const attestationHash = generateAttestationHash(applicantData, reviewResult);
+    const attestationHash = generateAttestationHash(applicantData, reviewResult || {});
 
     // Determine verification status
     let verificationStatus: 'verified' | 'suspended' | 'revoked' = 'suspended';
@@ -98,8 +136,8 @@ async function handleApplicantReviewed(webhookData: any) {
         uniqueId,
         attestationHash,
         sumsubApplicantId: applicantId,
-        verifiedName,
-        documentType,
+        verifiedName: verifiedName || undefined,
+        documentType: documentType || undefined,
       });
 
       if (updateResult.success) {
@@ -124,7 +162,7 @@ async function handleApplicantReviewed(webhookData: any) {
   }
 }
 
-async function handleApplicantPending(webhookData: any) {
+async function handleApplicantPending(webhookData: SumsubWebhookData) {
   const { applicantId, externalUserId } = webhookData;
   const accountId = externalUserId;
 
@@ -180,7 +218,7 @@ async function fetchApplicantData(applicantId: string) {
   }
 }
 
-function extractVerifiedName(applicantData: any): string | null {
+function extractVerifiedName(applicantData: SumsubApplicantData): string | null {
   try {
     // Extract name from fixed info (verified data)
     const fixedInfo = applicantData.fixedInfo;
@@ -201,7 +239,7 @@ function extractVerifiedName(applicantData: any): string | null {
   }
 }
 
-function extractDocumentType(applicantData: any): string | null {
+function extractDocumentType(applicantData: SumsubApplicantData): string | null {
   try {
     // Look for document type in required documents
     const requiredIdDocs = applicantData.requiredIdDocs?.docSets;
@@ -228,7 +266,7 @@ function generateUniqueId(applicantId: string): string {
   return crypto.createHash('blake2b512').update(data).digest('hex').substring(0, 32);
 }
 
-function generateAttestationHash(applicantData: any, reviewResult: any): string {
+function generateAttestationHash(applicantData: SumsubApplicantData, reviewResult: SumsubReviewResult): string {
   // Create privacy-preserving attestation hash
   const attestationData = {
     verificationStatus: reviewResult?.reviewAnswer || 'UNKNOWN',

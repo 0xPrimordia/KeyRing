@@ -19,6 +19,11 @@ export type Database = {
           verification_status: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider: 'entrust' | 'sumsub'
           verification_date: string | null
+          unique_id: string | null
+          attestation_hash: string | null
+          sumsub_applicant_id: string | null
+          verified_name: string | null
+          document_type: string | null
           created_at: string
           updated_at: string
         }
@@ -31,6 +36,11 @@ export type Database = {
           verification_status?: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider?: 'entrust' | 'sumsub'
           verification_date?: string | null
+          unique_id?: string | null
+          attestation_hash?: string | null
+          sumsub_applicant_id?: string | null
+          verified_name?: string | null
+          document_type?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -43,6 +53,11 @@ export type Database = {
           verification_status?: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider?: 'entrust' | 'sumsub'
           verification_date?: string | null
+          unique_id?: string | null
+          attestation_hash?: string | null
+          sumsub_applicant_id?: string | null
+          verified_name?: string | null
+          document_type?: string | null
           created_at?: string
           updated_at?: string
         }

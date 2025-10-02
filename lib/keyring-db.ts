@@ -163,7 +163,7 @@ export class KeyRingDB {
     signerId: string, 
     rewardType: 'onboarding' | 'list_addition' | 'transaction_review', 
     amount: number,
-    currency: string = 'LYNX'
+    currency: string = 'KYRNG'
   ): Promise<{ success: boolean; reward?: KeyringReward; error?: string }> {
     try {
       const { data: reward, error } = await supabase

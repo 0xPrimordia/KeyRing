@@ -87,7 +87,7 @@
       "reputation": 98,
       "totalLists": 3,
       "totalTransactions": 127,
-      "totalEarnings": "2,450 LYNX",
+      "totalEarnings": "2,450 KYRNG",
       "responseRate": 98,
       "avgResponseTime": "4.2 hours",
       "listsJoined": [
@@ -117,7 +117,7 @@
           "listName": "DeFi Protocol Alpha",
           "transactionType": "Token Supply Update",
           "timestamp": "2024-03-20T14:22:00Z",
-          "reward": "15 LYNX"
+          "reward": "15 KYRNG"
         },
         {
           "id": "act-002",
@@ -125,7 +125,7 @@
           "listName": "NFT Marketplace Beta",
           "transactionType": "Contract Upgrade",
           "timestamp": "2024-03-19T16:45:00Z",
-          "reward": "12 LYNX"
+          "reward": "12 KYRNG"
         },
         {
           "id": "act-003",
@@ -133,7 +133,7 @@
           "listName": "DAO Treasury Gamma",
           "transactionType": "Treasury Spend",
           "timestamp": "2024-03-18T10:30:00Z",
-          "reward": "20 LYNX",
+          "reward": "20 KYRNG",
           "reason": "Spending amount exceeds monthly limit"
         }
       ],
