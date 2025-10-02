@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useWallet } from '../../providers/WalletProvider';
 import SumsubWebSdk from '@sumsub/websdk-react';
+import Header from '../../components/Header';
 
 // Sumsub message types
 interface SumsubMessagePayload {
@@ -40,7 +41,7 @@ interface SumsubCompletionData {
 function VerifyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isConnected, accountId, publicKey, getPublicKey, dAppConnector } = useWallet();
+  const { isConnected, accountId, publicKey, getPublicKey, dAppConnector, connection, isInitializing } = useWallet();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,35 +64,60 @@ function VerifyPageContent() {
   // Check for existing verification on page load
   useEffect(() => {
     const checkExistingVerification = async () => {
-      if (isConnected && accountId) {
+      if (isConnected && connection) {
         try {
-          const response = await fetch('/api/signers/lookup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accountId })
-          });
+          let response;
+          
+          if (connection.type === 'base') {
+            // Ethereum wallet - check by wallet address
+            response = await fetch('/api/signers/ethereum/lookup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ walletAddress: connection.address })
+            });
+          } else {
+            // Hedera wallet - existing logic
+            response = await fetch('/api/signers/lookup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ accountId })
+            });
+          }
           
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.signer) {
               setExistingSigner({
                 id: data.signer.id,
-                codeName: data.signer.codeName,
-                accountId: data.signer.accountId || accountId,
-                verificationStatus: data.signer.verificationStatus,
-                createdAt: data.signer.createdAt,
-                profileTopicId: data.signer.profileTopicId,
-                sumsubApplicantId: data.signer.sumsubApplicantId,
-                sumsubReviewResult: data.signer.sumsubReviewResult,
+                codeName: data.signer.code_name || data.signer.codeName,
+                accountId: data.signer.wallet_address || data.signer.accountId || accountId,
+                verificationStatus: data.signer.verification_status || data.signer.verificationStatus,
+                createdAt: data.signer.created_at || data.signer.createdAt,
+                profileTopicId: data.signer.profile_topic_id || data.signer.profileTopicId,
+                sumsubApplicantId: data.signer.sumsub_applicant_id || data.signer.sumsubApplicantId,
+                sumsubReviewResult: data.signer.sumsub_review_result || data.signer.sumsubReviewResult,
               });
               
-              // If they have Sumsub data but no profile topic ID, show completion state
-              if (data.signer.sumsubApplicantId && !data.signer.profileTopicId) {
+              // For Ethereum wallets, if they exist they're already complete (no HCS-11 needed)
+              if (connection.type === 'base' && data.signer) {
                 setVerificationCompleted(true);
-                setSumsubData({
-                  applicantId: data.signer.sumsubApplicantId,
-                  reviewResult: data.signer.sumsubReviewResult || 'GREEN'
+                setCreatedProfile({
+                  keyringId: data.signer.id,
+                  displayName: data.signer.code_name,
+                  profileTopicId: '', // Not applicable for Ethereum
+                  transactionId: '', // Not applicable for Ethereum
+                  uaid: data.signer.wallet_address
                 });
+                setCreationProgress({ step: 'success', message: 'Ethereum signer already registered!', progress: 100 });
+              } else {
+                // Hedera logic - if they have Sumsub data but no profile topic ID, show completion state
+                if (data.signer.sumsubApplicantId && !data.signer.profileTopicId) {
+                  setVerificationCompleted(true);
+                  setSumsubData({
+                    applicantId: data.signer.sumsubApplicantId,
+                    reviewResult: data.signer.sumsubReviewResult || 'GREEN'
+                  });
+                }
               }
             } else {
               setExistingSigner(null);
@@ -108,49 +134,94 @@ function VerifyPageContent() {
     };
     
     checkExistingVerification();
-  }, [isConnected, accountId]);
+  }, [isConnected, connection, accountId]);
 
   const storeVerificationData = async (applicantId: string, reviewResult: 'GREEN' | 'RED' | 'YELLOW') => {
     try {
-      console.log('Storing verification data:', { applicantId, reviewResult });
+      console.log('Storing verification data:', { applicantId, reviewResult, walletType: connection?.type });
       
-      const response = await fetch('/api/sumsub/store-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId,
-          applicantId,
-          reviewResult
-        })
-      });
+      if (connection?.type === 'base') {
+        // Ethereum wallet flow - register directly as complete
+        const response = await fetch('/api/signers/ethereum', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            account_type: 'ethereum',
+            wallet_address: connection.address,
+            sumsub_applicant_id: applicantId,
+            sumsub_review_result: reviewResult,
+            verification_status: 'verified',
+            verification_provider: 'sumsub',
+            join_date: new Date().toISOString()
+          })
+        });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        console.log('Verification data stored successfully');
+        const data = await response.json();
         
-        // Update local state
-        setSumsubData({ applicantId, reviewResult });
-        setVerificationCompleted(true);
-        setHasStarted(false);
-        setAccessToken(null);
-        
-        // Update existing signer state
         if (data.signer) {
-          setExistingSigner({
-            id: data.signer.id,
-            codeName: data.signer.code_name || `temp_${accountId}`,
-            accountId: data.signer.account_id,
-            verificationStatus: data.signer.verification_status,
-            createdAt: data.signer.created_at,
-            profileTopicId: data.signer.profile_topic_id,
-            sumsubApplicantId: data.signer.sumsub_applicant_id,
-            sumsubReviewResult: data.signer.sumsub_review_result,
+          console.log('Ethereum signer registered successfully');
+          
+          // Update local state - mark as completed since no HCS-11 profile needed
+          setSumsubData({ applicantId, reviewResult });
+          setVerificationCompleted(true);
+          setHasStarted(false);
+          setAccessToken(null);
+          
+          // Set created profile directly (skip HCS-11 step)
+          setCreatedProfile({
+            keyringId: data.signer.id,
+            displayName: data.signer.code_name,
+            profileTopicId: '', // Not applicable for Ethereum
+            transactionId: '', // Not applicable for Ethereum
+            uaid: data.signer.wallet_address
           });
+          
+          // Mark creation as complete
+          setCreationProgress({ step: 'success', message: 'Ethereum signer registered successfully!', progress: 100 });
+        } else {
+          console.error('Failed to register Ethereum signer:', data.error);
+          setError('Failed to register Ethereum signer. Please try again.');
         }
       } else {
-        console.error('Failed to store verification data:', data.error);
-        setError('Failed to save verification data. Please try again.');
+        // Hedera wallet flow - existing logic
+        const response = await fetch('/api/sumsub/store-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accountId,
+            applicantId,
+            reviewResult
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('Verification data stored successfully');
+          
+          // Update local state
+          setSumsubData({ applicantId, reviewResult });
+          setVerificationCompleted(true);
+          setHasStarted(false);
+          setAccessToken(null);
+          
+          // Update existing signer state
+          if (data.signer) {
+            setExistingSigner({
+              id: data.signer.id,
+              codeName: data.signer.code_name || `temp_${accountId}`,
+              accountId: data.signer.account_id,
+              verificationStatus: data.signer.verification_status,
+              createdAt: data.signer.created_at,
+              profileTopicId: data.signer.profile_topic_id,
+              sumsubApplicantId: data.signer.sumsub_applicant_id,
+              sumsubReviewResult: data.signer.sumsub_review_result,
+            });
+          }
+        } else {
+          console.error('Failed to store verification data:', data.error);
+          setError('Failed to save verification data. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error storing verification data:', error);
@@ -246,14 +317,17 @@ function VerifyPageContent() {
       setError(null);
       setHasStarted(true);
       
+      // Use appropriate identifier based on wallet type
+      const userId = connection?.type === 'base' ? connection.address : accountId;
+      
       const response = await fetch('/api/sumsub/generate-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          accountId,
-          externalUserId: accountId, // Use Hedera account ID as external user ID
+          accountId: userId,
+          externalUserId: userId, // Use wallet address for Ethereum, account ID for Hedera
         }),
       });
 
@@ -275,14 +349,17 @@ function VerifyPageContent() {
   const handleTokenExpiration = async (): Promise<string> => {
     console.log('Access token expired, generating new one...');
     
+    // Use appropriate identifier based on wallet type
+    const userId = connection?.type === 'base' ? connection.address : accountId;
+    
     const response = await fetch('/api/sumsub/generate-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        accountId,
-        externalUserId: accountId,
+        accountId: userId,
+        externalUserId: userId,
       }),
     });
 
@@ -308,7 +385,7 @@ function VerifyPageContent() {
       case 'idCheck.onApplicantLoaded':
         console.log('Applicant loaded:', payload);
         // Store the applicant ID when loaded
-        if (payload.applicantId && accountId) {
+        if (payload.applicantId && connection) {
           console.log('Capturing Sumsub applicant ID:', payload.applicantId);
           // Store with GREEN status initially - will be updated by webhook if needed
           storeVerificationData(payload.applicantId as string, 'GREEN');
@@ -317,7 +394,7 @@ function VerifyPageContent() {
       case 'idCheck.onApplicantStatusChanged':
         console.log('Applicant status changed:', payload);
         // Check if we have review status information
-        if (payload.applicantId && payload.reviewAnswer && accountId) {
+        if (payload.applicantId && payload.reviewAnswer && connection) {
           console.log('Updating verification with review result:', payload.reviewAnswer);
           storeVerificationData(
             payload.applicantId as string, 
@@ -328,14 +405,14 @@ function VerifyPageContent() {
       case 'idCheck.onApplicantSubmitted':
         console.log('Applicant submitted for review:', payload);
         // Store verification data immediately
-        if (payload.applicantId && accountId) {
+        if (payload.applicantId && connection) {
           storeVerificationData(payload.applicantId as string, 'GREEN'); // Assume GREEN for now
         }
         break;
       case 'idCheck.onApplicantReviewed':
         console.log('Applicant reviewed:', payload);
         // This might be called if review happens immediately
-        if (payload.reviewAnswer && payload.applicantId && accountId) {
+        if (payload.reviewAnswer && payload.applicantId && connection) {
           storeVerificationData(
             payload.applicantId as string, 
             payload.reviewAnswer as 'GREEN' | 'RED' | 'YELLOW'
@@ -348,18 +425,29 @@ function VerifyPageContent() {
   };
 
   // Show wallet connection message if not connected
-  if (!isConnected || !accountId) {
+  // Support both new connection object and legacy accountId for Hedera
+  const hasValidConnection = isConnected && (connection || accountId);
+  
+  // Show loading while initializing
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Initializing</h1>
+          <p className="text-gray-400">Checking wallet connection...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show "not connected" while still initializing
+  if (!hasValidConnection) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Wallet Not Connected</h1>
-          <p className="text-gray-400 mb-6">Please connect your wallet to proceed with verification.</p>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
-          >
-            Go Home & Connect Wallet
-          </button>
+          <p className="text-gray-400 mb-6">Please connect your wallet using the button in the header above to proceed with verification.</p>
         </div>
       </div>
     );
@@ -409,36 +497,8 @@ function VerifyPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push(returnUrl)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Identity Verification</h1>
-                <p className="text-sm text-gray-400">Complete your KeyRing signer verification</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Account</p>
-              <p className="text-sm font-mono text-foreground">{accountId}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Verification Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
           {/* Info Banner */}
           <div className="bg-blue-500/10 border-b border-blue-500/20 p-4">
             <div className="flex items-start space-x-3">
@@ -703,22 +763,25 @@ function VerifyPageContent() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
 export default function VerifyPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Loading</h1>
-          <p className="text-gray-400">Preparing verification page...</p>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Loading</h1>
+            <p className="text-gray-400">Preparing verification page...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <VerifyPageContent />
-    </Suspense>
+      }>
+        <VerifyPageContent />
+      </Suspense>
+    </div>
   );
 }

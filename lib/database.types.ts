@@ -12,9 +12,11 @@ export type Database = {
       keyring_signers: {
         Row: {
           id: string
-          account_id: string
-          public_key: string
-          profile_topic_id: string
+          account_type: 'hedera' | 'ethereum'
+          account_id: string | null
+          wallet_address: string | null
+          public_key: string | null
+          profile_topic_id: string | null
           code_name: string
           verification_status: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider: 'entrust' | 'sumsub'
@@ -30,9 +32,11 @@ export type Database = {
         }
         Insert: {
           id?: string
-          account_id: string
-          public_key: string
-          profile_topic_id: string
+          account_type: 'hedera' | 'ethereum'
+          account_id?: string | null
+          wallet_address?: string | null
+          public_key?: string | null
+          profile_topic_id?: string | null
           code_name: string
           verification_status?: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider?: 'entrust' | 'sumsub'
@@ -48,9 +52,11 @@ export type Database = {
         }
         Update: {
           id?: string
-          account_id?: string
-          public_key?: string
-          profile_topic_id?: string
+          account_type?: 'hedera' | 'ethereum'
+          account_id?: string | null
+          wallet_address?: string | null
+          public_key?: string | null
+          profile_topic_id?: string | null
           code_name?: string
           verification_status?: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider?: 'entrust' | 'sumsub'

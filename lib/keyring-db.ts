@@ -11,7 +11,7 @@ type KeyringWhitelistInsert = Database['public']['Tables']['keyring_whitelist'][
 export class KeyRingDB {
   
   /**
-   * Register a new KeyRing signer
+   * Register a new Hedera KeyRing signer
    */
   static async registerSigner(data: {
     accountId: string;
@@ -24,6 +24,7 @@ export class KeyRingDB {
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       const signerData: KeyringSignerInsert = {
+        account_type: 'hedera',
         account_id: data.accountId,
         public_key: data.publicKey,
         profile_topic_id: data.profileTopicId,
@@ -57,6 +58,49 @@ export class KeyRingDB {
   }
 
   /**
+   * Register a new Ethereum KeyRing signer
+   */
+  static async registerEthereumSigner(data: {
+    walletAddress: string;
+    codeName: string;
+    verificationProvider?: 'entrust' | 'sumsub';
+    sumsubApplicantId?: string;
+    sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
+  }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
+    try {
+      const signerData: KeyringSignerInsert = {
+        account_type: 'ethereum',
+        wallet_address: data.walletAddress,
+        code_name: data.codeName,
+        verification_status: 'verified', // Auto-verify for MVP
+        verification_provider: data.verificationProvider || 'sumsub',
+        verification_date: new Date().toISOString(),
+        sumsub_applicant_id: data.sumsubApplicantId || null,
+        sumsub_review_result: data.sumsubReviewResult || null,
+      };
+
+      const { data: signer, error } = await supabase
+        .from('keyring_signers')
+        .insert(signerData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error registering Ethereum signer:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Add onboarding reward
+      await this.addReward(signer.id, 'onboarding', 10);
+
+      return { success: true, signer };
+    } catch (error: unknown) {
+      console.error('Error registering Ethereum signer:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
    * Register incomplete signer verification (Sumsub data only, no profile yet)
    */
   static async registerIncompleteSignerVerification(data: {
@@ -66,6 +110,7 @@ export class KeyRingDB {
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       const signerData: KeyringSignerInsert = {
+        account_type: 'hedera', // Default to hedera for existing functionality
         account_id: data.accountId,
         public_key: '', // Will be filled when profile is created
         profile_topic_id: '', // Will be filled when profile is created
@@ -197,6 +242,30 @@ export class KeyRingDB {
       return data;
     } catch (error) {
       console.error('Error in getSignerByPublicKey:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get signer by wallet address (for Ethereum signers)
+   */
+  static async getSignerByWalletAddress(walletAddress: string): Promise<KeyringSigner | null> {
+    try {
+      const { data, error } = await supabase
+        .from('keyring_signers')
+        .select('*')
+        .eq('wallet_address', walletAddress)
+        .eq('account_type', 'ethereum')
+        .single();
+
+      if (error) {
+        console.error('Error fetching signer by wallet address:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getSignerByWalletAddress:', error);
       return null;
     }
   }
