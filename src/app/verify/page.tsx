@@ -50,7 +50,6 @@ function VerifyPageContent() {
   const [verificationCompleted, setVerificationCompleted] = useState(false);
   const [sumsubData, setSumsubData] = useState<SumsubCompletionData | null>(null);
   const [existingSigner, setExistingSigner] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string; profileTopicId?: string; sumsubApplicantId?: string; sumsubReviewResult?: string } | null>(null);
-  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
   const [creationProgress, setCreationProgress] = useState<ProfileCreationProgress>({
     step: 'idle',
     message: '',
@@ -65,8 +64,6 @@ function VerifyPageContent() {
   useEffect(() => {
     const checkExistingVerification = async () => {
       if (isConnected && accountId) {
-        setIsCheckingAccount(true);
-        
         try {
           const response = await fetch('/api/signers/lookup', {
             method: 'POST',
@@ -107,8 +104,6 @@ function VerifyPageContent() {
           console.error('Error checking existing verification:', error);
           setExistingSigner(null);
         }
-        
-        setIsCheckingAccount(false);
       }
     };
     

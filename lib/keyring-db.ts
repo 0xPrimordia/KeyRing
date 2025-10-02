@@ -439,7 +439,7 @@ export class KeyRingDB {
   }) {
     try {
       // Map camelCase parameters to snake_case database columns
-      const dbUpdates: any = {
+      const dbUpdates: Partial<Database['public']['Tables']['keyring_signers']['Update']> = {
         updated_at: new Date().toISOString(),
       };
       
