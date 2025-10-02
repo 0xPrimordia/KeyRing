@@ -322,4 +322,38 @@ export class KeyRingDB {
     }
   }
 
+  // Update signer verification status
+  static async updateSignerVerification(signerId: string, updates: {
+    verificationStatus?: 'pending' | 'verified' | 'suspended' | 'revoked';
+    verificationProvider?: 'entrust' | 'sumsub';
+    verificationDate?: string;
+    uniqueId?: string;
+    attestationHash?: string;
+    sumsubApplicantId?: string;
+    verifiedName?: string;
+    documentType?: string;
+  }) {
+    try {
+      const { data, error } = await supabase
+        .from('keyring_signers')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', signerId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error updating signer verification:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, signer: data };
+    } catch (error) {
+      console.error('Error updating signer verification:', error);
+      return { success: false, error: 'Failed to update signer verification' };
+    }
+  }
+
 }

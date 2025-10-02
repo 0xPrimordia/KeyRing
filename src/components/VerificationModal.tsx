@@ -470,16 +470,16 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
             )}
           </div>
         ) : (
-          // Non-whitelisted user flow - Coming Soon
+          // Non-whitelisted user flow - Identity Verification
           <div className="text-center">
             <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">Get Whitelisted</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Complete Identity Verification</h3>
             <p className="text-gray-400 mb-6">
-              Identity integration is coming soon. Contact us to get whitelisted for early access.
+              Verify your identity to become a trusted KeyRing signer and earn rewards.
             </p>
             
             {/* 10 LYNX Reward Preview */}
@@ -501,50 +501,33 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm text-gray-300 mb-2">
-                    <strong>What&apos;s Coming:</strong>
+                  <p className="text-sm text-gray-300 mb-1">
+                    <strong>Secure Identity Verification:</strong> We use Sumsub for privacy-preserving identity verification.
                   </p>
-                  <ul className="text-xs text-gray-400 space-y-1">
-                    <li>• Automated identity verification</li>
-                    <li>• Integration with trusted KYC providers</li>
-                    <li>• Instant signer onboarding</li>
-                    <li>• Enhanced security protocols</li>
-                  </ul>
+                  <p className="text-xs text-gray-400">
+                    Your documents are processed securely and we only receive your verification status and verified name.
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Contact Section */}
-            <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-300 mb-3 text-center">
-                Contact us to get whitelisted for early access:
-              </p>
-              <div className="flex gap-3">
-                <a
-                  href="https://x.com/lynifyxyz"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-900 transition-colors text-center text-sm"
-                >
-                  Follow on X
-                </a>
-                <a
-                  href="https://discord.gg/GM5BfpPe2Y"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 bg-[#5865F2] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#4752C4] transition-colors text-center text-sm"
-                >
-                  Join our Discord
-                </a>
-              </div>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  onClose();
+                  window.location.href = `/verify?returnUrl=${encodeURIComponent(window.location.pathname)}`;
+                }}
+                className="w-full bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+              >
+                Begin Identity Verification
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full bg-gray-600 text-foreground px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 transition-colors"
+              >
+                Close
+              </button>
             </div>
-
-            <button
-              onClick={onClose}
-              className="w-full bg-gray-600 text-foreground px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 transition-colors"
-            >
-              Close
-            </button>
           </div>
         )}
       </div>

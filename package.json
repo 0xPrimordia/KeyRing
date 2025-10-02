@@ -23,6 +23,7 @@
     "@hashgraph/proto": "^2.23.0",
     "@hashgraph/sdk": "^2.73.2",
     "@hashgraphonline/standards-sdk": "^0.1.107",
+    "@sumsub/websdk-react": "^2.4.1",
     "@supabase/supabase-js": "^2.58.0",
     "@types/node-fetch": "^2.6.13",
     "@walletconnect/modal": "^2.7.0",
