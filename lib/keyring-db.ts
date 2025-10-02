@@ -433,16 +433,29 @@ export class KeyRingDB {
     uniqueId?: string;
     attestationHash?: string;
     sumsubApplicantId?: string;
+    sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
     verifiedName?: string;
     documentType?: string;
   }) {
     try {
+      // Map camelCase parameters to snake_case database columns
+      const dbUpdates: any = {
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (updates.verificationStatus) dbUpdates.verification_status = updates.verificationStatus;
+      if (updates.verificationProvider) dbUpdates.verification_provider = updates.verificationProvider;
+      if (updates.verificationDate) dbUpdates.verification_date = updates.verificationDate;
+      if (updates.uniqueId) dbUpdates.unique_id = updates.uniqueId;
+      if (updates.attestationHash) dbUpdates.attestation_hash = updates.attestationHash;
+      if (updates.sumsubApplicantId) dbUpdates.sumsub_applicant_id = updates.sumsubApplicantId;
+      if (updates.sumsubReviewResult) dbUpdates.sumsub_review_result = updates.sumsubReviewResult;
+      if (updates.verifiedName) dbUpdates.verified_name = updates.verifiedName;
+      if (updates.documentType) dbUpdates.document_type = updates.documentType;
+
       const { data, error } = await supabase
         .from('keyring_signers')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(dbUpdates)
         .eq('id', signerId)
         .select()
         .single();
