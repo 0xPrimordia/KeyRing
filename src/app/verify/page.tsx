@@ -579,7 +579,7 @@ function VerifyPageContent() {
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">Verification Complete!</h3>
                     <p className="text-gray-400 mb-4">
-                      Your identity has been successfully verified. Now create your KeyRing signer profile to start earning rewards.
+                      Your identity has been successfully verified. Now create your KeyRing signer profile to qualify for airdrops when KYRNG releases.
                     </p>
                     
                     {sumsubData && (
