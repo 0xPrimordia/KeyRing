@@ -22,6 +22,7 @@ export type Database = {
           unique_id: string | null
           attestation_hash: string | null
           sumsub_applicant_id: string | null
+          sumsub_review_result: 'GREEN' | 'RED' | 'YELLOW' | null
           verified_name: string | null
           document_type: string | null
           created_at: string
@@ -39,6 +40,7 @@ export type Database = {
           unique_id?: string | null
           attestation_hash?: string | null
           sumsub_applicant_id?: string | null
+          sumsub_review_result?: 'GREEN' | 'RED' | 'YELLOW' | null
           verified_name?: string | null
           document_type?: string | null
           created_at?: string
@@ -56,6 +58,7 @@ export type Database = {
           unique_id?: string | null
           attestation_hash?: string | null
           sumsub_applicant_id?: string | null
+          sumsub_review_result?: 'GREEN' | 'RED' | 'YELLOW' | null
           verified_name?: string | null
           document_type?: string | null
           created_at?: string
