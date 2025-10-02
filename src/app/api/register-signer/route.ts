@@ -6,7 +6,7 @@ import { generateKeyRingId, getDisplayName } from '../../../../lib/codename-gene
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, publicKey } = await request.json();
+    const { accountId, publicKey, sumsubData, existingSignerId } = await request.json();
 
     if (!accountId || !publicKey) {
       return NextResponse.json({ 
@@ -14,15 +14,26 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('[API] Registering KeyRing signer:', { accountId, publicKey: publicKey.substring(0, 20) + '...' });
+    console.log('[API] Registering KeyRing signer:', { 
+      accountId, 
+      publicKey: publicKey.substring(0, 20) + '...', 
+      hasSumsubData: !!sumsubData,
+      existingSignerId: !!existingSignerId
+    });
 
-    // Check if signer already exists
-    const existingSigner = await KeyRingDB.getSignerByAccountId(accountId);
-    if (existingSigner) {
-      return NextResponse.json({
-        success: false,
-        error: 'Signer already registered with this account ID'
-      }, { status: 400 });
+    // Check if we're completing an existing signer or creating new
+    if (existingSignerId) {
+      // This is completing a profile for an existing Sumsub-verified signer
+      console.log('[API] Completing existing signer profile:', existingSignerId);
+    } else {
+      // Check if signer already exists (for new registrations)
+      const existingSigner = await KeyRingDB.getSignerByAccountId(accountId);
+      if (existingSigner) {
+        return NextResponse.json({
+          success: false,
+          error: 'Signer already registered with this account ID'
+        }, { status: 400 });
+      }
     }
 
     // Initialize HCS-11 client
@@ -50,14 +61,21 @@ export async function POST(request: NextRequest) {
     const displayName = getDisplayName(publicKey, 'profile');
     // const avatarSeed = getAvatarSeed(publicKey); // Unused for now
 
+    // Determine verification provider and create appropriate profile
+    const verificationProvider = sumsubData ? 'sumsub' : 'entrust';
+    const profileAlias = sumsubData ? 'KeyRing Verified Signer (Sumsub)' : 'KeyRing Verified Signer';
+    const profileBio = sumsubData 
+      ? `Verified threshold key signer specializing in decentralized governance and multi-signature operations. Identity verified via Sumsub.`
+      : `Verified threshold key signer specializing in decentralized governance and multi-signature operations`;
+
     // Create KeyRing signer profile using HCS-11
     const keyringProfile = hcs11Client.createPersonalProfile(displayName, {
-      alias: 'KeyRing Verified Signer',
-      bio: `Verified threshold key signer specializing in decentralized governance and multi-signature operations`,
+      alias: profileAlias,
+      bio: profileBio,
       properties: {
         // KeyRing-specific metadata
         keyring: {
-          verification_provider: 'entrust', // Will be dynamic based on user choice
+          verification_provider: verificationProvider,
           verification_status: 'verified',
           verification_date: new Date().toISOString(),
           public_key: publicKey,
@@ -68,7 +86,12 @@ export async function POST(request: NextRequest) {
           response_time_avg: 0,
           active_lists: 0,
           join_date: new Date().toISOString(),
-          account_id: accountId
+          account_id: accountId,
+          // Sumsub verification data (if available)
+          ...(sumsubData && {
+            sumsub_applicant_id: sumsubData.applicantId,
+            sumsub_review_result: sumsubData.reviewResult,
+          })
         },
         // Geographic/regulatory info (privacy-preserving)
         region: 'unknown', // Will be set during verification process
@@ -120,14 +143,32 @@ export async function POST(request: NextRequest) {
         transactionSize: transactionBytes.length
       });
 
-        // Store signer in database
-        const dbResult = await KeyRingDB.registerSigner({
-          accountId,
-          publicKey,
-          profileTopicId: inscriptionResult.profileTopicId,
-          codeName: keyringId,
-          verificationProvider: 'entrust'
-        });
+        // Store signer in database or complete existing profile
+        let dbResult;
+        if (existingSignerId) {
+          // Complete existing signer profile
+          dbResult = await KeyRingDB.completeSignerProfile(existingSignerId, {
+            publicKey,
+            profileTopicId: inscriptionResult.profileTopicId,
+            codeName: keyringId,
+          });
+          
+          // dbResult already includes the signer data from completeSignerProfile
+        } else {
+          // Create new signer
+          dbResult = await KeyRingDB.registerSigner({
+            accountId,
+            publicKey,
+            profileTopicId: inscriptionResult.profileTopicId,
+            codeName: keyringId,
+            verificationProvider: verificationProvider,
+            // Include Sumsub data if available
+            ...(sumsubData && {
+              sumsubApplicantId: sumsubData.applicantId,
+              sumsubReviewResult: sumsubData.reviewResult,
+            })
+          });
+        }
 
       if (!dbResult.success) {
         console.error('[API] Failed to store signer in database:', dbResult.error);

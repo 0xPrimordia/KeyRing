@@ -19,6 +19,8 @@ export class KeyRingDB {
     profileTopicId: string;
     codeName: string;
     verificationProvider?: 'entrust' | 'sumsub';
+    sumsubApplicantId?: string;
+    sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       const signerData: KeyringSignerInsert = {
@@ -29,6 +31,8 @@ export class KeyRingDB {
         verification_status: 'verified', // Auto-verify for MVP
         verification_provider: data.verificationProvider || 'entrust',
         verification_date: new Date().toISOString(),
+        sumsub_applicant_id: data.sumsubApplicantId || null,
+        sumsub_review_result: data.sumsubReviewResult || null,
       };
 
       const { data: signer, error } = await supabase
@@ -49,6 +53,105 @@ export class KeyRingDB {
     } catch (error: unknown) {
       console.error('Error registering signer:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Register incomplete signer verification (Sumsub data only, no profile yet)
+   */
+  static async registerIncompleteSignerVerification(data: {
+    accountId: string;
+    applicantId: string;
+    reviewResult: 'GREEN' | 'RED' | 'YELLOW';
+  }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
+    try {
+      const signerData: KeyringSignerInsert = {
+        account_id: data.accountId,
+        public_key: '', // Will be filled when profile is created
+        profile_topic_id: '', // Will be filled when profile is created
+        code_name: `temp_${data.accountId}`, // Temporary code name
+        verification_status: data.reviewResult === 'GREEN' ? 'verified' : 'pending',
+        verification_provider: 'sumsub',
+        verification_date: new Date().toISOString(),
+        sumsub_applicant_id: data.applicantId,
+        sumsub_review_result: data.reviewResult,
+      };
+
+      const { data: signer, error } = await supabase
+        .from('keyring_signers')
+        .insert(signerData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error registering incomplete signer:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('Created incomplete signer record:', signer.id);
+      return { success: true, signer };
+    } catch (error: unknown) {
+      console.error('Error registering incomplete signer:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Complete signer profile (update with public key and profile topic ID)
+   */
+  static async completeSignerProfile(signerId: string, data: {
+    publicKey: string;
+    profileTopicId: string;
+    codeName: string;
+  }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
+    try {
+      const { error } = await supabase
+        .from('keyring_signers')
+        .update({
+          public_key: data.publicKey,
+          profile_topic_id: data.profileTopicId,
+          code_name: data.codeName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', signerId);
+
+      if (error) {
+        console.error('Database error completing signer profile:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Add onboarding reward for completed profile
+      await this.addReward(signerId, 'onboarding', 10);
+
+      // Get the updated signer data
+      const updatedSigner = await this.getSignerById(signerId);
+      return { success: true, signer: updatedSigner || undefined };
+    } catch (error: unknown) {
+      console.error('Error completing signer profile:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Find signer by ID
+   */
+  static async getSignerById(id: string): Promise<KeyringSigner | null> {
+    try {
+      const { data, error } = await supabase
+        .from('keyring_signers')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching signer by ID:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getSignerById:', error);
+      return null;
     }
   }
 
@@ -330,16 +433,29 @@ export class KeyRingDB {
     uniqueId?: string;
     attestationHash?: string;
     sumsubApplicantId?: string;
+    sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
     verifiedName?: string;
     documentType?: string;
   }) {
     try {
+      // Map camelCase parameters to snake_case database columns
+      const dbUpdates: Partial<Database['public']['Tables']['keyring_signers']['Update']> = {
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (updates.verificationStatus) dbUpdates.verification_status = updates.verificationStatus;
+      if (updates.verificationProvider) dbUpdates.verification_provider = updates.verificationProvider;
+      if (updates.verificationDate) dbUpdates.verification_date = updates.verificationDate;
+      if (updates.uniqueId) dbUpdates.unique_id = updates.uniqueId;
+      if (updates.attestationHash) dbUpdates.attestation_hash = updates.attestationHash;
+      if (updates.sumsubApplicantId) dbUpdates.sumsub_applicant_id = updates.sumsubApplicantId;
+      if (updates.sumsubReviewResult) dbUpdates.sumsub_review_result = updates.sumsubReviewResult;
+      if (updates.verifiedName) dbUpdates.verified_name = updates.verifiedName;
+      if (updates.documentType) dbUpdates.document_type = updates.documentType;
+
       const { data, error } = await supabase
         .from('keyring_signers')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(dbUpdates)
         .eq('id', signerId)
         .select()
         .single();

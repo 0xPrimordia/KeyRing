@@ -41,7 +41,7 @@ export default function SignersPage() {
             Become a Verified Signer
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Earn KYRNG rewards by helping secure the Hedera ecosystem. Join KeyRing&apos;s network of 
+            Qualify for KYRNG airdrops by helping secure the Hedera ecosystem. Join KeyRing&apos;s network of 
             verified signers and get paid to review admin transactions with AI agent assistance.
           </p>
           <div className="flex items-center justify-center space-x-8 text-sm text-gray-400">
@@ -49,7 +49,7 @@ export default function SignersPage() {
               <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              Earn KYRNG rewards
+              Qualify for airdrops
             </div>
             <div className="flex items-center">
               <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -66,11 +66,11 @@ export default function SignersPage() {
           </div>
         </div>
 
-        {/* Reward Structure */}
+        {/* Airdrop Qualification */}
         <div className="mb-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">How You Earn</h2>
-            <p className="text-lg text-gray-400">Multiple reward streams for active, reliable signers</p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">Airdrop Qualification</h2>
+            <p className="text-lg text-gray-400">Qualify for KYRNG airdrops by becoming a verified signer</p>
           </div>
 
           <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
@@ -84,8 +84,8 @@ export default function SignersPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground mb-1">On-Boarding Bonus: 10 KYRNG</h3>
-                    <p className="text-gray-300 text-sm">Get started with an instant reward for completing identity verification</p>
+                    <h3 className="text-xl font-bold text-foreground mb-1">Airdrop Qualified</h3>
+                    <p className="text-gray-300 text-sm">Qualify for KYRNG airdrops by completing identity verification</p>
                   </div>
                 </div>
                 <div className="ml-6">
@@ -141,11 +141,11 @@ export default function SignersPage() {
                 <svg className="w-6 h-6 text-primary mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h4 className="text-lg font-semibold text-foreground">Reward Distribution</h4>
+                <h4 className="text-lg font-semibold text-foreground">Future Token Distribution</h4>
               </div>
               <p className="text-gray-300 text-sm">
-                85% of project payments flow directly to signers. Transaction reviews are your primary earning opportunity, 
-                with list bonuses providing additional income when you join new projects.
+                Verified signers will qualify for KYRNG airdrops when the token launches. 
+                Early participants may receive additional allocation based on their contribution to the network.
               </p>
             </div>
           </div>
@@ -188,8 +188,8 @@ export default function SignersPage() {
               <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-background font-bold text-lg">
                 5
               </div>
-              <h4 className="font-semibold text-foreground mb-2">Earn Rewards</h4>
-              <p className="text-sm text-gray-400">Receive KYRNG payments for each approval or rejection</p>
+              <h4 className="font-semibold text-foreground mb-2">Qualify for Airdrops</h4>
+              <p className="text-sm text-gray-400">Verified signers qualify for KYRNG airdrops when the token releases</p>
             </div>
           </div>
         </div>
@@ -270,10 +270,10 @@ export default function SignersPage() {
 
         {/* CTA Section */}
         <div className="text-center bg-gradient-to-r from-primary/20 to-primary-dark/20 rounded-2xl p-12 border border-primary/30">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Ready to Start Earning?</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-4">Ready to Qualify for Airdrops?</h2>
           <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
             Join KeyRing&apos;s network of verified signers and help secure the future of decentralized governance 
-            while earning KYRNG rewards for your participation.
+            while qualifying for KYRNG airdrops when the token releases.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 

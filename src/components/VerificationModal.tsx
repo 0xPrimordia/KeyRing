@@ -276,7 +276,7 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                     </p>
                     <p className="flex items-start">
                       <span className="text-green-400 mr-2">•</span>
-                      You&apos;ll start receiving KYRNG rewards in your wallet when added to threshold lists
+                      You&apos;ll qualify for KYRNG airdrops when the token releases
                     </p>
                     <p className="flex items-start">
                       <span className="text-blue-400 mr-2">•</span>
@@ -417,7 +417,7 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
                     ✅ You&apos;re already registered as a KeyRing signer!
                   </p>
                   <p className="text-xs text-gray-400">
-                    You can participate in threshold signing and earn rewards.
+                    You can participate in threshold signing and qualify for airdrops.
                   </p>
                 </div>
                 
@@ -479,19 +479,19 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">Complete Identity Verification</h3>
             <p className="text-gray-400 mb-6">
-              Verify your identity to become a trusted KeyRing signer and earn rewards.
+              Verify your identity to become a trusted KeyRing signer and qualify for airdrops.
             </p>
             
-            {/* 10 KYRNG Reward Preview */}
+            {/* Airdrop Qualification Preview */}
             <div className="bg-gradient-to-r from-primary/20 to-primary-dark/20 rounded-lg p-4 border border-primary/30 mb-6">
               <div className="flex items-center justify-center mb-2">
-                <svg className="w-6 h-6 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                <svg className="w-6 h-6 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
-                <span className="text-lg font-bold text-primary">10 KYRNG Reward</span>
+                <span className="text-lg font-bold text-primary">Airdrop Qualified</span>
               </div>
               <p className="text-sm text-gray-300">
-                Earn your onboarding bonus when verification becomes available
+                Qualify for KYRNG airdrops when the token releases
               </p>
             </div>
             

@@ -36,10 +36,13 @@ export async function POST(request: NextRequest) {
       signer: {
         id: signer.id,
         codeName: signer.code_name,
+        accountId: signer.account_id,
         verificationStatus: signer.verification_status,
         verificationProvider: signer.verification_provider,
         verificationDate: signer.verification_date,
         profileTopicId: signer.profile_topic_id,
+        sumsubApplicantId: signer.sumsub_applicant_id,
+        sumsubReviewResult: signer.sumsub_review_result,
         createdAt: signer.created_at
       }
     });

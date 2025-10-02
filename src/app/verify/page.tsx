@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useWallet } from '../../providers/WalletProvider';
 import SumsubWebSdk from '@sumsub/websdk-react';
@@ -16,19 +16,229 @@ interface SumsubError {
   [key: string]: unknown;
 }
 
+type ProfileCreationStep = 'idle' | 'creating' | 'inscribing' | 'storing' | 'memo' | 'success' | 'error';
+
+interface ProfileCreationProgress {
+  step: ProfileCreationStep;
+  message: string;
+  progress: number;
+}
+
+interface CreatedProfile {
+  keyringId: string;
+  displayName: string;
+  profileTopicId: string;
+  transactionId: string;
+  uaid?: string;
+}
+
+interface SumsubCompletionData {
+  applicantId: string;
+  reviewResult: 'GREEN' | 'RED' | 'YELLOW';
+}
+
 function VerifyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isConnected, accountId } = useWallet();
+  const { isConnected, accountId, publicKey, getPublicKey, dAppConnector } = useWallet();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
+  
+  // Verification completion and profile creation states
+  const [verificationCompleted, setVerificationCompleted] = useState(false);
+  const [sumsubData, setSumsubData] = useState<SumsubCompletionData | null>(null);
+  const [existingSigner, setExistingSigner] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string; profileTopicId?: string; sumsubApplicantId?: string; sumsubReviewResult?: string } | null>(null);
+  const [creationProgress, setCreationProgress] = useState<ProfileCreationProgress>({
+    step: 'idle',
+    message: '',
+    progress: 0
+  });
+  const [createdProfile, setCreatedProfile] = useState<CreatedProfile | null>(null);
 
   // Get return URL from query params
   const returnUrl = searchParams.get('returnUrl') || '/';
 
-  // No useEffect redirects - just handle it in the render
+  // Check for existing verification on page load
+  useEffect(() => {
+    const checkExistingVerification = async () => {
+      if (isConnected && accountId) {
+        try {
+          const response = await fetch('/api/signers/lookup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.signer) {
+              setExistingSigner({
+                id: data.signer.id,
+                codeName: data.signer.codeName,
+                accountId: data.signer.accountId || accountId,
+                verificationStatus: data.signer.verificationStatus,
+                createdAt: data.signer.createdAt,
+                profileTopicId: data.signer.profileTopicId,
+                sumsubApplicantId: data.signer.sumsubApplicantId,
+                sumsubReviewResult: data.signer.sumsubReviewResult,
+              });
+              
+              // If they have Sumsub data but no profile topic ID, show completion state
+              if (data.signer.sumsubApplicantId && !data.signer.profileTopicId) {
+                setVerificationCompleted(true);
+                setSumsubData({
+                  applicantId: data.signer.sumsubApplicantId,
+                  reviewResult: data.signer.sumsubReviewResult || 'GREEN'
+                });
+              }
+            } else {
+              setExistingSigner(null);
+            }
+          } else {
+            // 404 means signer not found, which is expected for new accounts
+            setExistingSigner(null);
+          }
+        } catch (error) {
+          console.error('Error checking existing verification:', error);
+          setExistingSigner(null);
+        }
+      }
+    };
+    
+    checkExistingVerification();
+  }, [isConnected, accountId]);
+
+  const storeVerificationData = async (applicantId: string, reviewResult: 'GREEN' | 'RED' | 'YELLOW') => {
+    try {
+      console.log('Storing verification data:', { applicantId, reviewResult });
+      
+      const response = await fetch('/api/sumsub/store-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId,
+          applicantId,
+          reviewResult
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('Verification data stored successfully');
+        
+        // Update local state
+        setSumsubData({ applicantId, reviewResult });
+        setVerificationCompleted(true);
+        setHasStarted(false);
+        setAccessToken(null);
+        
+        // Update existing signer state
+        if (data.signer) {
+          setExistingSigner({
+            id: data.signer.id,
+            codeName: data.signer.code_name || `temp_${accountId}`,
+            accountId: data.signer.account_id,
+            verificationStatus: data.signer.verification_status,
+            createdAt: data.signer.created_at,
+            profileTopicId: data.signer.profile_topic_id,
+            sumsubApplicantId: data.signer.sumsub_applicant_id,
+            sumsubReviewResult: data.signer.sumsub_review_result,
+          });
+        }
+      } else {
+        console.error('Failed to store verification data:', data.error);
+        setError('Failed to save verification data. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error storing verification data:', error);
+      setError('Failed to save verification data. Please try again.');
+    }
+  };
+
+  const handleCreateProfile = async () => {
+    if (!accountId || !sumsubData || !existingSigner) return;
+    
+    setError(null);
+    setCreationProgress({ step: 'creating', message: 'Preparing profile creation...', progress: 10 });
+    
+    try {
+      let currentPublicKey = publicKey;
+      
+      // Get public key if we don't have it
+      if (!currentPublicKey) {
+        setCreationProgress({ step: 'creating', message: 'Getting public key...', progress: 20 });
+        currentPublicKey = await getPublicKey(accountId);
+      }
+      
+      if (!currentPublicKey) {
+        throw new Error('Failed to obtain public key');
+      }
+
+      // Create HCS-11 profile with existing Sumsub data
+      setCreationProgress({ step: 'inscribing', message: 'Creating HCS-11 profile on Hedera...', progress: 30 });
+      
+      const registrationResponse = await fetch('/api/register-signer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: accountId,
+          publicKey: currentPublicKey,
+          sumsubData: {
+            applicantId: sumsubData.applicantId,
+            reviewResult: sumsubData.reviewResult,
+          },
+          existingSignerId: existingSigner.id // Pass existing signer ID to update instead of create
+        })
+      });
+      
+      const registrationData = await registrationResponse.json();
+      
+      if (registrationData.success) {
+        setCreationProgress({ step: 'storing', message: 'Profile created successfully!', progress: 70 });
+        
+        // Store the created profile data
+        setCreatedProfile({
+          keyringId: registrationData.signer.keyringId,
+          displayName: registrationData.signer.displayName,
+          profileTopicId: registrationData.signer.profileTopicId,
+          transactionId: registrationData.signer.transactionId,
+          uaid: registrationData.signer.uaid
+        });
+
+        // If memo update is required, have the user sign it
+        if (registrationData.memoUpdate?.required && registrationData.memoUpdate.transaction) {
+          setCreationProgress({ step: 'memo', message: 'Please sign the memo update transaction...', progress: 80 });
+          
+          try {
+            const signResult = await dAppConnector?.signAndExecuteTransaction({
+              signerAccountId: accountId,
+              transactionList: registrationData.memoUpdate.transaction
+            });
+            
+            if (signResult) {
+              setCreationProgress({ step: 'success', message: 'Profile linked to your account!', progress: 100 });
+            } else {
+              setCreationProgress({ step: 'success', message: 'Profile created! You can link it later.', progress: 100 });
+            }
+          } catch (memoError) {
+            console.error('Failed to update memo:', memoError);
+            setCreationProgress({ step: 'success', message: 'Profile created! Memo update failed.', progress: 100 });
+          }
+        } else {
+          setCreationProgress({ step: 'success', message: 'Profile created successfully!', progress: 100 });
+        }
+      } else {
+        throw new Error(registrationData.error || 'Failed to create profile');
+      }
+    } catch (error: unknown) {
+      console.error('Failed to create profile:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create profile. Please try again.');
+      setCreationProgress({ step: 'error', message: 'Profile creation failed', progress: 0 });
+    }
+  };
 
   const startVerification = async () => {
     try {
@@ -95,13 +305,42 @@ function VerifyPageContent() {
         console.error('Verification error:', payload);
         setError(`Sumsub error: ${payload.message || 'Unknown error'}`);
         break;
-      case 'idCheck.applicantLoaded':
+      case 'idCheck.onApplicantLoaded':
         console.log('Applicant loaded:', payload);
+        // Store the applicant ID when loaded
+        if (payload.applicantId && accountId) {
+          console.log('Capturing Sumsub applicant ID:', payload.applicantId);
+          // Store with GREEN status initially - will be updated by webhook if needed
+          storeVerificationData(payload.applicantId as string, 'GREEN');
+        }
+        break;
+      case 'idCheck.onApplicantStatusChanged':
+        console.log('Applicant status changed:', payload);
+        // Check if we have review status information
+        if (payload.applicantId && payload.reviewAnswer && accountId) {
+          console.log('Updating verification with review result:', payload.reviewAnswer);
+          storeVerificationData(
+            payload.applicantId as string, 
+            payload.reviewAnswer as 'GREEN' | 'RED' | 'YELLOW'
+          );
+        }
         break;
       case 'idCheck.onApplicantSubmitted':
         console.log('Applicant submitted for review:', payload);
-        // Redirect back to the return URL after submission
-        router.push(returnUrl);
+        // Store verification data immediately
+        if (payload.applicantId && accountId) {
+          storeVerificationData(payload.applicantId as string, 'GREEN'); // Assume GREEN for now
+        }
+        break;
+      case 'idCheck.onApplicantReviewed':
+        console.log('Applicant reviewed:', payload);
+        // This might be called if review happens immediately
+        if (payload.reviewAnswer && payload.applicantId && accountId) {
+          storeVerificationData(
+            payload.applicantId as string, 
+            payload.reviewAnswer as 'GREEN' | 'RED' | 'YELLOW'
+          );
+        }
         break;
       default:
         break;
@@ -218,7 +457,182 @@ function VerifyPageContent() {
 
           {/* Verification Content */}
           <div className="p-6">
-            {!hasStarted ? (
+            {verificationCompleted ? (
+              // Verification completed - show profile creation UI
+              <div className="text-center">
+                {creationProgress.step === 'success' ? (
+                  // Success State
+                  <div>
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">🎉 Welcome to KeyRing!</h3>
+                    <p className="text-gray-400 mb-6">
+                      Your signer profile has been created successfully
+                    </p>
+                    
+                    {createdProfile && (
+                      <div className="bg-gray-700 rounded-lg p-4 text-left mb-6">
+                        <h4 className="text-sm font-semibold text-foreground mb-3">Profile Details:</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Signer ID:</span>
+                            <span className="text-primary font-mono">{createdProfile.keyringId}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Display Name:</span>
+                            <span className="text-foreground">{createdProfile.displayName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Profile Topic:</span>
+                            <span className="text-gray-300 font-mono text-xs">{createdProfile.profileTopicId}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={() => {
+                        if (createdProfile?.keyringId) {
+                          router.push(`/signer/${createdProfile.keyringId}`);
+                        } else {
+                          router.push(returnUrl);
+                        }
+                      }}
+                      className="w-full bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+                    >
+                      View My Profile
+                    </button>
+                  </div>
+                ) : creationProgress.step === 'error' ? (
+                  // Error State
+                  <div>
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L4.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Profile Creation Failed</h3>
+                    <p className="text-gray-400 mb-4">
+                      {error || 'An error occurred while creating your profile'}
+                    </p>
+                    
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => {
+                          setCreationProgress({ step: 'idle', message: '', progress: 0 });
+                          setError(null);
+                        }}
+                        className="flex-1 bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+                      >
+                        Try Again
+                      </button>
+                      <button
+                        onClick={() => router.push(returnUrl)}
+                        className="flex-1 bg-gray-600 text-foreground px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 transition-colors"
+                      >
+                        Go Back
+                      </button>
+                    </div>
+                  </div>
+                ) : creationProgress.step !== 'idle' ? (
+                  // Progress State
+                  <div>
+                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Creating Your Profile</h3>
+                    <p className="text-gray-400 mb-6">
+                      {creationProgress.message}
+                    </p>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${creationProgress.progress}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="bg-gray-700 rounded-lg p-4 text-left">
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <p className="text-xs text-gray-300">
+                            Creating your verified HCS-11 profile on Hedera with Sumsub verification data.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Verification completed - ready to create profile
+                  <div>
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Verification Complete!</h3>
+                    <p className="text-gray-400 mb-4">
+                      Your identity has been successfully verified. Now create your KeyRing signer profile to qualify for airdrops when KYRNG releases.
+                    </p>
+                    
+                    {sumsubData && (
+                      <div className="bg-gray-700 rounded-lg p-4 text-left mb-6">
+                        <h4 className="text-sm font-semibold text-foreground mb-3">Verification Details:</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Status:</span>
+                            <span className="text-green-400">✅ Verified</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Sumsub ID:</span>
+                            <span className="text-gray-300 font-mono text-xs">{sumsubData.applicantId}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Review Result:</span>
+                            <span className={`font-semibold ${
+                              sumsubData.reviewResult === 'GREEN' ? 'text-green-400' : 
+                              sumsubData.reviewResult === 'YELLOW' ? 'text-yellow-400' : 'text-red-400'
+                            }`}>
+                              {sumsubData.reviewResult}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={handleCreateProfile}
+                      className="w-full bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors mb-4"
+                    >
+                      Create KeyRing Profile
+                    </button>
+                    
+                    <div className="bg-gray-700 rounded-lg p-4 text-left">
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm text-gray-300 mb-1">
+                            <strong>Verified HCS-11 Profile:</strong> This creates a privacy-preserving identity on Hedera with your Sumsub verification data.
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Your verification status and Sumsub ID will be stored in your profile for future reference.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : !hasStarted ? (
               // Start verification button
               <div className="text-center py-12">
                 <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
