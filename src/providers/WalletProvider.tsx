@@ -9,7 +9,9 @@ import { base, baseSepolia } from 'viem/chains';
 
 // Type for Ethereum provider detection
 interface EthereumProvider {
-  request?: (args: { method: string; params?: any[] }) => Promise<any>;
+  request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on?: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
 }
 
 // Types for different wallet connections
@@ -228,20 +230,21 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // Check if window.ethereum exists
-        if (typeof window !== 'undefined' && (window as any).ethereum) {
+        const ethereum = (window as typeof window & { ethereum?: EthereumProvider })?.ethereum;
+        if (typeof window !== 'undefined' && ethereum) {
           // Only check accounts if we don't already have a connection
           // This reduces the frequency of eth_accounts calls
           if (!connection || connection.type !== 'base') {
             try {
-              const accounts = await (window as any).ethereum.request({
+              const accounts = await ethereum.request?.({
                 method: 'eth_accounts', // This doesn't prompt, just returns connected accounts
-              });
+              }) as string[] | undefined;
               
               if (accounts && accounts.length > 0) {
                 const currentAddress = accounts[0];
-                const chainId = await (window as any).ethereum.request({
+                const chainId = await ethereum.request?.({
                   method: 'eth_chainId',
-                });
+                }) as string;
                 
                 setConnection({
                   type: 'base',
@@ -251,7 +254,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                 setIsConnected(true);
                 console.log("[BASE WALLET] Ethereum account restored:", currentAddress);
               }
-            } catch (ethError) {
+            } catch {
               // Silently ignore errors to avoid spam
               console.log("[BASE WALLET] No Ethereum accounts available");
             }
@@ -286,11 +289,12 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       if (accounts.length > 0) {
         // Account connected or switched
         if (!connection || connection.type !== 'base' || connection.address !== accounts[0]) {
-          (window as any).ethereum.request({ method: 'eth_chainId' }).then((chainId: string) => {
+          const ethereum = (window as typeof window & { ethereum?: EthereumProvider })?.ethereum;
+          ethereum?.request?.({ method: 'eth_chainId' }).then((chainId: unknown) => {
             setConnection({
               type: 'base',
               address: accounts[0],
-              chainId: parseInt(chainId, 16)
+              chainId: parseInt(chainId as string, 16)
             });
             setIsConnected(true);
           });
@@ -306,8 +310,9 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     // Add event listener if ethereum provider exists
-    if (typeof window !== 'undefined' && (window as any).ethereum) {
-      (window as any).ethereum.on('accountsChanged', handleAccountsChanged);
+    const ethereum = (window as typeof window & { ethereum?: EthereumProvider })?.ethereum;
+    if (typeof window !== 'undefined' && ethereum) {
+      ethereum.on?.('accountsChanged', handleAccountsChanged);
     }
 
     // Fallback interval check (much less frequent)
@@ -317,11 +322,12 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       clearInterval(interval);
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        (window as any).ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      const ethereum = (window as typeof window & { ethereum?: EthereumProvider })?.ethereum;
+      if (typeof window !== 'undefined' && ethereum) {
+        ethereum.removeListener?.('accountsChanged', handleAccountsChanged);
       }
     };
-  }, [connection, ethereumChecked, ethereumDisconnected]);
+  }, [connection, ethereumChecked, ethereumDisconnected, wagmiConfig]);
 
   // Set isInitializing to false only when both Hedera and Ethereum checks are complete
   useEffect(() => {
@@ -415,24 +421,25 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("[BASE WALLET] Starting Base wallet connection process");
       
       // Check if window.ethereum exists (browser extension detected)
+      const ethereum = (window as typeof window & { ethereum?: EthereumProvider })?.ethereum;
       const hasEthereumProvider = typeof window !== 'undefined' && 
-        (window as any).ethereum && 
-        typeof (window as any).ethereum.request === 'function';
+        ethereum && 
+        typeof ethereum.request === 'function';
       
       if (hasEthereumProvider) {
         try {
           console.log("[BASE WALLET] Detected browser extension, requesting accounts directly");
           
           // Request accounts directly from window.ethereum
-          const accounts = await (window as any).ethereum.request({
+          const accounts = await ethereum.request?.({
             method: 'eth_requestAccounts',
-          });
+          }) as string[] | undefined;
           
           if (accounts && accounts.length > 0) {
             // Get chain ID
-            const chainId = await (window as any).ethereum.request({
+            const chainId = await ethereum.request?.({
               method: 'eth_chainId',
-            });
+            }) as string;
             
             const baseConnection: WalletConnection = {
               type: 'base',
