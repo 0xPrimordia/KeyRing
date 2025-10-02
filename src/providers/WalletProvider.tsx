@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { DAppConnector } from "@hashgraph/hedera-wallet-connect";
 import { LedgerId } from "@hashgraph/sdk";
 import { toast } from "sonner";
-import { createConfig, http, connect, getAccount, getConnections } from '@wagmi/core';
+import { createConfig, http, getAccount } from '@wagmi/core';
 import { base, baseSepolia } from 'viem/chains';
 
 // Type for Ethereum provider detection
@@ -218,7 +218,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     initWalletConnect();
-  }, [sessionTopic]);
+  }, [sessionTopic, wagmiConfig]);
 
   // Separate effect to monitor Ethereum account changes
   useEffect(() => {

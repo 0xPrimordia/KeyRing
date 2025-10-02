@@ -1,10 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { DAppConnector } from "@hashgraph/hedera-wallet-connect";
 import { LedgerId } from "@hashgraph/sdk";
 import { toast } from "sonner";
-import { createConfig, http, connect, disconnect, getAccount, getConnections } from '@wagmi/core';
+import { createConfig, http, connect, disconnect, getConnections } from '@wagmi/core';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { walletConnect, metaMask, coinbaseWallet } from '@wagmi/connectors';
 
@@ -125,7 +125,7 @@ export const MultiWalletProvider = ({ children }: { children: React.ReactNode })
     initWallets();
   }, []);
 
-  const initHederaWallet = async () => {
+  const initHederaWallet = useCallback(async () => {
     try {
       // Determine network based on environment
       const isMainnet = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet';
@@ -207,7 +207,7 @@ export const MultiWalletProvider = ({ children }: { children: React.ReactNode })
     } catch (error) {
       console.error("[HEDERA WALLET] Failed to initialize:", error);
     }
-  };
+  }, []);
 
   const checkExistingEthereumConnections = async () => {
     try {
@@ -341,10 +341,16 @@ export const MultiWalletProvider = ({ children }: { children: React.ReactNode })
           ((activeConnection.type === 'hedera' && connection.type === 'hedera') ||
            (activeConnection.type === 'ethereum' && connection.type === 'ethereum' && 
             activeConnection.address === connection.address))) {
-        const remainingConnections = connections.filter(conn => 
-          !(conn.type === connection.type && 
-            (conn.type === 'hedera' || conn.address === connection.address))
-        );
+        const remainingConnections = connections.filter(conn => {
+          if (conn.type !== connection.type) return true;
+          if (conn.type === 'hedera' && connection.type === 'hedera') {
+            return conn.sessionTopic !== connection.sessionTopic;
+          }
+          if (conn.type === 'ethereum' && connection.type === 'ethereum') {
+            return conn.address !== connection.address;
+          }
+          return true;
+        });
         setActiveConnection(remainingConnections[0] || null);
       }
 
@@ -405,16 +411,16 @@ export const MultiWalletProvider = ({ children }: { children: React.ReactNode })
   };
 
   // Helper functions
-  const updateHederaConnection = (accountId: string, sessionTopic: string) => {
+  const updateHederaConnection = useCallback((accountId: string, sessionTopic: string) => {
     setConnections(prev => prev.map(conn => {
       if (conn.type === 'hedera' && conn.sessionTopic === sessionTopic) {
         return { ...conn, accountId };
       }
       return conn;
     }));
-  };
+  }, []);
 
-  const removeHederaConnection = (sessionTopic: string | null) => {
+  const removeHederaConnection = useCallback((sessionTopic: string | null) => {
     setConnections(prev => prev.filter(conn => 
       !(conn.type === 'hedera' && conn.sessionTopic === sessionTopic)
     ));
@@ -425,7 +431,7 @@ export const MultiWalletProvider = ({ children }: { children: React.ReactNode })
       );
       setActiveConnection(remainingConnections[0] || null);
     }
-  };
+  }, [activeConnection, connections]);
 
   return (
     <MultiWalletContext.Provider
