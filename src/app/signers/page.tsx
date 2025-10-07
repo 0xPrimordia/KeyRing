@@ -1,6 +1,7 @@
 'use client';
 
 import { useWallet } from '../../providers/WalletProvider';
+import { useAccount } from 'wagmi';
 import { useState } from 'react';
 import VerificationModal from '../../components/VerificationModal';
 import Header from '@/components/Header';
@@ -8,14 +9,24 @@ import Header from '@/components/Header';
 
 export default function SignersPage() {
   const { connectWallet, isConnected, isInitializing } = useWallet();
+  const { isConnected: isEthConnected } = useAccount();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
   const handleStartVerification = async () => {
+    // Check if we have an ETH connection via RainbowKit
+    
+    if (isEthConnected) {
+      // ETH wallet connected, go directly to verify page
+      window.location.href = '/verify';
+      return;
+    }
+    
     if (!isConnected) {
       setIsConnecting(true);
       try {
-        const walletData = await connectWallet();
+        // Default to Hedera connection for this flow
+        const walletData = await connectWallet('hedera');
         if (walletData) {
           // Successfully connected, now show modal
           setIsModalOpen(true);

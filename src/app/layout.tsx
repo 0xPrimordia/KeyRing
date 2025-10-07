@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "../providers/WalletProvider";
+import { RainbowKitProvider } from "../providers/RainbowKitProvider";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -29,20 +30,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WalletProvider>
-          {children}
-          <Toaster 
-            position="bottom-right" 
-            theme="dark"
-            toastOptions={{
-              style: {
-                background: '#2a2a2a',
-                color: '#ffffff',
-                border: '1px solid #3a3a3a',
-              },
-            }}
-          />
-        </WalletProvider>
+        <RainbowKitProvider>
+          <WalletProvider>
+            {children}
+            <Toaster 
+              position="bottom-right" 
+              theme="dark"
+              toastOptions={{
+                style: {
+                  background: '#2a2a2a',
+                  color: '#ffffff',
+                  border: '1px solid #3a3a3a',
+                },
+              }}
+            />
+          </WalletProvider>
+        </RainbowKitProvider>
       </body>
     </html>
   );

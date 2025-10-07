@@ -1,6 +1,8 @@
 'use client';
 
 import { useWallet, WalletConnection } from '../providers/WalletProvider';
+import { useAccount } from 'wagmi';
+import EthWalletButton from './EthWalletButton';
 import { useState, useEffect, useRef } from 'react';
 
 // This interface is no longer needed since we're using generic detection
@@ -13,6 +15,9 @@ export default function WalletButton() {
     connectWallet,
     disconnectWallet 
   } = useWallet();
+  
+  // Check if we have an ETH connection via RainbowKit
+  const { isConnected: isEthConnected } = useAccount();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -44,15 +49,10 @@ export default function WalletButton() {
   };
 
   const handleConnectBase = async () => {
-    setIsConnecting(true);
     setShowWalletOptions(false);
-    try {
-      await connectWallet('base');
-    } catch (error) {
-      console.error('Failed to connect Base wallet:', error);
-    } finally {
-      setIsConnecting(false);
-    }
+    // Trigger RainbowKit connection programmatically
+    const event = new CustomEvent('openRainbowKit');
+    window.dispatchEvent(event);
   };
 
   const handleDisconnect = async () => {
@@ -79,7 +79,13 @@ export default function WalletButton() {
     );
   }
 
-  if (isConnected && connection) {
+  // Show ETH wallet connection if connected via RainbowKit
+  if (isEthConnected) {
+    return <EthWalletButton />;
+  }
+  
+  // Show Hedera wallet connection if connected via WalletProvider
+  if (isConnected && connection && connection.type === 'hedera') {
     return (
       <div className="flex items-center space-x-3">
         <div className="flex items-center bg-gray-800 rounded-lg px-3 py-2 border border-gray-700">
@@ -126,7 +132,7 @@ export default function WalletButton() {
           >
             <div className="flex items-center">
               <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-              Connect Base
+              Connect Ethereum
             </div>
           </button>
         </div>

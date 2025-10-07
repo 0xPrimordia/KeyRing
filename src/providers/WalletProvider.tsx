@@ -240,19 +240,12 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                 method: 'eth_accounts', // This doesn't prompt, just returns connected accounts
               }) as string[] | undefined;
               
+              // REMOVED AUTO-CONNECTION: Don't automatically connect to existing accounts
+              // This was causing the issue where users couldn't select which account to use
+              // Users must explicitly click "Connect Wallet" to choose their account
               if (accounts && accounts.length > 0) {
-                const currentAddress = accounts[0];
-                const chainId = await ethereum.request?.({
-                  method: 'eth_chainId',
-                }) as string;
-                
-                setConnection({
-                  type: 'base',
-                  address: currentAddress,
-                  chainId: parseInt(chainId, 16)
-                });
-                setIsConnected(true);
-                console.log("[BASE WALLET] Ethereum account restored:", currentAddress);
+                console.log("[BASE WALLET] Ethereum accounts available but not auto-connecting:", accounts.length);
+                // Just log that accounts are available, don't auto-connect
               }
             } catch {
               // Silently ignore errors to avoid spam
@@ -287,8 +280,9 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       if (accounts.length > 0) {
-        // Account connected or switched
-        if (!connection || connection.type !== 'base' || connection.address !== accounts[0]) {
+        // Account connected or switched - but don't auto-reconnect
+        // Only update if we already have an active connection
+        if (connection?.type === 'base') {
           const ethereum = (window as typeof window & { ethereum?: EthereumProvider })?.ethereum;
           ethereum?.request?.({ method: 'eth_chainId' }).then((chainId: unknown) => {
             setConnection({
@@ -297,7 +291,11 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
               chainId: parseInt(chainId as string, 16)
             });
             setIsConnected(true);
+            console.log("[BASE WALLET] Updated existing connection to new account:", accounts[0]);
           });
+        } else {
+          // No existing connection - don't auto-connect, let user choose
+          console.log("[BASE WALLET] Account available but not auto-connecting - user must click Connect");
         }
       } else {
         // Account disconnected from wallet extension
@@ -430,7 +428,14 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           console.log("[BASE WALLET] Detected browser extension, requesting accounts directly");
           
+          // First disconnect any existing connection to force account selection
+          if (connection?.type === 'base') {
+            console.log("[BASE WALLET] Disconnecting existing connection to allow account selection");
+            await disconnectWallet();
+          }
+          
           // Request accounts directly from window.ethereum
+          // This should show the account selection dialog
           const accounts = await ethereum.request?.({
             method: 'eth_requestAccounts',
           }) as string[] | undefined;
@@ -457,7 +462,8 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
             return baseConnection;
           }
         } catch (injectedError) {
-          console.log("[BASE WALLET] Direct ethereum request failed, trying WalletConnect:", injectedError);
+          console.log("[BASE WALLET] Direct ethereum request failed:", injectedError);
+          throw injectedError;
         }
       }
       
