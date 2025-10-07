@@ -1,14 +1,26 @@
 'use client';
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useDisconnect, useConnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import { useEffect, useRef } from 'react';
 
 export default function EthWalletButton() {
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
-  const connectRef = useRef<any>(null);
+  const connectRef = useRef<{ openConnectModal?: () => void } | null>(null);
 
+  useEffect(() => {
+    const handleOpenRainbowKit = () => {
+      if (connectRef.current?.openConnectModal) {
+        connectRef.current.openConnectModal();
+      }
+    };
+
+    window.addEventListener('openRainbowKit', handleOpenRainbowKit);
+    return () => window.removeEventListener('openRainbowKit', handleOpenRainbowKit);
+  }, []);
+
+  // Connected state view
   if (isConnected && address) {
     return (
       <div className="flex items-center space-x-3">
@@ -28,17 +40,6 @@ export default function EthWalletButton() {
       </div>
     );
   }
-
-  useEffect(() => {
-    const handleOpenRainbowKit = () => {
-      if (connectRef.current) {
-        connectRef.current.openConnectModal();
-      }
-    };
-
-    window.addEventListener('openRainbowKit', handleOpenRainbowKit);
-    return () => window.removeEventListener('openRainbowKit', handleOpenRainbowKit);
-  }, []);
 
   return (
     <ConnectButton.Custom>

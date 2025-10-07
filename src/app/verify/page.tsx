@@ -458,12 +458,11 @@ function VerifyPageContent() {
         break;
       case 'idCheck.onApplicantStatusChanged':
         console.log('Applicant status changed:', payload);
-        const reviewStatus = (payload as any).reviewStatus;
-        const reviewResult = (payload as any).reviewResult;
-        console.log('DEBUG - reviewStatus:', reviewStatus, 'reviewResult:', reviewResult);
+        const statusPayload = payload as { reviewStatus?: string; reviewResult?: { reviewAnswer?: string } };
+        console.log('DEBUG - reviewStatus:', statusPayload.reviewStatus, 'reviewResult:', statusPayload.reviewResult);
         // Check if verification is completed - reviewStatus === 'completed' and reviewResult.reviewAnswer === 'GREEN'
-        if (reviewStatus === 'completed' && reviewResult?.reviewAnswer) {
-          console.log('✅ VERIFICATION COMPLETED! reviewAnswer:', reviewResult.reviewAnswer);
+        if (statusPayload.reviewStatus === 'completed' && statusPayload.reviewResult?.reviewAnswer) {
+          console.log('✅ VERIFICATION COMPLETED! reviewAnswer:', statusPayload.reviewResult.reviewAnswer);
           setSumsubVerificationComplete(true);
         }
         break;
