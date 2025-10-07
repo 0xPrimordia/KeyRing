@@ -33,6 +33,9 @@ export async function GET() {
       profileTopicId: signer.profile_topic_id,
       verificationProvider: signer.verification_provider,
       createdAt: signer.created_at,
+      accountType: signer.account_type, // hedera or ethereum
+      walletAddress: signer.wallet_address, // Ethereum address (0x...)
+      accountId: signer.account_id, // Hedera account ID (0.0.xxxxx)
       // Mock data for fields that will be implemented later
       listsJoined: [],
       recentActivity: [],

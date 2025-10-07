@@ -25,6 +25,9 @@ interface Signer {
     contractInteractions: string;
     mostActiveHours: string;
   };
+  accountType?: 'hedera' | 'ethereum';
+  walletAddress?: string;
+  accountId?: string;
 }
 
 interface ThresholdListMember {
@@ -261,6 +264,9 @@ export default function RegistryPage() {
                     Code Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Network
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
@@ -277,7 +283,7 @@ export default function RegistryPage() {
               <tbody className="divide-y divide-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center">
+                    <td colSpan={6} className="px-6 py-8 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
                         <span className="text-gray-400">Loading signers...</span>
@@ -286,13 +292,13 @@ export default function RegistryPage() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center">
+                    <td colSpan={6} className="px-6 py-8 text-center">
                       <span className="text-red-400">{error}</span>
                     </td>
                   </tr>
                 ) : signers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center">
+                    <td colSpan={6} className="px-6 py-8 text-center">
                       <span className="text-gray-400">No signers found</span>
                     </td>
                   </tr>
@@ -303,6 +309,24 @@ export default function RegistryPage() {
                         <Link href={`/signer/${signer.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                           {signer.codeName}
                         </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {signer.accountType === 'ethereum' ? (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 2L3 10l7 4 7-4-7-8z"/>
+                              <path d="M10 16l-7-4 7 6 7-6-7 4z"/>
+                            </svg>
+                            Ethereum
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                            </svg>
+                            Hedera
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyling(signer.status)}`}>
