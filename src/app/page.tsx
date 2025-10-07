@@ -243,7 +243,7 @@ export default function RegistryPage() {
                     : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
                 }`}
               >
-                Threshold Lists
+                Multi-Sig Lists
               </button>
             </nav>
           </div>
@@ -350,15 +350,15 @@ export default function RegistryPage() {
           </div>
         </div>
         ) : (
-          /* Threshold Lists Section */
+          /* Multi-Sig Lists Section */
           <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-foreground">Certified Threshold Lists</h3>
+              <h3 className="text-lg font-semibold text-foreground">Certified Multi-Sig Lists</h3>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
-                <span className="text-gray-400">Loading threshold lists...</span>
+                <span className="text-gray-400">Loading multi-sig lists...</span>
               </div>
             ) : error ? (
               <div className="text-center py-16">
@@ -366,7 +366,7 @@ export default function RegistryPage() {
               </div>
             ) : thresholdLists.length === 0 ? (
               <div className="text-center py-16">
-                <span className="text-gray-400">No threshold lists found</span>
+                <span className="text-gray-400">No multi-sig lists found</span>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">

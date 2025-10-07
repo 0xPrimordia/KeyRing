@@ -222,9 +222,9 @@ export default function SignerPage({ params }: SignerPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Threshold Lists */}
+            {/* Multi-Sig Lists */}
             <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-              <h2 className="text-xl font-bold text-foreground mb-6">Threshold Lists</h2>
+              <h2 className="text-xl font-bold text-foreground mb-6">Multi-Sig Lists</h2>
               <div className="space-y-4">
                 {signer.listsJoined.length > 0 ? (
                   signer.listsJoined.map((list) => (
@@ -249,7 +249,7 @@ export default function SignerPage({ params }: SignerPageProps) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No Threshold Lists Yet</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Multi-Sig Lists Yet</h3>
                     <p className="text-gray-400 text-sm mb-4">
                       This signer hasn&apos;t joined any threshold lists yet. Once they&apos;re added to a list, 
                       they&apos;ll be able to participate in multi-signature transactions and earn rewards.

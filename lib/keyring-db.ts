@@ -109,12 +109,16 @@ export class KeyRingDB {
     reviewResult: 'GREEN' | 'RED' | 'YELLOW';
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
+      // Generate proper KeyRing ID from account ID
+      const { generateKeyRingId } = await import('./codename-generator');
+      const codeName = generateKeyRingId(data.accountId);
+      
       const signerData: KeyringSignerInsert = {
         account_type: 'hedera', // Default to hedera for existing functionality
         account_id: data.accountId,
         public_key: '', // Will be filled when profile is created
         profile_topic_id: '', // Will be filled when profile is created
-        code_name: `temp_${data.accountId}`, // Temporary code name
+        code_name: codeName, // Generate proper KeyRing ID
         verification_status: data.reviewResult === 'GREEN' ? 'verified' : 'pending',
         verification_provider: 'sumsub',
         verification_date: new Date().toISOString(),
