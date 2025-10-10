@@ -52,6 +52,18 @@ interface ThresholdList {
   avgTenure: number;
 }
 
+interface Project {
+  id: string;
+  company_name: string;
+  legal_entity_name: string;
+  public_record_url: string | null;
+  owners: string[] | null;
+  topic_message_id: string | null;
+  created_at: string;
+  updated_at: string;
+  threshold_lists_count?: number;
+}
+
 // Mock data for the registry (unused - data now comes from API)
 // const mockVerifiers = [
 //   {
@@ -154,6 +166,7 @@ export default function RegistryPage() {
   const [activeTab, setActiveTab] = useState('signers');
   const [signers, setSigners] = useState<Signer[]>([]);
   const [thresholdLists, setThresholdLists] = useState<ThresholdList[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -172,12 +185,22 @@ export default function RegistryPage() {
           } else {
             setError(data.error);
           }
-        } else {
+        } else if (activeTab === 'lists') {
           const response = await fetch('/api/threshold-lists');
           const data = await response.json();
           
           if (data.success) {
             setThresholdLists(data.lists);
+            setError(null);
+          } else {
+            setError(data.error);
+          }
+        } else if (activeTab === 'projects') {
+          const response = await fetch('/api/projects');
+          const data = await response.json();
+          
+          if (data.success) {
+            setProjects(data.projects);
             setError(null);
           } else {
             setError(data.error);
@@ -245,12 +268,107 @@ export default function RegistryPage() {
               >
                 Multi-Sig Lists
               </button>
+              <button 
+                onClick={() => setActiveTab('projects')}
+                className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+                  activeTab === 'projects'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
+                }`}
+              >
+                Projects
+              </button>
             </nav>
           </div>
         </div>
 
         {/* Content Area */}
-        {activeTab === 'signers' ? (
+        {activeTab === 'projects' ? (
+          /* Projects Section */
+          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-foreground">Registered Projects</h3>
+            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+                <span className="text-gray-400">Loading projects...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <span className="text-red-400">{error}</span>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-16">
+                <span className="text-gray-400">No projects found</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                {projects.map((project) => (
+                  <Link 
+                    key={project.id} 
+                    href={`/project/${project.id}`}
+                    className="bg-gray-700 rounded-lg p-6 border border-gray-600 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 block"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
+                          {project.company_name}
+                        </h3>
+                        <div className="text-xs text-gray-400">{project.legal_entity_name}</div>
+                      </div>
+                      {project.topic_message_id && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-300 border border-green-500/30">
+                          ✓ On-Chain
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2 text-sm mb-4">
+                      {project.owners && project.owners.length > 0 && (
+                        <div>
+                          <span className="text-gray-400 text-xs">Owners:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {project.owners.map((owner, idx) => (
+                              <span key={idx} className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
+                                {owner}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {project.threshold_lists_count !== undefined && (
+                        <div className="flex justify-between pt-2 border-t border-gray-600">
+                          <span className="text-gray-400">Threshold Lists:</span>
+                          <span className="text-foreground font-medium">{project.threshold_lists_count}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {project.public_record_url && (
+                      <a 
+                        href={project.public_record_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:text-primary-dark transition-colors flex items-center mt-4"
+                      >
+                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Public Records
+                      </a>
+                    )}
+                    
+                    <div className="mt-4 pt-4 border-t border-gray-600 text-xs text-gray-400">
+                      Registered {new Date(project.created_at).toLocaleDateString()}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'signers' ? (
           /* Signers Table */
           <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-700">

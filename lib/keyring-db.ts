@@ -3,6 +3,8 @@ import { Database } from './database.types';
 
 type KeyringSigner = Database['public']['Tables']['keyring_signers']['Row'];
 type KeyringSignerInsert = Database['public']['Tables']['keyring_signers']['Insert'];
+type KeyringProject = Database['public']['Tables']['keyring_projects']['Row'];
+type KeyringProjectInsert = Database['public']['Tables']['keyring_projects']['Insert'];
 type KeyringThresholdList = Database['public']['Tables']['keyring_threshold_lists']['Row'];
 type KeyringReward = Database['public']['Tables']['keyring_rewards']['Row'];
 // type KeyringWhitelist = Database['public']['Tables']['keyring_whitelist']['Row']; // Unused for now
@@ -298,10 +300,155 @@ export class KeyRingDB {
   }
 
   /**
+   * Create a new project
+   */
+  static async createProject(data: {
+    companyName: string;
+    legalEntityName: string;
+    publicRecordUrl?: string;
+    owners?: string[];
+    topicMessageId?: string;
+  }): Promise<{ success: boolean; project?: KeyringProject; error?: string }> {
+    try {
+      const projectData: KeyringProjectInsert = {
+        company_name: data.companyName,
+        legal_entity_name: data.legalEntityName,
+        public_record_url: data.publicRecordUrl || null,
+        owners: data.owners || null,
+        topic_message_id: data.topicMessageId || null,
+      };
+
+      const { data: project, error } = await supabase
+        .from('keyring_projects')
+        .insert(projectData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error creating project:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, project };
+    } catch (error: unknown) {
+      console.error('Error creating project:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Get project by ID
+   */
+  static async getProjectById(projectId: string): Promise<KeyringProject | null> {
+    try {
+      const { data, error } = await supabase
+        .from('keyring_projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching project by ID:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getProjectById:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get project by company name
+   */
+  static async getProjectByName(companyName: string): Promise<KeyringProject | null> {
+    try {
+      const { data, error } = await supabase
+        .from('keyring_projects')
+        .select('*')
+        .eq('company_name', companyName)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching project by name:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getProjectByName:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all projects
+   */
+  static async getAllProjects(): Promise<KeyringProject[]> {
+    try {
+      const { data, error } = await supabase
+        .from('keyring_projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching projects:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllProjects:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Update project
+   */
+  static async updateProject(projectId: string, updates: {
+    companyName?: string;
+    legalEntityName?: string;
+    publicRecordUrl?: string;
+    owners?: string[];
+    topicMessageId?: string;
+  }): Promise<{ success: boolean; project?: KeyringProject; error?: string }> {
+    try {
+      const dbUpdates: Partial<Database['public']['Tables']['keyring_projects']['Update']> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (updates.companyName) dbUpdates.company_name = updates.companyName;
+      if (updates.legalEntityName) dbUpdates.legal_entity_name = updates.legalEntityName;
+      if (updates.publicRecordUrl !== undefined) dbUpdates.public_record_url = updates.publicRecordUrl || null;
+      if (updates.owners !== undefined) dbUpdates.owners = updates.owners || null;
+      if (updates.topicMessageId !== undefined) dbUpdates.topic_message_id = updates.topicMessageId || null;
+
+      const { data: project, error } = await supabase
+        .from('keyring_projects')
+        .update(dbUpdates)
+        .eq('id', projectId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error updating project:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, project };
+    } catch (error: unknown) {
+      console.error('Error updating project:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
    * Register a new threshold list
    */
   static async registerThresholdList(data: {
-    projectName: string;
+    projectId: string;
     listTopicId: string;
     thresholdAccountId: string;
     requiredSignatures: number;
@@ -311,7 +458,7 @@ export class KeyRingDB {
       const { data: list, error } = await supabase
         .from('keyring_threshold_lists')
         .insert({
-          project_name: data.projectName,
+          project_id: data.projectId,
           list_topic_id: data.listTopicId,
           threshold_account_id: data.thresholdAccountId,
           required_signatures: data.requiredSignatures,
