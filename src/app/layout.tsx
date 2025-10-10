@@ -4,6 +4,8 @@ import "./globals.css";
 import { WalletProvider } from "../providers/WalletProvider";
 import { RainbowKitProvider } from "../providers/RainbowKitProvider";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +46,8 @@ export default function RootLayout({
                 },
               }}
             />
+            <Analytics />
+            <SpeedInsights />
           </WalletProvider>
         </RainbowKitProvider>
       </body>
