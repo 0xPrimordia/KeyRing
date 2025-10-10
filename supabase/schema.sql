@@ -27,11 +27,24 @@ CREATE TABLE keyring_signers (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- KeyRing Projects Table
+-- Stores project/company information
+CREATE TABLE keyring_projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_name TEXT NOT NULL,
+    legal_entity_name TEXT NOT NULL,
+    public_record_url TEXT,
+    owners TEXT[], -- Array of owner names
+    topic_message_id TEXT, -- HCS-2 topic message transaction ID
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- KeyRing Threshold Lists Table
 -- Stores certified threshold key lists for projects
 CREATE TABLE keyring_threshold_lists (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    project_name TEXT NOT NULL,
+    project_id UUID NOT NULL REFERENCES keyring_projects(id) ON DELETE CASCADE,
     list_topic_id TEXT NOT NULL, -- HCS-2 topic for list metadata
     threshold_account_id TEXT UNIQUE NOT NULL, -- Hedera account with threshold key
     required_signatures INTEGER NOT NULL,
@@ -71,6 +84,8 @@ CREATE TABLE keyring_rewards (
 CREATE INDEX idx_keyring_signers_account_id ON keyring_signers(account_id);
 CREATE INDEX idx_keyring_signers_public_key ON keyring_signers(public_key);
 CREATE INDEX idx_keyring_signers_verification_status ON keyring_signers(verification_status);
+CREATE INDEX idx_keyring_projects_company_name ON keyring_projects(company_name);
+CREATE INDEX idx_keyring_threshold_lists_project_id ON keyring_threshold_lists(project_id);
 CREATE INDEX idx_keyring_threshold_lists_account_id ON keyring_threshold_lists(threshold_account_id);
 CREATE INDEX idx_keyring_list_memberships_signer_id ON keyring_list_memberships(signer_id);
 CREATE INDEX idx_keyring_list_memberships_list_id ON keyring_list_memberships(list_id);
@@ -91,6 +106,10 @@ CREATE TRIGGER update_keyring_signers_updated_at
     BEFORE UPDATE ON keyring_signers 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_keyring_projects_updated_at 
+    BEFORE UPDATE ON keyring_projects 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_keyring_threshold_lists_updated_at 
     BEFORE UPDATE ON keyring_threshold_lists 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -100,12 +119,16 @@ CREATE TRIGGER update_keyring_threshold_lists_updated_at
 -- But we'll set it up for future security
 
 ALTER TABLE keyring_signers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE keyring_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE keyring_threshold_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE keyring_list_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE keyring_rewards ENABLE ROW LEVEL SECURITY;
 
 -- Allow service role full access (bypass RLS)
 CREATE POLICY "Service role can manage signers" ON keyring_signers
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role can manage projects" ON keyring_projects
     FOR ALL USING (auth.role() = 'service_role');
 
 CREATE POLICY "Service role can manage lists" ON keyring_threshold_lists
@@ -120,6 +143,9 @@ CREATE POLICY "Service role can manage rewards" ON keyring_rewards
 -- Public read access for verified signers (for registry lookups)
 CREATE POLICY "Public can read verified signers" ON keyring_signers
     FOR SELECT USING (verification_status = 'verified');
+
+CREATE POLICY "Public can read projects" ON keyring_projects
+    FOR SELECT USING (true);
 
 CREATE POLICY "Public can read active lists" ON keyring_threshold_lists
     FOR SELECT USING (status = 'active');

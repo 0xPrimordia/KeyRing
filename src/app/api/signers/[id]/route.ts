@@ -38,10 +38,15 @@ export async function GET(
       ? `${signer.public_key.slice(0, 10)}...${signer.public_key.slice(-6)}`
       : 'Not available';
 
-    // Fetch real account data from Mirror Node
-    const mirrorNodeData = await getComprehensiveAccountData(signer.account_id);
-    const accountInfo = mirrorNodeData.accountInfo;
-    const transactionData = mirrorNodeData.transactionData;
+    // Fetch real account data from Mirror Node (only for Hedera accounts)
+    let accountInfo = null;
+    let transactionData = null;
+    
+    if (signer.account_id && signer.account_type === 'hedera') {
+      const mirrorNodeData = await getComprehensiveAccountData(signer.account_id);
+      accountInfo = mirrorNodeData.accountInfo;
+      transactionData = mirrorNodeData.transactionData;
+    }
 
     const transformedSigner = {
       id: signer.id,
@@ -68,14 +73,14 @@ export async function GET(
           ? `${Math.floor((Date.now() - new Date(accountInfo.createdTimestamp).getTime()) / (1000 * 60 * 60 * 24))} days`
           : 'Not determined',
         accountCreated: accountInfo?.createdTimestamp || signer.created_at,
-        transactionCount: transactionData.totalCount,
-        lastTransactionDate: transactionData.transactions.length > 0 
+        transactionCount: transactionData?.totalCount || 0,
+        lastTransactionDate: transactionData?.transactions?.length && transactionData.transactions.length > 0 
           ? new Date(parseFloat(transactionData.transactions[0].consensusTimestamp) * 1000).toISOString()
           : null,
-        transactionTypes: transactionData.transactions.length > 0
+        transactionTypes: transactionData?.transactions?.length && transactionData.transactions.length > 0
           ? [...new Set(transactionData.transactions.map(tx => tx.type))].join(', ')
           : 'None yet',
-        recentTransactions: transactionData.transactions
+        recentTransactions: transactionData?.transactions || []
       }
     };
 

@@ -1,11 +1,21 @@
+// Load environment variables FIRST, before any other imports that depend on them
 import { config } from 'dotenv';
-import { Client, TopicMessageSubmitTransaction, TopicCreateTransaction, TopicInfoQuery, PrivateKey, AccountId, TopicId } from '@hashgraph/sdk';
-import { Project } from '../types/project';
-
 config({ path: '.env.local' });
 
-async function getOrCreateProjectRegistryTopic(client: Client): Promise<string> {
-    const existingTopicId = process.env.PROJECT_REGISTRY_TOPIC;
+// Now import everything else
+import { Client, TopicMessageSubmitTransaction, TopicCreateTransaction, TopicInfoQuery, PrivateKey, AccountId, TopicId } from '@hashgraph/sdk';
+
+// Get network from environment variable
+const NETWORK = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+const isMainnet = NETWORK === 'mainnet';
+
+async function getOrCreateProjectRegistryTopic(client: Client, network: string, operatorKey: PrivateKey): Promise<string> {
+    // Use network-specific environment variable for topic ID
+    const topicEnvVar = network === 'mainnet' 
+        ? 'PROJECT_REGISTRY_TOPIC_MAINNET' 
+        : 'PROJECT_REGISTRY_TOPIC_TESTNET';
+    
+    const existingTopicId = process.env[topicEnvVar];
 
     if (existingTopicId && existingTopicId !== '0.0.0') {
         try {
@@ -14,62 +24,102 @@ async function getOrCreateProjectRegistryTopic(client: Client): Promise<string> 
             .setTopicId(existingTopicId)
             .execute(client);
           
-          console.log('Using existing project registry topic:', existingTopicId);
+          console.log(`✓ Using existing ${network} project registry topic:`, existingTopicId);
           return existingTopicId;
         } catch (error) {
-          console.log('Existing topic not found or invalid, creating new topic...');
+          console.log(`⚠️  Existing ${network} topic not found or invalid, creating new topic...`);
         }
       }
 
     // Create a new topic for KeyRing verified projects registry
-    console.log('Creating new KeyRing Project Registry topic (HCS-2 indexed)...');
+    console.log(`📝 Creating new KeyRing Project Registry topic on ${network.toUpperCase()} (HCS-2 indexed)...`);
     const createTopicTx = new TopicCreateTransaction()
         .setTopicMemo('hcs-2:0:86400') // HCS-2 indexed topic, 24 hour TTL
-        .setSubmitKey(PrivateKey.fromStringDer(process.env.HEDERA_PRIVATE_KEY!).publicKey);
+        .setSubmitKey(operatorKey.publicKey);
 
     const createResponse = await createTopicTx.execute(client);
     const createReceipt = await createResponse.getReceipt(client);
     const newTopicId = createReceipt.topicId!.toString();
 
-    console.log('Created new project registry topic with ID:', newTopicId);
-    console.log('Add this to your .env.local file: PROJECT_REGISTRY_TOPIC=' + newTopicId);
+    console.log(`✅ Created new ${network} project registry topic with ID:`, newTopicId);
+    console.log(`\n📋 Add this to your .env.local file:\n${topicEnvVar}=${newTopicId}\n`);
     return newTopicId;
 }
 
 async function sendTestProject() {
     try {
-        const operatorId = AccountId.fromString(process.env.HEDERA_ACCOUNT_ID!);
+        console.log('\n🌐 KeyRing Project Registration');
+        console.log('═══════════════════════════════════════\n');
+        
+        // Validate network configuration
+        if (!NETWORK || (NETWORK !== 'testnet' && NETWORK !== 'mainnet')) {
+            throw new Error('NEXT_PUBLIC_HEDERA_NETWORK must be set to "testnet" or "mainnet"');
+        }
+        
+        console.log(`📡 Network: ${NETWORK.toUpperCase()}`);
+        
+        // Get network-specific credentials
+        const accountIdEnvVar = isMainnet ? 'HEDERA_MAINNET_ACCOUNT_ID' : 'HEDERA_TESTNET_ACCOUNT_ID';
+        const privateKeyEnvVar = isMainnet ? 'HEDERA_MAINNET_PRIVATE_KEY' : 'HEDERA_TESTNET_PRIVATE_KEY';
+        
+        const accountIdValue = process.env[accountIdEnvVar];
+        const privateKeyValue = process.env[privateKeyEnvVar];
+        
+        if (!accountIdValue) {
+            throw new Error(`Missing ${accountIdEnvVar} environment variable`);
+        }
+        if (!privateKeyValue) {
+            throw new Error(`Missing ${privateKeyEnvVar} environment variable`);
+        }
+        
+        const operatorId = AccountId.fromString(accountIdValue);
         let operatorPrivateKey: PrivateKey;
 
         try {
-            operatorPrivateKey = PrivateKey.fromStringDer(process.env.HEDERA_PRIVATE_KEY!);
+            operatorPrivateKey = PrivateKey.fromStringDer(privateKeyValue);
         } catch (error) {
             console.error("❌ Error parsing private key:", error);
             throw error;
         }
         
-        const client = Client.forTestnet().setOperator(operatorId, operatorPrivateKey);
-        const topicId = await getOrCreateProjectRegistryTopic(client);
+        console.log(`🔑 Operator Account: ${operatorId}\n`);
+        
+        // Configure client based on network
+        const client = isMainnet 
+            ? Client.forMainnet().setOperator(operatorId, operatorPrivateKey)
+            : Client.forTestnet().setOperator(operatorId, operatorPrivateKey);
+        
+        const topicId = await getOrCreateProjectRegistryTopic(client, NETWORK, operatorPrivateKey);
 
-        const testProject: Project = {
-            project_id: `proj_${Date.now()}_${Math.floor(Math.random() * 1000000)}`,
-            company: {
-                legal_name: "DeFi Protocol Alpha LLC",
-                owners: ["Alice Johnson", "Bob Smith"],
-                employees: ["Charlie Brown", "Diana Prince", "Eve Wilson"]
-            },
-            description: "A decentralized finance protocol focused on yield farming and liquidity provision with advanced tokenomics and governance features.",
-            status: "verified"
-        }
+        // Project data matching new database schema
+        const projectData = {
+            companyName: "Lynxify",
+            legalEntityName: "Lynxify LLC",
+            publicRecordUrl: "https://wyobiz.wyo.gov/Business/FilingDetails.aspx?eFNum=006087115039222233134008027248138231208044036098",
+            owners: ["Jason Cox", "Kevin Compton"],
+            metadata: {
+                description: "Lynxify is a Wyoming-based company that provides a suite of tools for the Hedera ecosystem.",
+                hederaAccountId: operatorId.toString(),
+                status: "verified"
+            }
+        };
 
+        // Create HCS-2 message with new schema fields
         const hcs2Message = {
             "p": "hcs-2",
             "op": "register",
             "t_id": operatorId.toString(), // Project's Hedera account ID
-            "metadata": JSON.stringify(testProject),
+            "metadata": {
+                company_name: projectData.companyName,
+                legal_entity_name: projectData.legalEntityName,
+                public_record_url: projectData.publicRecordUrl,
+                owners: projectData.owners,
+                ...projectData.metadata
+            },
             "m": "KeyRing verified project registration"
         };
 
+        // Submit to HCS-2 topic
         const projectMessage = JSON.stringify(hcs2Message);
         const transaction = new TopicMessageSubmitTransaction()
             .setTopicId(topicId)
@@ -77,17 +127,42 @@ async function sendTestProject() {
 
         const response = await transaction.execute(client);
         const receipt = await response.getReceipt(client);
+        const transactionId = response.transactionId.toString();
 
-        console.log('🎉 Project registered successfully in KeyRing Protocol!');
+        console.log('\n🎉 Project registered successfully on Hedera HCS-2 topic!');
+        console.log('═══════════════════════════════════════');
+        console.log(`Network: ${NETWORK.toUpperCase()}`);
         console.log('Registry Topic ID:', topicId);
-        console.log('Transaction ID:', response.transactionId.toString());
+        console.log('Transaction ID:', transactionId);
         console.log('Status:', receipt.status.toString());
-        console.log('Project details:', JSON.stringify(testProject, null, 2));
-        console.log('\n📋 HCS-2 Message:');
+        
+        // Add network-specific explorer links
+        const explorerBase = isMainnet 
+            ? 'https://hashscan.io/mainnet' 
+            : 'https://hashscan.io/testnet';
+        console.log(`\n🔍 View on HashScan:`);
+        console.log(`Topic: ${explorerBase}/topic/${topicId}`);
+        console.log(`Transaction: ${explorerBase}/transaction/${transactionId}`);
+
+        console.log('\n📋 HCS-2 Message Sent:');
         console.log(JSON.stringify(hcs2Message, null, 2));
         
+        console.log('\n✨ Registration Complete!\n');
+        
+        // Close the client
+        client.close();
+        
     } catch (error) {
-        console.error("❌ Error registering test project:", error);
+        console.error("\n❌ Error registering project:", error);
+        console.error('\n💡 Troubleshooting:');
+        console.error('- Ensure NEXT_PUBLIC_HEDERA_NETWORK is set to "testnet" or "mainnet"');
+        if (isMainnet) {
+            console.error('- For mainnet: Set HEDERA_MAINNET_ACCOUNT_ID and HEDERA_MAINNET_PRIVATE_KEY');
+        } else {
+            console.error('- For testnet: Set HEDERA_TESTNET_ACCOUNT_ID and HEDERA_TESTNET_PRIVATE_KEY');
+        }
+        console.error('- Check that your account has sufficient HBAR balance');
+        console.error(`- Current network: ${NETWORK}\n`);
         throw error;
     }
 }

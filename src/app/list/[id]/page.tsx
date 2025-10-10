@@ -15,7 +15,7 @@ export default function ThresholdListPage({ params }: ThresholdListPageProps) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Threshold List Not Found</h1>
+          <h1 className="text-2xl font-bold mb-4">Multi-Sig List Not Found</h1>
           <Link href="/" className="text-primary hover:text-primary-dark">
             Return to Registry
           </Link>

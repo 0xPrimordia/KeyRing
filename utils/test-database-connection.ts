@@ -68,6 +68,7 @@ async function testDatabaseConnection() {
       console.log('\n3. Testing database permissions...');
       try {
         const testData = {
+          account_type: 'hedera' as const,
           account_id: 'test-account-123',
           public_key: 'test-public-key-456',
           profile_topic_id: '0.0.123456',

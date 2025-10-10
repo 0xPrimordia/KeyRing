@@ -12,9 +12,11 @@ export type Database = {
       keyring_signers: {
         Row: {
           id: string
-          account_id: string
-          public_key: string
-          profile_topic_id: string
+          account_type: 'hedera' | 'ethereum'
+          account_id: string | null
+          wallet_address: string | null
+          public_key: string | null
+          profile_topic_id: string | null
           code_name: string
           verification_status: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider: 'entrust' | 'sumsub'
@@ -30,9 +32,11 @@ export type Database = {
         }
         Insert: {
           id?: string
-          account_id: string
-          public_key: string
-          profile_topic_id: string
+          account_type: 'hedera' | 'ethereum'
+          account_id?: string | null
+          wallet_address?: string | null
+          public_key?: string | null
+          profile_topic_id?: string | null
           code_name: string
           verification_status?: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider?: 'entrust' | 'sumsub'
@@ -48,9 +52,11 @@ export type Database = {
         }
         Update: {
           id?: string
-          account_id?: string
-          public_key?: string
-          profile_topic_id?: string
+          account_type?: 'hedera' | 'ethereum'
+          account_id?: string | null
+          wallet_address?: string | null
+          public_key?: string | null
+          profile_topic_id?: string | null
           code_name?: string
           verification_status?: 'pending' | 'verified' | 'suspended' | 'revoked'
           verification_provider?: 'entrust' | 'sumsub'
@@ -66,10 +72,43 @@ export type Database = {
         }
         Relationships: []
       }
+      keyring_projects: {
+        Row: {
+          id: string
+          company_name: string
+          legal_entity_name: string
+          public_record_url: string | null
+          owners: string[] | null
+          topic_message_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company_name: string
+          legal_entity_name: string
+          public_record_url?: string | null
+          owners?: string[] | null
+          topic_message_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_name?: string
+          legal_entity_name?: string
+          public_record_url?: string | null
+          owners?: string[] | null
+          topic_message_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       keyring_threshold_lists: {
         Row: {
           id: string
-          project_name: string
+          project_id: string
           list_topic_id: string
           threshold_account_id: string
           required_signatures: number
@@ -80,7 +119,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          project_name: string
+          project_id: string
           list_topic_id: string
           threshold_account_id: string
           required_signatures: number
@@ -91,7 +130,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          project_name?: string
+          project_id?: string
           list_topic_id?: string
           threshold_account_id?: string
           required_signatures?: number
@@ -100,7 +139,15 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "keyring_threshold_lists_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "keyring_projects"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       keyring_list_memberships: {
         Row: {

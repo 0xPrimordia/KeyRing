@@ -1,6 +1,7 @@
 'use client';
 
 import { useWallet } from '../../providers/WalletProvider';
+import { useAccount } from 'wagmi';
 import { useState } from 'react';
 import VerificationModal from '../../components/VerificationModal';
 import Header from '@/components/Header';
@@ -8,14 +9,24 @@ import Header from '@/components/Header';
 
 export default function SignersPage() {
   const { connectWallet, isConnected, isInitializing } = useWallet();
+  const { isConnected: isEthConnected } = useAccount();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
   const handleStartVerification = async () => {
+    // Check if we have an ETH connection via RainbowKit
+    
+    if (isEthConnected) {
+      // ETH wallet connected, go directly to verify page
+      window.location.href = '/verify';
+      return;
+    }
+    
     if (!isConnected) {
       setIsConnecting(true);
       try {
-        const walletData = await connectWallet();
+        // Default to Hedera connection for this flow
+        const walletData = await connectWallet('hedera');
         if (walletData) {
           // Successfully connected, now show modal
           setIsModalOpen(true);
@@ -114,7 +125,7 @@ export default function SignersPage() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">List Addition</h3>
-                <p className="text-gray-400 text-sm">Base rate bonus when selected for threshold lists</p>
+                <p className="text-gray-400 text-sm">Base rate bonus when selected for multi-sig lists</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -168,7 +179,7 @@ export default function SignersPage() {
                 2
               </div>
               <h4 className="font-semibold text-foreground mb-2">Get Selected</h4>
-              <p className="text-sm text-gray-400">Projects randomly select you for their threshold lists and pay list bonus</p>
+              <p className="text-sm text-gray-400">Projects randomly select you for their multi-sig lists and pay list bonus</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-background font-bold text-lg">

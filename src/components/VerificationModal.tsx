@@ -25,7 +25,7 @@ interface CreatedProfile {
 }
 
 export default function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
-  const { getPublicKey, isConnected, accountId, publicKey, dAppConnector } = useWallet();
+  const { getPublicKey, isConnected, accountId, publicKey, dAppConnector, connection } = useWallet();
   const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null);
   const [existingAccount, setExistingAccount] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string } | null>(null);
   const [isCheckingAccount, setIsCheckingAccount] = useState(false);
@@ -40,40 +40,42 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
   // Check if user is whitelisted and if account exists when modal opens
   useEffect(() => {
     const checkAccountStatus = async () => {
-      if (isOpen && isConnected && accountId) {
+      if (isOpen && isConnected && connection) {
         setIsCheckingAccount(true);
         
-        // Check whitelist from database
-        let isAccountWhitelisted = false;
-        try {
-          const whitelistResponse = await fetch('/api/whitelist/check', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accountId })
-          });
-          
-          if (whitelistResponse.ok) {
-            const whitelistData = await whitelistResponse.json();
-            isAccountWhitelisted = whitelistData.success ? whitelistData.isWhitelisted : false;
-            setIsWhitelisted(isAccountWhitelisted);
-          } else {
-            setIsWhitelisted(false);
-          }
-        } catch (whitelistError) {
-          console.error('Error checking whitelist:', whitelistError);
-          setIsWhitelisted(false);
-        }
-        
-        // Check if account already exists in database
-        if (isAccountWhitelisted) {
+        // Handle different wallet types
+        if (connection.type === 'hedera') {
+          // Hedera wallet flow - check whitelist
+          let isAccountWhitelisted = false;
           try {
-            const response = await fetch('/api/signers/lookup', {
+            const whitelistResponse = await fetch('/api/whitelist/check', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accountId })
+              body: JSON.stringify({ accountId: connection.accountId })
             });
             
-            if (response.ok) {
+            if (whitelistResponse.ok) {
+              const whitelistData = await whitelistResponse.json();
+              isAccountWhitelisted = whitelistData.success ? whitelistData.isWhitelisted : false;
+              setIsWhitelisted(isAccountWhitelisted);
+            } else {
+              setIsWhitelisted(false);
+            }
+          } catch (whitelistError) {
+            console.error('Error checking whitelist:', whitelistError);
+            setIsWhitelisted(false);
+          }
+          
+          // Check if account already exists in database
+          if (isAccountWhitelisted) {
+            try {
+              const response = await fetch('/api/signers/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accountId: connection.accountId })
+              });
+              
+              if (response.ok) {
               const data = await response.json();
               if (data.success && data.signer) {
                 setExistingAccount(data.signer);
@@ -84,9 +86,63 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
               // 404 means signer not found, which is expected for new accounts
               setExistingAccount(null);
             }
-          } catch (error) {
+            } catch (error) {
             console.error('Error checking existing account:', error);
             setExistingAccount(null);
+          }
+        }
+        } else if (connection.type === 'base') {
+          // Ethereum wallet flow - check whitelist same as Hedera
+          let isAccountWhitelisted = false;
+          try {
+            const whitelistResponse = await fetch('/api/whitelist/check', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ accountId: connection.address })
+            });
+            
+            if (whitelistResponse.ok) {
+              const whitelistData = await whitelistResponse.json();
+              isAccountWhitelisted = whitelistData.success ? whitelistData.isWhitelisted : false;
+              setIsWhitelisted(isAccountWhitelisted);
+            } else {
+              setIsWhitelisted(false);
+            }
+          } catch (whitelistError) {
+            console.error('Error checking whitelist:', whitelistError);
+            setIsWhitelisted(false);
+          }
+          
+          // Check if Ethereum account already exists in database (only if whitelisted)
+          if (isAccountWhitelisted) {
+            try {
+              const response = await fetch('/api/signers/ethereum/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ walletAddress: connection.address })
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.signer) {
+                  setExistingAccount({
+                    id: data.signer.id,
+                    codeName: data.signer.code_name,
+                    accountId: data.signer.wallet_address, // Use wallet address as accountId for display
+                    verificationStatus: data.signer.verification_status,
+                    createdAt: data.signer.created_at
+                  });
+                } else {
+                  setExistingAccount(null);
+                }
+              } else {
+                // 404 means signer not found, which is expected for new accounts
+                setExistingAccount(null);
+              }
+            } catch (error) {
+              console.error('Error checking existing Ethereum account:', error);
+              setExistingAccount(null);
+            }
           }
         }
         
@@ -95,7 +151,7 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
     };
     
     checkAccountStatus();
-  }, [isOpen, isConnected, accountId]);
+  }, [isOpen, isConnected, connection]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -110,74 +166,108 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
   }, [isOpen]);
 
   const handleCreateProfile = async () => {
-    if (!accountId) return;
+    if (!connection) return;
     
     setError(null);
     setCreationProgress({ step: 'creating', message: 'Preparing profile creation...', progress: 10 });
     
     try {
-      let currentPublicKey = publicKey;
-      
-      // Get public key if we don't have it
-      if (!currentPublicKey) {
-        setCreationProgress({ step: 'creating', message: 'Getting public key...', progress: 20 });
-        currentPublicKey = await getPublicKey(accountId);
-      }
-      
-      if (!currentPublicKey) {
-        throw new Error('Failed to obtain public key');
-      }
-
-      // Register signer using HCS-11
-      setCreationProgress({ step: 'inscribing', message: 'Creating HCS-11 profile on Hedera...', progress: 30 });
-      
-      const registrationResponse = await fetch('/api/register-signer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: accountId,
-          publicKey: currentPublicKey
-        })
-      });
-      
-      const registrationData = await registrationResponse.json();
-      
-      if (registrationData.success) {
-        setCreationProgress({ step: 'storing', message: 'Profile created successfully!', progress: 70 });
+      if (connection.type === 'hedera') {
+        // Hedera wallet flow
+        if (!accountId) return;
         
-        // Store the created profile data
-        setCreatedProfile({
-          keyringId: registrationData.signer.keyringId,
-          displayName: registrationData.signer.displayName,
-          profileTopicId: registrationData.signer.profileTopicId,
-          transactionId: registrationData.signer.transactionId,
-          uaid: registrationData.signer.uaid
-        });
+        let currentPublicKey = publicKey;
+        
+        // Get public key if we don't have it
+        if (!currentPublicKey) {
+          setCreationProgress({ step: 'creating', message: 'Getting public key...', progress: 20 });
+          currentPublicKey = await getPublicKey(accountId);
+        }
+        
+        if (!currentPublicKey) {
+          throw new Error('Failed to obtain public key');
+        }
 
-        // If memo update is required, have the user sign it
-        if (registrationData.memoUpdate?.required && registrationData.memoUpdate.transaction) {
-          setCreationProgress({ step: 'memo', message: 'Please sign the memo update transaction...', progress: 80 });
+        // Register signer using HCS-11
+        setCreationProgress({ step: 'inscribing', message: 'Creating HCS-11 profile on Hedera...', progress: 30 });
+        
+        const registrationResponse = await fetch('/api/register-signer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accountId: accountId,
+            publicKey: currentPublicKey
+          })
+        });
+        
+        const registrationData = await registrationResponse.json();
+        
+        if (registrationData.success) {
+          setCreationProgress({ step: 'storing', message: 'Profile created successfully!', progress: 70 });
           
-          try {
-            const signResult = await dAppConnector?.signAndExecuteTransaction({
-              signerAccountId: accountId,
-              transactionList: registrationData.memoUpdate.transaction
-            });
+          // Store the created profile data
+          setCreatedProfile({
+            keyringId: registrationData.signer.keyringId,
+            displayName: registrationData.signer.displayName,
+            profileTopicId: registrationData.signer.profileTopicId,
+            transactionId: registrationData.signer.transactionId,
+            uaid: registrationData.signer.uaid
+          });
+
+          // If memo update is required, have the user sign it
+          if (registrationData.memoUpdate?.required && registrationData.memoUpdate.transaction) {
+            setCreationProgress({ step: 'memo', message: 'Please sign the memo update transaction...', progress: 80 });
             
-            if (signResult) {
-              setCreationProgress({ step: 'success', message: 'Profile linked to your account!', progress: 100 });
-            } else {
-              setCreationProgress({ step: 'success', message: 'Profile created! You can link it later.', progress: 100 });
+            try {
+              const signResult = await dAppConnector?.signAndExecuteTransaction({
+                signerAccountId: accountId,
+                transactionList: registrationData.memoUpdate.transaction
+              });
+              
+              if (signResult) {
+                setCreationProgress({ step: 'success', message: 'Profile linked to your account!', progress: 100 });
+              } else {
+                setCreationProgress({ step: 'success', message: 'Profile created! You can link it later.', progress: 100 });
+              }
+            } catch (memoError) {
+              console.error('Failed to update memo:', memoError);
+              setCreationProgress({ step: 'success', message: 'Profile created! Memo update failed.', progress: 100 });
             }
-          } catch (memoError) {
-            console.error('Failed to update memo:', memoError);
-            setCreationProgress({ step: 'success', message: 'Profile created! Memo update failed.', progress: 100 });
+          } else {
+            setCreationProgress({ step: 'success', message: 'Profile created successfully!', progress: 100 });
           }
         } else {
-          setCreationProgress({ step: 'success', message: 'Profile created successfully!', progress: 100 });
+          throw new Error(registrationData.error || 'Failed to create profile');
         }
-      } else {
-        throw new Error(registrationData.error || 'Failed to create profile');
+      } else if (connection.type === 'base') {
+        // Ethereum wallet flow - simplified registration
+        setCreationProgress({ step: 'storing', message: 'Registering Ethereum signer...', progress: 50 });
+        
+        const registrationResponse = await fetch('/api/signers/ethereum', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            account_type: 'ethereum',
+            wallet_address: connection.address
+          })
+        });
+        
+        const registrationData = await registrationResponse.json();
+        
+        if (registrationData.signer) {
+          setCreationProgress({ step: 'success', message: 'Ethereum signer registered successfully!', progress: 100 });
+          
+          // Store the created profile data (simplified for Ethereum)
+          setCreatedProfile({
+            keyringId: registrationData.signer.id,
+            displayName: registrationData.signer.code_name,
+            profileTopicId: '', // Not applicable for Ethereum
+            transactionId: '', // Not applicable for Ethereum
+            uaid: registrationData.signer.wallet_address
+          });
+        } else {
+          throw new Error(registrationData.error || 'Failed to register Ethereum signer');
+        }
       }
     } catch (error: unknown) {
       console.error('Failed to create profile:', error);
