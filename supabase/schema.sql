@@ -73,8 +73,10 @@ CREATE TABLE keyring_rewards (
     signer_id UUID NOT NULL REFERENCES keyring_signers(id) ON DELETE CASCADE,
     reward_type reward_type NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    currency TEXT DEFAULT 'LYNX',
-    transaction_id TEXT, -- Hedera transaction ID when paid
+    currency TEXT DEFAULT 'KYRNG',
+    transaction_id TEXT, -- Hedera transaction ID when KYRNG reward is paid out
+    schedule_id TEXT, -- Schedule ID that was signed (for transaction_review rewards)
+    signature_transaction_id TEXT, -- Transaction ID of the SCHEDULESIGN transaction
     status reward_status DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     paid_at TIMESTAMPTZ
@@ -91,6 +93,8 @@ CREATE INDEX idx_keyring_list_memberships_signer_id ON keyring_list_memberships(
 CREATE INDEX idx_keyring_list_memberships_list_id ON keyring_list_memberships(list_id);
 CREATE INDEX idx_keyring_rewards_signer_id ON keyring_rewards(signer_id);
 CREATE INDEX idx_keyring_rewards_status ON keyring_rewards(status);
+CREATE INDEX idx_keyring_rewards_schedule_id ON keyring_rewards(schedule_id);
+CREATE INDEX idx_keyring_rewards_signature_tx_id ON keyring_rewards(signature_transaction_id);
 
 -- Updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()

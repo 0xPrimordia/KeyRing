@@ -199,6 +199,8 @@ export type Database = {
           amount: number
           currency: string
           transaction_id: string | null
+          schedule_id: string | null
+          signature_transaction_id: string | null
           status: 'pending' | 'paid' | 'failed'
           created_at: string
           paid_at: string | null
@@ -210,6 +212,8 @@ export type Database = {
           amount: number
           currency?: string
           transaction_id?: string | null
+          schedule_id?: string | null
+          signature_transaction_id?: string | null
           status?: 'pending' | 'paid' | 'failed'
           created_at?: string
           paid_at?: string | null
@@ -221,6 +225,8 @@ export type Database = {
           amount?: number
           currency?: string
           transaction_id?: string | null
+          schedule_id?: string | null
+          signature_transaction_id?: string | null
           status?: 'pending' | 'paid' | 'failed'
           created_at?: string
           paid_at?: string | null

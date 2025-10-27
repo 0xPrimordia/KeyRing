@@ -75,6 +75,16 @@ export default function Header() {
               >
                 Register List
               </Link>
+              <Link 
+                href="/signer-dashboard" 
+                className={`transition-colors ${
+                  isActive('/signer-dashboard')
+                    ? 'text-primary hover:text-primary-dark' 
+                    : 'text-foreground hover:text-primary'
+                }`}
+              >
+                Signer Dashboard
+              </Link>
             </nav>
             
             <div className="border-l border-gray-700 pl-8">
@@ -151,6 +161,17 @@ export default function Header() {
                 }`}
               >
                 Register List
+              </Link>
+              <Link
+                href="/signer-dashboard"
+                onClick={closeMobileMenu}
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  isActive('/signer-dashboard')
+                    ? 'text-primary bg-primary/10' 
+                    : 'text-foreground hover:text-primary hover:bg-primary/5'
+                }`}
+              >
+                Signer Dashboard
               </Link>
               
               {/* Mobile Wallet Button */}

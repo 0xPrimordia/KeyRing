@@ -13,11 +13,9 @@ import * as path from "path";
 // Load .env.local from the project root
 dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 
-// 5 public keys you will provide - placeholders for now
+// 3 public keys for testnet threshold list
 const PUBLIC_KEYS = [
   "302a300506032b65700321005f2a9826bef0c082e6e885c46022969da4120f5143b9c5413f79eabbba0cb399",
-  "302a300506032b65700321008e9938d49222e81e50054cb172e627668ce1e1c29d9434d2eb6cf21dbdafb5fb", 
-  "302e020100300506032b657004220420b332baf5790e8174a0820e7c0155f5e4b6b497e5635411852e54c8931b9d73ab",
   "59345a9c8b6112ccc1a3c636d6bc0d2c42477013f3d9f107f0db39b53a5cbb07",
   "0158a26e9dc97312aaf7e8811f3223e5a30b6676a0b58518d062d38418de8eb8"
 ];
@@ -27,11 +25,11 @@ async function createThresholdKeyList(): Promise<void> {
   const client = Client.forTestnet();
   
   // Set operator account
-  const operatorId = process.env.HEDERA_ACCOUNT_ID;
-  const operatorKey = process.env.HEDERA_PRIVATE_KEY;
+  const operatorId = process.env.HEDERA_TESTNET_ACCOUNT_ID;
+  const operatorKey = process.env.HEDERA_TESTNET_PRIVATE_KEY;
   
   if (!operatorId || !operatorKey) {
-    console.log("Please set HEDERA_ACCOUNT_ID and HEDERA_PRIVATE_KEY in your .env file");
+    console.log("Please set HEDERA_TESTNET_ACCOUNT_ID and HEDERA_TESTNET_PRIVATE_KEY in your .env.local file");
     console.log("You can get testnet credentials from: https://portal.hedera.com/register");
     return;
   }
@@ -39,7 +37,7 @@ async function createThresholdKeyList(): Promise<void> {
   client.setOperator(operatorId, operatorKey);
   
   try {
-    console.log("🔑 Creating KeyList with 5 public keys...\n");
+    console.log("🔑 Creating KeyList with 3 public keys...\n");
     
     // Convert string public keys to PublicKey objects
     const publicKeys: PublicKey[] = PUBLIC_KEYS.map((keyString, index) => {
@@ -68,11 +66,12 @@ async function createThresholdKeyList(): Promise<void> {
       }
     });
     
-    // Create a KeyList where all 5 keys are required to sign (as per docs)
-    const keyList = KeyList.of(...publicKeys);
+    // Create a threshold KeyList - 2 of 3 keys required to sign
+    const keyList = new KeyList(publicKeys, 2);
     
     console.log("KeyList created:");
     console.log(`Keys: ${keyList._keys.length}`);
+    console.log(`Threshold: 2 of 3 keys required`);
     console.log(`Structure: ${keyList.toString()}\n`);
     
     // Create an account with this KeyList as admin key
