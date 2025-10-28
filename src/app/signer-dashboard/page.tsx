@@ -670,45 +670,32 @@ export default function SignerDashboard() {
 
         {/* Rewards Balance Widget */}
         <div className="mb-8 bg-gradient-to-br from-primary/15 to-primary/5 backdrop-blur-sm rounded-2xl p-8 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-5">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center">
-                <img 
-                  src="/key_ring_logo_lock_v1.svg" 
-                  alt="KeyRing" 
-                  className="w-14 h-14"
-                />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">KYRNG Rewards</h3>
-                <div className="flex items-baseline space-x-2.5">
-                  <span className="text-5xl font-bold text-primary">
-                    {rewardBalance.pending.toLocaleString()}
-                  </span>
-                  <span className="text-xl text-muted-foreground font-semibold">KYRNG</span>
-                </div>
-                {rewardBalance.total === 0 ? (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Sign your first transaction to earn rewards! 🎉
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Pending rewards • {rewardBalance.paid.toLocaleString()} already paid
-                  </p>
-                )}
-              </div>
+          <div className="flex items-center space-x-5">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center">
+              <img 
+                src="/key_ring_logo_lock_v1.svg" 
+                alt="KeyRing" 
+                className="w-14 h-14"
+              />
             </div>
-            <div className="hidden md:flex flex-col items-end space-y-3">
-              <div className="bg-muted/40 px-5 py-3 rounded-xl">
-                <div className="text-xs text-muted-foreground uppercase tracking-wider">Total Earned</div>
-                <div className="text-3xl font-bold mt-1">{rewardBalance.total.toLocaleString()}</div>
-          </div>
-              {rewardBalance.pending > 0 && (
-                <button className="text-sm font-bold text-white bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary transition-all px-6 py-3 rounded-xl shadow-sm hover:shadow">
-                  Claim Rewards →
-                </button>
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">KYRNG Rewards</h3>
+              <div className="flex items-baseline space-x-2.5">
+                <span className="text-5xl font-bold text-primary">
+                  {rewardBalance.pending.toLocaleString()}
+                </span>
+                <span className="text-xl text-muted-foreground font-semibold">KYRNG</span>
+              </div>
+              {rewardBalance.total === 0 ? (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Sign your first transaction to earn rewards! 🎉
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Pending rewards • {rewardBalance.paid.toLocaleString()} already paid
+                </p>
               )}
-          </div>
+            </div>
           </div>
         </div>
 
