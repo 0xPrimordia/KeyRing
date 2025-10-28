@@ -24,16 +24,20 @@ export default function EthWalletButton() {
   if (isConnected && address) {
     return (
       <div className="flex items-center space-x-3">
-        <div className="flex items-center bg-gray-800 rounded-lg px-3 py-2 border border-gray-700">
-          <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-          <span className="text-xs text-gray-400 mr-2">ETH:</span>
-          <span className="text-sm font-medium text-foreground">
-            {address.slice(0, 6)}...{address.slice(-4)}
-          </span>
-        </div>
+        <a
+          href="/signer-dashboard"
+          className="flex items-center px-4 py-2 hover:opacity-80 transition-opacity"
+        >
+          <div 
+            className="w-5 h-5 rounded-full mr-3"
+            style={{ backgroundColor: '#717C2A' }}
+          ></div>
+          <span className="text-base font-bold text-foreground">Ethereum: Dashboard</span>
+        </a>
         <button
           onClick={() => disconnect()}
-          className="text-sm text-gray-400 hover:text-foreground transition-colors"
+          className="text-2xl text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
+          style={{ paddingTop: '0.875rem' }}
         >
           Disconnect
         </button>

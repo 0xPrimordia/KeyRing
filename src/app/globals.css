@@ -2,10 +2,12 @@
 @import '@rainbow-me/rainbowkit/styles.css';
 
 :root {
-  --background: #171717;
+  --background: #000000;
   --foreground: #ffffff;
   --primary: #01C6E0;
   --primary-dark: #00A8C0;
+  --teal: #8CCBBA;
+  --light-blue: #408FC7;
   --gray-800: #2a2a2a;
   --gray-700: #3a3a3a;
   --gray-600: #4a4a4a;
@@ -16,14 +18,27 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
+  --color-teal: var(--teal);
+  --color-light-blue: var(--light-blue);
   --color-gray-800: var(--gray-800);
   --color-gray-700: var(--gray-700);
   --color-gray-600: var(--gray-600);
-  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-epilogue), system-ui, -apple-system, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 1.75;
+}
+
+* {
+  font-family: var(--font-epilogue), system-ui, -apple-system, sans-serif;
+}
+
+/* Preserve monospace for specific elements that need it */
+code, kbd, samp, pre, .font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }

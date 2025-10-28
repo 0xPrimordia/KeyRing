@@ -654,8 +654,8 @@ export default function SignerDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-6">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Signer Dashboard</h1>
+        <div className="mb-8 mt-12 flex items-center justify-between">
+          <h1 className="text-5xl font-bold">Signer Dashboard</h1>
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-3 bg-muted/30 hover:bg-muted/50 rounded-xl transition-colors"
@@ -669,30 +669,46 @@ export default function SignerDashboard() {
         </div>
 
         {/* Rewards Balance Widget */}
-        <div className="mb-8 bg-gradient-to-br from-primary/15 to-primary/5 backdrop-blur-sm rounded-2xl p-8 shadow-sm">
-          <div className="flex items-center space-x-5">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center">
-              <img 
-                src="/key_ring_logo_lock_v1.svg" 
-                alt="KeyRing" 
-                className="w-14 h-14"
-              />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">KYRNG Rewards</h3>
-              <div className="flex items-baseline space-x-2.5">
-                <span className="text-5xl font-bold text-primary">
-                  {rewardBalance.pending.toLocaleString()}
-                </span>
-                <span className="text-xl text-muted-foreground font-semibold">KYRNG</span>
+        <div 
+          className="mb-8 rounded-2xl shadow-sm p-[3px]"
+          style={{
+            background: 'linear-gradient(to right, #408FC7, #8CCBBA)'
+          }}
+        >
+          <div className="bg-background rounded-2xl p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-5">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center">
+                  <img 
+                    src="/key_ring_logo_lock_v1.svg" 
+                    alt="KeyRing" 
+                    className="w-14 h-14"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">KYRNG Rewards</h3>
+                  <div className="flex items-baseline space-x-2.5">
+                    <span className="text-5xl font-bold text-teal">
+                      {rewardBalance.pending.toLocaleString()}
+                    </span>
+                    <span className="text-xl text-muted-foreground font-semibold">KYRNG</span>
+                  </div>
+                </div>
               </div>
-              {rewardBalance.total === 0 ? (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Sign your first transaction to earn rewards! 🎉
-                </p>
+              
+              {rewardBalance.pending > 0 ? (
+                <button
+                  className="text-black text-2xl px-6 py-3 rounded-lg hover:opacity-80 transition-opacity"
+                  style={{
+                    background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
+                    border: '3px solid #8CCBBA'
+                  }}
+                >
+                  Claim Rewards
+                </button>
               ) : (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Pending rewards • {rewardBalance.paid.toLocaleString()} already paid
+                <p className="text-muted-foreground">
+                  Sign your first transaction to earn rewards
                 </p>
               )}
             </div>
@@ -720,7 +736,7 @@ export default function SignerDashboard() {
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold">Account Settings</h2>
+                      <h2 className="text-5xl font-bold mt-4">Account Settings</h2>
                       <p className="text-sm text-muted-foreground font-mono">{accountId}</p>
                     </div>
                   </div>
@@ -784,19 +800,19 @@ export default function SignerDashboard() {
 
         {/* Threshold Lists Header with Refresh */}
         {pendingSchedules.length > 0 && (
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 mt-12">
             <div>
-              <h2 className="text-2xl font-bold">My Threshold Lists</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-4xl font-bold">My Threshold Lists</h2>
+              <p className="text-muted-foreground mt-1">
                 {pendingSchedules.length} pending transaction{pendingSchedules.length !== 1 ? 's' : ''} awaiting signature
               </p>
             </div>
             <button
               onClick={loadPendingSchedules}
               disabled={loading}
-              className="text-sm text-primary hover:text-primary-dark font-semibold transition-colors flex items-center gap-1.5 px-4 py-2 hover:bg-primary/10 rounded-lg"
+              className="text-2xl text-teal hover:opacity-80 transition-opacity flex items-center gap-1.5 px-4 py-2 rounded-lg"
             >
-              <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               {loading ? 'Refreshing...' : 'Refresh'}
@@ -866,30 +882,46 @@ export default function SignerDashboard() {
                     className="px-6 py-5 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary/30 to-primary/10 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      <div className="w-10 h-10 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h2 className="text-lg font-bold">Threshold List</h2>
+                          <h3 className="text-2xl font-bold">Threshold List</h3>
                           {listInfo && (
-                            <span className="text-xs bg-primary/20 text-primary font-semibold px-3 py-1 rounded-full">
-                              {listInfo.keyType}
+                            <span 
+                              className="relative inline-block rounded-full p-[2px] ml-3"
+                              style={{
+                                background: 'linear-gradient(to right, #8CCBBA, #408FC7)'
+                              }}
+                            >
+                              <span className="block font-semibold px-4 py-1 rounded-full bg-black relative">
+                                <span 
+                                  style={{
+                                    background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text'
+                                  }}
+                                >
+                                  {listInfo.keyType}
+                                </span>
+                              </span>
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground font-mono">{thresholdListId}</p>
+                        <p className="text-muted-foreground font-mono">{thresholdListId}</p>
                         {listInfo && (
-                          <p className="text-xs text-muted-foreground mt-1">{listInfo.memo}</p>
+                          <p className="text-muted-foreground mt-1">{listInfo.memo}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">{schedules.length}</div>
-                        <div className="text-xs text-muted-foreground">Pending</div>
+                    <div className="flex items-center gap-8">
+                      <div className="text-center">
+                        <h2 className="text-4xl font-bold text-teal">{schedules.length}</h2>
+                        <div className="text-2xl text-muted-foreground">Transactions</div>
                       </div>
                       <svg 
                         className={`w-6 h-6 text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`} 

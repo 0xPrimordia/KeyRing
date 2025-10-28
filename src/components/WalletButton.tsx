@@ -88,14 +88,22 @@ export default function WalletButton() {
   if (isConnected && connection && connection.type === 'hedera') {
     return (
       <div className="flex items-center space-x-3">
-        <div className="flex items-center bg-gray-800 rounded-lg px-3 py-2 border border-gray-700">
-          <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-          <span className="text-xs text-gray-400 mr-2 capitalize">{connection.type}:</span>
-          <span className="text-sm font-medium text-foreground">{formatAddress(connection)}</span>
-        </div>
+        <a
+          href="/signer-dashboard"
+          className="flex items-center px-4 py-2 hover:opacity-80 transition-opacity"
+        >
+          <div 
+            className="w-5 h-5 rounded-full mr-3 flex items-center justify-center"
+            style={{ backgroundColor: '#F1BD5C' }}
+          >
+            <span className="text-black text-sm font-bold leading-none" style={{ paddingTop: '2px' }}>ℏ</span>
+          </div>
+          <span className="text-base font-bold text-foreground capitalize">{connection.type}: Dashboard</span>
+        </a>
         <button
           onClick={handleDisconnect}
-          className="text-sm text-gray-400 hover:text-foreground transition-colors"
+          className="text-2xl text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
+          style={{ paddingTop: '0.875rem' }}
         >
           Disconnect
         </button>
