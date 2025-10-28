@@ -26,7 +26,8 @@ export default function EthWalletButton() {
       <div className="flex items-center space-x-3">
         <a
           href="/signer-dashboard"
-          className="flex items-center px-4 py-2 hover:opacity-80 transition-opacity"
+          className="flex items-center px-4 rounded-lg transition-colors hover:bg-white/10 leading-relaxed"
+          style={{ paddingTop: '0.875rem', paddingBottom: '0.75rem' }}
         >
           <div 
             className="w-5 h-5 rounded-full mr-3"

@@ -1011,37 +1011,44 @@ export default function SignerDashboard() {
         </div>
 
         {/* Info Section */}
-        <div className="mt-8 bg-gradient-to-br from-primary/10 to-transparent rounded-2xl p-6">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold mb-3">How This Works</h3>
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">→</span>
-                  <span>Scheduled transactions are created by project operators</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">→</span>
-                  <span>You'll see transactions that require your approval here</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">→</span>
-                  <span>Click "Sign Transaction" to approve via your HashPack wallet</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">→</span>
-                  <span>Earn 10 KYRNG for each transaction you sign</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">→</span>
-                  <span>Transactions auto-execute once threshold is met</span>
-                </li>
-          </ul>
+        <div
+          className="mt-8 rounded-2xl p-[3px]"
+          style={{
+            background: 'linear-gradient(to right, #408FC7, #8CCBBA)'
+          }}
+        >
+          <div className="bg-background rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                <svg className="w-8 h-8 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-bold mb-3">How This Works</h3>
+                <ul className="text-muted-foreground space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-teal mt-0.5">→</span>
+                    <span>Scheduled transactions are created by project operators</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-teal mt-0.5">→</span>
+                    <span>You'll see transactions that require your approval here</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-teal mt-0.5">→</span>
+                    <span>Click "Sign Transaction" to approve via your HashPack wallet</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-teal mt-0.5">→</span>
+                    <span>Earn 10 KYRNG for each transaction you sign</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-teal mt-0.5">→</span>
+                    <span>Transactions auto-execute once threshold is met</span>
+                  </li>
+            </ul>
+              </div>
             </div>
           </div>
         </div>
