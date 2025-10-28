@@ -936,7 +936,7 @@ export default function SignerDashboard() {
 
                   {/* Pending Transactions under this Threshold List */}
                   {!isCollapsed && (
-                    <div className="space-y-3 p-6 pt-0">
+                    <div className="space-y-3 p-6 pt-0 pl-20">
                       {schedules.map((schedule) => {
                         const riskInfo = getRiskLevelFromMemo(schedule.memo);
                         return (
@@ -951,43 +951,49 @@ export default function SignerDashboard() {
                             <div className="flex items-start justify-between gap-4 mb-3">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-base font-bold group-hover:text-primary transition-colors">
+                                  <h3 className="text-2xl font-bold group-hover:text-primary transition-colors">
                                     {schedule.memo || 'Scheduled Transaction'}
                                   </h3>
                                   {riskInfo && (
-                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                                      riskInfo.level === 'low' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                                      riskInfo.level === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                                      riskInfo.level === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                                      riskInfo.level === 'critical' ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
-                                      'bg-slate-500/20 text-slate-400 border border-slate-500/30'
-                                    }`}>
+                                    <span 
+                                      className="inline-flex items-center rounded-full uppercase tracking-wider text-white ml-3"
+                                      style={{
+                                        backgroundColor: riskInfo.level === 'low' ? '#586022' :
+                                                       riskInfo.level === 'medium' ? '#B89048' :
+                                                       riskInfo.level === 'high' ? '#B0602E' :
+                                                       riskInfo.level === 'critical' ? '#762616' : '#000000',
+                                        paddingLeft: '1rem',
+                                        paddingRight: '1rem',
+                                        paddingTop: '0.5rem',
+                                        paddingBottom: '0.375rem'
+                                      }}
+                                    >
                                       {riskInfo.label}
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground font-mono">{schedule.schedule_id}</p>
+                                <p className="text-muted-foreground font-mono">{schedule.schedule_id}</p>
                               </div>
                               <svg className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
                             </div>
                             
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-4 text-muted-foreground">
                               <div className="flex items-center gap-1.5">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                                 <span className="font-mono">{schedule.creator_account_id}</span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span>{schedule.signatures?.length || 0} signatures</span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span>Expires {new Date(parseFloat(schedule.expiration_time) * 1000).toLocaleDateString()}</span>

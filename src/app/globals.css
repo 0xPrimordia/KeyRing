@@ -8,6 +8,10 @@
   --primary-dark: #00A8C0;
   --teal: #8CCBBA;
   --light-blue: #408FC7;
+  --risk-low: #586022;
+  --risk-medium: #B89048;
+  --risk-high: #B0602E;
+  --risk-critical: #762616;
   --gray-800: #2a2a2a;
   --gray-700: #3a3a3a;
   --gray-600: #4a4a4a;
@@ -20,6 +24,10 @@
   --color-primary-dark: var(--primary-dark);
   --color-teal: var(--teal);
   --color-light-blue: var(--light-blue);
+  --color-risk-low: var(--risk-low);
+  --color-risk-medium: var(--risk-medium);
+  --color-risk-high: var(--risk-high);
+  --color-risk-critical: var(--risk-critical);
   --color-gray-800: var(--gray-800);
   --color-gray-700: var(--gray-700);
   --color-gray-600: var(--gray-600);
