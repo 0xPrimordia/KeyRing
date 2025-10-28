@@ -11,7 +11,10 @@ import {
   ScheduleId,
   AccountId,
   TransactionId,
-  Client
+  Client,
+  TopicMessageQuery,
+  TopicMessageSubmitTransaction,
+  PrivateKey
 } from '@hashgraph/sdk';
 
 const aiRecommendations = {
@@ -126,6 +129,20 @@ interface ScheduleDetails {
   transaction_body?: any;
 }
 
+interface HCSMessage {
+  consensusTimestamp: string;
+  message: string;
+  sequenceNumber: number;
+  runningHash: string;
+}
+
+interface ThresholdListData {
+  id: string;
+  hcs_topic_id: string;
+  threshold_account_id: string;
+  status: string;
+}
+
 export default function ScheduleDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -140,6 +157,9 @@ export default function ScheduleDetailsPage() {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState('');
   const [submittingRejection, setSubmittingRejection] = useState(false);
+  const [hcsMessages, setHcsMessages] = useState<HCSMessage[]>([]);
+  const [thresholdListData, setThresholdListData] = useState<ThresholdListData | null>(null);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   useEffect(() => {
     loadScheduleDetails();
@@ -161,10 +181,175 @@ export default function ScheduleDetailsPage() {
       const data = await response.json();
       setSchedule(data);
 
+      // Load rejection messages for this transaction
+      if (data.payer_account_id) {
+        loadHCSMessages(data.payer_account_id);
+      }
+
     } catch (err: any) {
       setError(err.message || 'Failed to load schedule');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadHCSMessages(payerAccountId: string) {
+    try {
+      setLoadingMessages(true);
+      console.log('[REJECTIONS] Loading threshold list data for:', payerAccountId);
+
+      // Fetch threshold list data to get rejection topic ID
+      const response = await fetch(`/api/threshold-lists/${payerAccountId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[REJECTIONS] API error:', response.status, errorData);
+        
+        if (response.status === 404) {
+          console.log('[REJECTIONS] No threshold list found for this payer account');
+          return;
+        }
+        throw new Error(`Failed to fetch threshold list data: ${errorData.error || response.statusText}`);
+      }
+
+      const thresholdList = await response.json();
+      setThresholdListData(thresholdList);
+      console.log('[REJECTIONS] Threshold list data:', thresholdList);
+
+      // Subscribe to rejection topic (only in browser)
+      if (thresholdList.hcs_topic_id && typeof window !== 'undefined') {
+        await subscribeToHCSTopic(thresholdList.hcs_topic_id);
+      }
+
+    } catch (err: any) {
+      console.error('[REJECTIONS] Error loading messages:', err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  }
+
+  async function subscribeToHCSTopic(topicId: string) {
+    // Only run in browser
+    if (typeof window === 'undefined') {
+      console.log('[REJECTIONS] Skipping subscription in SSR');
+      return;
+    }
+
+    try {
+      console.log('[REJECTIONS] Subscribing to rejection topic:', topicId);
+
+      const client = Client.forTestnet();
+      
+      // Subscribe to rejection topic and filter messages related to this schedule
+      new TopicMessageQuery()
+        .setTopicId(topicId)
+        .setStartTime(0) // Get all historical rejections
+        .subscribe(client, null, (message) => {
+          const messageString = Buffer.from(message.contents).toString('utf8');
+          console.log('[REJECTIONS] Received message:', messageString);
+
+          // Parse message to check if it's related to this schedule
+          try {
+            const messageData = JSON.parse(messageString);
+            if (messageData.scheduleId === scheduleId || messageString.includes(scheduleId)) {
+              const hcsMessage: HCSMessage = {
+                consensusTimestamp: message.consensusTimestamp.toDate().toISOString(),
+                message: messageString,
+                sequenceNumber: message.sequenceNumber.toNumber(),
+                runningHash: Buffer.from(message.runningHash).toString('base64')
+              };
+
+              setHcsMessages(prev => [...prev, hcsMessage]);
+            }
+          } catch (e) {
+            // If not JSON, check if schedule ID is in plain text
+            if (messageString.includes(scheduleId)) {
+              const hcsMessage: HCSMessage = {
+                consensusTimestamp: message.consensusTimestamp.toDate().toISOString(),
+                message: messageString,
+                sequenceNumber: message.sequenceNumber.toNumber(),
+                runningHash: Buffer.from(message.runningHash).toString('base64')
+              };
+
+              setHcsMessages(prev => [...prev, hcsMessage]);
+            }
+          }
+        });
+
+    } catch (err: any) {
+      console.error('[REJECTIONS] Error subscribing to topic:', err);
+    }
+  }
+
+  async function submitRejectionToHCS() {
+    console.log('[REJECTIONS] Submit rejection called:', { 
+      hasThresholdListData: !!thresholdListData, 
+      topicId: thresholdListData?.hcs_topic_id,
+      hasFeedback: !!rejectionFeedback.trim()
+    });
+
+    if (!thresholdListData?.hcs_topic_id) {
+      const msg = 'Cannot submit rejection: Threshold list not found for this transaction';
+      console.error('[REJECTIONS]', msg);
+      setError(msg);
+      return;
+    }
+
+    if (!rejectionFeedback.trim()) {
+      setError('Please provide feedback explaining your rejection');
+      return;
+    }
+
+    if (!accountId || !dAppConnector) {
+      setError('Please connect your HashPack wallet first');
+      return;
+    }
+
+    try {
+      setSubmittingRejection(true);
+      setError(null);
+
+      console.log('[REJECTIONS] Submitting rejection to topic:', thresholdListData.hcs_topic_id);
+
+      const rejectionMessage = JSON.stringify({
+        type: 'rejection',
+        scheduleId: scheduleId,
+        signer: accountId,
+        feedback: rejectionFeedback,
+        timestamp: new Date().toISOString()
+      });
+
+      // Get HashPack signer
+      const signer = dAppConnector.getSigner(AccountId.fromString(accountId));
+      
+      // Create topic message submit transaction
+      const transaction = new TopicMessageSubmitTransaction()
+        .setTopicId(thresholdListData.hcs_topic_id)
+        .setMessage(rejectionMessage);
+
+      console.log('[REJECTIONS] Signing with HashPack...');
+
+      // Freeze with signer and execute via HashPack
+      const frozenTx = await transaction.freezeWithSigner(signer);
+      const txResponse = await frozenTx.executeWithSigner(signer);
+      
+      console.log('[REJECTIONS] Transaction response:', txResponse);
+      console.log('[REJECTIONS] Transaction ID:', txResponse.transactionId?.toString());
+
+      console.log('[REJECTIONS] Rejection posted successfully');
+      setShowRejectForm(false);
+      setRejectionFeedback('');
+      
+      // Reload messages to show the new rejection
+      setTimeout(() => {
+        loadHCSMessages(schedule!.payer_account_id);
+      }, 2000);
+
+    } catch (err: any) {
+      console.error('[REJECTIONS] Error submitting rejection:', err);
+      setError(err.message || 'Failed to submit rejection to topic');
+    } finally {
+      setSubmittingRejection(false);
     }
   }
 
@@ -858,7 +1043,7 @@ export default function ScheduleDetailsPage() {
                   </div>
                   
                   <p className="text-sm text-muted-foreground mb-4">
-                    Explain your concerns to other signers and the project team. Your feedback will be posted on-chain via HCS.
+                    Explain your concerns to other signers and the project team. Your rejection will be posted on-chain to the threshold list's rejection topic for transparency.
                   </p>
 
                   <textarea
@@ -874,21 +1059,7 @@ export default function ScheduleDetailsPage() {
                       💡 Tip: Be specific about your concerns - this helps the team address issues faster
                     </p>
                     <button
-                      onClick={async () => {
-                        if (!rejectionFeedback.trim()) {
-                          setError('Please provide feedback explaining your rejection');
-                          return;
-                        }
-                        setSubmittingRejection(true);
-                        // TODO: Post to HCS
-                        console.log('[REJECT] Feedback:', rejectionFeedback);
-                        setTimeout(() => {
-                          setSubmittingRejection(false);
-                          setShowRejectForm(false);
-                          setRejectionFeedback('');
-                          alert('Rejection feedback submitted! (HCS integration coming soon)');
-                        }, 1000);
-                      }}
+                      onClick={submitRejectionToHCS}
                       disabled={submittingRejection || !rejectionFeedback.trim()}
                       className="px-6 py-2.5 bg-red-500/20 hover:bg-red-500 border border-red-500/50 hover:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-red-500 hover:text-white font-bold rounded-lg transition-all"
                     >
@@ -971,8 +1142,93 @@ export default function ScheduleDetailsPage() {
                 )}
               </div>
 
+              {/* Rejections (HCS Messages) */}
+              {thresholdListData && (
+                <div className="px-6 py-5 pt-8 border-t border-muted/30">
+                  <h2 className="text-lg font-bold flex items-center gap-2 mb-4">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Rejections
+                  </h2>
+                  
+                  {loadingMessages ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                      <p className="text-xs text-muted-foreground mt-2">Loading rejection history...</p>
+                    </div>
+                  ) : hcsMessages.length > 0 ? (
+                    <div className="space-y-3">
+                      {hcsMessages.map((msg, index) => {
+                        let parsedMessage;
+                        try {
+                          parsedMessage = JSON.parse(msg.message);
+                        } catch (e) {
+                          parsedMessage = { message: msg.message };
+                        }
+
+                        const isRejection = parsedMessage.type === 'rejection';
+
+                        return (
+                          <div key={index} className={`p-4 rounded-xl ${isRejection ? 'bg-red-500/10 border border-red-500/30' : 'bg-muted/30'}`}>
+                            <div className="flex items-start gap-3 mb-2">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isRejection ? 'bg-red-500/20' : 'bg-primary/20'}`}>
+                                <svg className={`w-4 h-4 ${isRejection ? 'text-red-500' : 'text-primary'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  {isRejection ? (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                  ) : (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                  )}
+                                </svg>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="text-sm font-bold">
+                                    {parsedMessage.signer ? `${parsedMessage.signer.substring(0, 10)}...` : 'Signer'}
+                                  </p>
+                                  {isRejection && (
+                                    <span className="text-xs bg-red-500/20 text-red-500 font-semibold px-2 py-0.5 rounded-full">
+                                      Rejected
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(msg.consensusTimestamp).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm mt-2 leading-relaxed">
+                              {parsedMessage.feedback || parsedMessage.message}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="w-12 h-12 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-6 h-6 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-muted-foreground">No rejections</p>
+                      <p className="text-xs text-muted-foreground mt-1">Signer concerns will appear here</p>
+                    </div>
+                  )}
+
+                  <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-red-500">Rejection Topic:</span> {thresholdListData.hcs_topic_id}
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      Rejection feedback is posted on-chain for transparency
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Basic Information */}
-              <div className="px-6 py-5 pt-8">
+              <div className="px-6 py-5 pt-8 border-t border-muted/30">
                 <h2 className="text-lg font-bold flex items-center gap-2 mb-4">
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

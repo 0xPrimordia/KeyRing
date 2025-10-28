@@ -41,14 +41,13 @@ CREATE TABLE keyring_projects (
 );
 
 -- KeyRing Threshold Lists Table
--- Stores certified threshold key lists for projects
+-- Stores certified threshold key lists for projects and demos
+-- All key structure and signature requirements are stored on-chain
 CREATE TABLE keyring_threshold_lists (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    project_id UUID NOT NULL REFERENCES keyring_projects(id) ON DELETE CASCADE,
-    list_topic_id TEXT NOT NULL, -- HCS-2 topic for list metadata
-    threshold_account_id TEXT UNIQUE NOT NULL, -- Hedera account with threshold key
-    required_signatures INTEGER NOT NULL,
-    total_signers INTEGER NOT NULL,
+    project_id UUID REFERENCES keyring_projects(id) ON DELETE CASCADE, -- Null for demo/standalone lists
+    hcs_topic_id TEXT NOT NULL, -- HCS-2 topic for list communication (rejections, activity)
+    threshold_account_id TEXT UNIQUE NOT NULL, -- Hedera account with threshold KeyList (e.g., 2-of-3)
     status list_status DEFAULT 'active',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -89,6 +88,7 @@ CREATE INDEX idx_keyring_signers_verification_status ON keyring_signers(verifica
 CREATE INDEX idx_keyring_projects_company_name ON keyring_projects(company_name);
 CREATE INDEX idx_keyring_threshold_lists_project_id ON keyring_threshold_lists(project_id);
 CREATE INDEX idx_keyring_threshold_lists_account_id ON keyring_threshold_lists(threshold_account_id);
+CREATE INDEX idx_keyring_threshold_lists_hcs_topic ON keyring_threshold_lists(hcs_topic_id);
 CREATE INDEX idx_keyring_list_memberships_signer_id ON keyring_list_memberships(signer_id);
 CREATE INDEX idx_keyring_list_memberships_list_id ON keyring_list_memberships(list_id);
 CREATE INDEX idx_keyring_rewards_signer_id ON keyring_rewards(signer_id);
