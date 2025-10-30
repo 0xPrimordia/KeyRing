@@ -114,7 +114,33 @@ export async function generateDemoThresholdList(connectedAccountId: string): Pro
     }
     
     console.log(`✅ Threshold List Created: ${accountId}`);
+    console.log(`   Threshold: 2-of-${publicKeys.length}`);
+    console.log(`   Memo: KeyRing Demo Threshold List for ${connectedAccountId}`);
     console.log(`🔗 https://hashscan.io/testnet/account/${accountId}\n`);
+    
+    // Verify the account was created with correct details
+    console.log('🔍 Verifying account creation...');
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for mirror node
+    
+    try {
+      const verifyResponse = await fetch(
+        `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`
+      );
+      
+      if (verifyResponse.ok) {
+        const verifyData = await verifyResponse.json();
+        console.log('✓ Account verified on mirror node');
+        console.log(`  Memo: ${verifyData.memo || '(none)'}`);
+        console.log(`  Key Type: ${verifyData.key?._type || '(none)'}`);
+        if (verifyData.key?._type === 'KeyList') {
+          const keys = verifyData.key.keys || [];
+          const threshold = verifyData.key.threshold || keys.length;
+          console.log(`  Threshold: ${threshold}-of-${keys.length}`);
+        }
+      }
+    } catch (verifyError) {
+      console.warn('⚠️  Could not verify account on mirror node (may need more time to propagate)');
+    }
     
     return accountId.toString();
     

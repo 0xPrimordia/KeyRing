@@ -1,539 +1,297 @@
-'use client';
-
-import Link from "next/link";
 import Header from '../components/Header';
-import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
-interface Signer {
-  id: string;
-  codeName: string;
-  status: 'pending' | 'verified' | 'suspended' | 'revoked';
-  verifiedAt: string;
-  reputation: string;
-  totalLists: number;
-  totalTransactions: number;
-  totalEarnings: string;
-  responseRate: string;
-  avgResponseTime: string;
-  profileTopicId: string;
-  verificationProvider: string;
-  createdAt: string;
-  listsJoined: unknown[];
-  recentActivity: unknown[];
-  metadata: {
-    transactionCount: number;
-    contractInteractions: string;
-    mostActiveHours: string;
-  };
-  accountType?: 'hedera' | 'ethereum';
-  walletAddress?: string;
-  accountId?: string;
-}
-
-interface ThresholdListMember {
-  signerId: string;
-  codeName: string;
-  accountId: string;
-  joinedAt: string;
-  status: string;
-}
-
-interface ThresholdList {
-  id: string;
-  name: string;
-  accountId: string;
-  threshold: number;
-  totalMembers: number;
-  activeMembers: number;
-  status: string;
-  createdAt: string;
-  members: ThresholdListMember[];
-  reliability: number;
-  avgTenure: number;
-}
-
-interface Project {
-  id: string;
-  company_name: string;
-  legal_entity_name: string;
-  public_record_url: string | null;
-  owners: string[] | null;
-  topic_message_id: string | null;
-  created_at: string;
-  updated_at: string;
-  threshold_lists_count?: number;
-}
-
-// Mock data for the registry (unused - data now comes from API)
-// const mockVerifiers = [
-//   {
-//     id: "v1",
-//     codeName: "crimson-firefly-47",
-//     status: "Active",
-//     listsJoined: 3,
-//     startDate: "2024-01-15",
-//     reputation: 98,
-//     accountId: "0.0.123456"
-//   },
-//   {
-//     id: "v2", 
-//     codeName: "azure-mountain-92",
-//     status: "Active",
-//     listsJoined: 5,
-//     startDate: "2024-02-03",
-//     reputation: 95,
-//     accountId: "0.0.234567"
-//   },
-//   {
-//     id: "v3",
-//     codeName: "golden-river-18",
-//     status: "Active", 
-//     listsJoined: 2,
-//     startDate: "2024-03-12",
-//     reputation: 100,
-//     accountId: "0.0.345678"
-//   },
-//   {
-//     id: "v4",
-//     codeName: "violet-storm-63",
-//     status: "Active",
-//     listsJoined: 4,
-//     startDate: "2024-01-28",
-//     reputation: 92,
-//     accountId: "0.0.456789"
-//   },
-//   {
-//     id: "v5",
-//     codeName: "silver-dawn-29",
-//     status: "Suspended",
-//     listsJoined: 1,
-//     startDate: "2024-04-05",
-//     reputation: 78,
-//     accountId: "0.0.567890"
-//   }
-// ];
-
-// const mockThresholdLists = [
-//   {
-//     id: "tl1",
-//     name: "DeFi Protocol Alpha",
-//     threshold: 3,
-//     totalMembers: 5,
-//     certified: true,
-//     avgTenure: "8 months",
-//     reliability: 96,
-//     members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18", "violet-storm-63", "silver-dawn-29"]
-//   },
-//   {
-//     id: "tl2", 
-//     name: "NFT Marketplace Beta",
-//     threshold: 2,
-//     totalMembers: 3,
-//     certified: true,
-//     avgTenure: "6 months", 
-//     reliability: 98,
-//     members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18"]
-//   },
-//   {
-//     id: "tl3",
-//     name: "DAO Treasury Gamma",
-//     threshold: 4,
-//     totalMembers: 7,
-//     certified: true,
-//     avgTenure: "5 months",
-//     reliability: 94,
-//     members: ["crimson-firefly-47", "azure-mountain-92", "golden-river-18", "violet-storm-63"]
-//   }
-// ];
-
-// Helper function to get status styling
-const getStatusStyling = (status: 'pending' | 'verified' | 'suspended' | 'revoked') => {
-  switch (status) {
-    case 'verified':
-      return 'bg-green-100 text-green-800';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'suspended':
-      return 'bg-orange-100 text-orange-800';
-    case 'revoked':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
-export default function RegistryPage() {
-  const [activeTab, setActiveTab] = useState('signers');
-  const [signers, setSigners] = useState<Signer[]>([]);
-  const [thresholdLists, setThresholdLists] = useState<ThresholdList[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        if (activeTab === 'signers') {
-          const response = await fetch('/api/signers');
-          const data = await response.json();
-          
-          if (data.success) {
-            setSigners(data.signers);
-            setError(null);
-          } else {
-            setError(data.error);
-          }
-        } else if (activeTab === 'lists') {
-          const response = await fetch('/api/threshold-lists');
-          const data = await response.json();
-          
-          if (data.success) {
-            setThresholdLists(data.lists);
-            setError(null);
-          } else {
-            setError(data.error);
-          }
-        } else if (activeTab === 'projects') {
-          const response = await fetch('/api/projects');
-          const data = await response.json();
-          
-          if (data.success) {
-            setProjects(data.projects);
-            setError(null);
-          } else {
-            setError(data.error);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [activeTab]);
-
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Title */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Signer Registry</h2>
-          <p className="text-gray-400">Search and verify threshold signers and certified lists</p>
-        </div>
-
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search by public key, account ID, code name, or list ID..."
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            <button className="absolute right-3 top-3 text-gray-400 hover:text-primary transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-700">
-            <nav className="-mb-px flex space-x-8">
-              <button 
-                onClick={() => setActiveTab('signers')}
-                className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
-                  activeTab === 'signers'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
-                }`}
-              >
-                Signers
-              </button>
-              <button 
-                onClick={() => setActiveTab('lists')}
-                className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
-                  activeTab === 'lists'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
-                }`}
-              >
-                Multi-Sig Lists
-              </button>
-              <button 
-                onClick={() => setActiveTab('projects')}
-                className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
-                  activeTab === 'projects'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
-                }`}
-              >
-                Projects
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        {activeTab === 'projects' ? (
-          /* Projects Section */
-          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-foreground">Registered Projects</h3>
-            </div>
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
-                <span className="text-gray-400">Loading projects...</span>
-              </div>
-            ) : error ? (
-              <div className="text-center py-16">
-                <span className="text-red-400">{error}</span>
-              </div>
-            ) : projects.length === 0 ? (
-              <div className="text-center py-16">
-                <span className="text-gray-400">No projects found</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                {projects.map((project) => (
-                  <Link 
-                    key={project.id} 
-                    href={`/project/${project.id}`}
-                    className="bg-gray-700 rounded-lg p-6 border border-gray-600 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 block"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
-                          {project.company_name}
-                        </h3>
-                        <div className="text-xs text-gray-400">{project.legal_entity_name}</div>
-                      </div>
-                      {project.topic_message_id && (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-300 border border-green-500/30">
-                          ✓ On-Chain
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2 text-sm mb-4">
-                      {project.owners && project.owners.length > 0 && (
-                        <div>
-                          <span className="text-gray-400 text-xs">Owners:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {project.owners.map((owner, idx) => (
-                              <span key={idx} className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
-                                {owner}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {project.threshold_lists_count !== undefined && (
-                        <div className="flex justify-between pt-2 border-t border-gray-600">
-                          <span className="text-gray-400">Threshold Lists:</span>
-                          <span className="text-foreground font-medium">{project.threshold_lists_count}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {project.public_record_url && (
-                      <a 
-                        href={project.public_record_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:text-primary-dark transition-colors flex items-center mt-4"
-                      >
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        Public Records
-                      </a>
-                    )}
-                    
-                    <div className="mt-4 pt-4 border-t border-gray-600 text-xs text-gray-400">
-                      Registered {new Date(project.created_at).toLocaleDateString()}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : activeTab === 'signers' ? (
-          /* Signers Table */
-          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-foreground">Active Signers</h3>
-            </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Code Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Network
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Lists Joined
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Start Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Reputation
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center">
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
-                        <span className="text-gray-400">Loading signers...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center">
-                      <span className="text-red-400">{error}</span>
-                    </td>
-                  </tr>
-                ) : signers.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center">
-                      <span className="text-gray-400">No signers found</span>
-                    </td>
-                  </tr>
-                ) : (
-                  signers.map((signer) => (
-                    <tr key={signer.id} className="hover:bg-gray-700 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link href={`/signer/${signer.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                          {signer.codeName}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {signer.accountType === 'ethereum' ? (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 2L3 10l7 4 7-4-7-8z"/>
-                              <path d="M10 16l-7-4 7 6 7-6-7 4z"/>
-                            </svg>
-                            Ethereum
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                            </svg>
-                            Hedera
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyling(signer.status)}`}>
-                          {signer.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {signer.totalLists}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {new Date(signer.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-400 italic">Not yet determined</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        ) : (
-          /* Multi-Sig Lists Section */
-          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-foreground">Certified Multi-Sig Lists</h3>
-            </div>
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
-                <span className="text-gray-400">Loading multi-sig lists...</span>
-              </div>
-            ) : error ? (
-              <div className="text-center py-16">
-                <span className="text-red-400">{error}</span>
-              </div>
-            ) : thresholdLists.length === 0 ? (
-              <div className="text-center py-16">
-                <span className="text-gray-400">No multi-sig lists found</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                {thresholdLists.map((list) => (
-                  <div key={list.id} className="bg-gray-700 rounded-lg p-6 border border-gray-600">
-                    <div className="flex items-center justify-between mb-4">
-                      <Link href={`/list/${list.id}`} className="text-lg font-semibold text-foreground hover:text-primary transition-colors">
-                        {list.name}
-                      </Link>
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-primary/20 text-primary">
-                        ✓ Certified
-                      </span>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Threshold:</span>
-                        <span className="text-foreground">{list.threshold} of {list.totalMembers}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Active Members:</span>
-                        <span className="text-foreground">{list.activeMembers}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Reliability:</span>
-                        <span className="text-foreground">{list.reliability}%</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-gray-600">
-                      <div className="text-xs text-gray-400 mb-2">Members:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {list.members.slice(0, 3).map((member, idx) => (
-                          <span key={idx} className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
-                            {member.codeName}
-                          </span>
-                        ))}
-                        {list.members.length > 3 && (
-                          <span className="inline-block px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded">
-                            +{list.members.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center mt-16"> 
+      <h1 className="text-4xl font-bold mb-12">Decentralize Early. Build Trust. Move Fast.</h1>
+      <h3 className="font-bold mb-8">KeyRing empowers Web3 companies to establish transparent governance from day one—without slowing down development or breaking the bank.</h3>
       </div>
-    </div>
-  );
-}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="relative w-full">
+          <Image
+            src="/keyring-hero.png"
+            alt="KeyRing Protocol"
+            width={1920}
+            height={1080}
+            priority
+            className="w-full h-auto"
+          />
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Left Panel */}
+          <div className="mt-60 pr-16">
+            <h2 className="font-bold mb-6">Why Trust is the Real Problem</h2>
+            <h3 className="mt-4">Despite billions invested, the Web3 ecosystem continues to suffer from trust deficits that hold back adoption and innovation.</h3>
+            <h3 className="mt-4">Many security standards, such as SSL certificates, were needed to move web1.0 into web2.0. We still lack adequate trust layers to fully transition from web2.0 into web3.0.</h3>
+            <h3 className="mt-4">The result? $3.5 billion lost in rug pulls in 2024 alone.</h3>
+          </div>
+          
+          {/* Right Panel - Highlight Cards */}
+          <div className="space-y-6">
+            {/* Card 1 */}
+            <div 
+              className="rounded-lg p-[3px]"
+              style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
+            >
+              <div className="bg-background rounded-lg p-6">
+                <div className="flex gap-6 items-center">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/icons/reward.png"
+                      alt="Award"
+                      width={64}
+                      height={64}
+                      className="w-16 h-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-4">No Standards or Verifications</h3>
+                    <p>Without a standardized way to verify legitimacy, users are forced to trust every new project, token, or coin at face value. Many of these projects feature anonymous teams that could be hiding bad actors.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div 
+              className="rounded-lg p-[3px]"
+              style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
+            >
+              <div className="bg-background rounded-lg p-6">
+                <div className="flex gap-6 items-center">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/icons/tokens.png"
+                      alt="Tokens"
+                      width={64}
+                      height={64}
+                      className="w-16 h-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-4">Centralized Admin Enables Scammers</h3>
+                    <p className="mb-4">Single operators of contracts create a point of centralization that allow for the vast majority of rug pulls, scams, and fraud in web3.</p>
+                    <p>Even well intentioned-projects deviate from roadmaps and promises without accountability, leaving communities feeling betrayed.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div 
+              className="rounded-lg p-[3px]"
+              style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
+            >
+              <div className="bg-background rounded-lg p-6">
+                <div className="flex gap-6 items-center">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/icons/no-users.png"
+                      alt="No Users"
+                      width={64}
+                      height={64}
+                      className="w-16 h-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-4">Current Solutions Still Fall Short</h3>
+                    <p className="mb-4">Options like multi-sigs and DAOs are a step forward, but don't provide enough transparency into signers or provide ways to hold members, many anonymous, accountable.</p>
+                    <p>These options also slow down decision making and are expensive to set up, particularly for early stage companies that need them most.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
+        <h1 className="text-center mb-8">How KeyRing Changes Everything</h1>
+        <h3 className="text-center mb-24">KeyRing combines transparent oversight, reputation systems, and economic incentives to allow early teams to create real accountability—without sacrificing speed or breaking the bank.</h3>
+        
+        {/* Three Cards in a Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1 */}
+          <div 
+            className="rounded-lg p-[3px]"
+            style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
+          >
+            <div className="bg-background rounded-lg p-6 h-full">
+              <div className="flex flex-col">
+                <Image
+                  src="/icons/blue-badge.png"
+                  alt="Badge"
+                  width={64}
+                  height={64}
+                  className="w-16 h-auto object-contain mb-4"
+                />
+                <h2 className="mb-4">Platform for Trust</h2>
+                <p>Projects augment their smart contracts with KeyRing to set up a verified list or multi-signature structure on-chain. Anyone can verify this at any time, thereby shifting the need to trust in someone's word to trust in someone's code. </p>
+                <p className="mt-4">This standard and transparent approach allows projects to prove their commitment to users and build trust from day one.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div 
+            className="rounded-lg p-[3px]"
+            style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
+          >
+            <div className="bg-background rounded-lg p-6 h-full">
+              <div className="flex flex-col">
+                <Image
+                  src="/icons/blue-reliable.png"
+                  alt="Reliable"
+                  width={64}
+                  height={64}
+                  className="w-16 h-auto object-contain mb-4"
+                />
+                <h2 className="mb-4">Verifiable Accountability</h2>
+                <p>Every signer is  identity-verified through KeyRing first but can stay anonymous within the platform. Signers can be given incentives to speed up review, and all their actions are tracked on-chain in their reputation history. </p>
+                <p className="mt-4">This structure provides public accountability and reputation verification for all actions between signers and projects on the platform.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div 
+            className="rounded-lg p-[3px]"
+            style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
+          >
+            <div className="bg-background rounded-lg p-6 h-full">
+              <div className="flex flex-col">
+                <Image
+                  src="/icons/blue-graph.png"
+                  alt="Graph"
+                  width={64}
+                  height={64}
+                  className="w-16 h-auto object-contain mb-4"
+                />
+                <h2 className="mb-4">For Early Projects</h2>
+                <p>Instead of slowly earning trust in the community and prove their track record, or setting up an expensive and sometimes cumbersome DAO, young teams and projects can now focus on building. </p>
+                <p className="mt-4">As trust becomes built-in, users, investors, and businesses feel safe to participate, unlocking Web3's full potential.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
+         <h1 className="text-center mb-8">How KeyRing Works</h1>
+         
+         {/* Two Side-by-Side Boxes */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           {/* Orange Box - Projects */}
+           <div 
+             className="rounded-lg p-[3px]"
+             style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
+           >
+             <div className="bg-background rounded-lg p-6 h-full">
+               <div className="flex gap-6 items-center mb-6">
+                 <Image
+                   src="/icons/maintain.png"
+                   alt="Maintain"
+                   width={64}
+                   height={64}
+                   className="w-16 h-auto object-contain"
+                 />
+                 <h2>Projects Maintain Threshold Lists</h2>
+               </div>
+               
+               {/* Bullet Points */}
+               <ul className="space-y-4">
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/orange-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Bullet point text here</span>
+                 </li>
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/orange-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Bullet point text here</span>
+                 </li>
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/orange-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Bullet point text here</span>
+                 </li>
+               </ul>
+             </div>
+           </div>
+
+           {/* Blue Box - Signers */}
+           <div 
+             className="rounded-lg p-[3px]"
+             style={{ background: 'linear-gradient(to right, #408FC7, #8CCBBA)' }}
+           >
+             <div className="bg-background rounded-lg p-6 h-full">
+               <div className="flex gap-6 items-center mb-6">
+                 <Image
+                   src="/icons/people.png"
+                   alt="People"
+                   width={64}
+                   height={64}
+                   className="w-16 h-auto object-contain"
+                 />
+                 <h2>Signers Oversee and Earn Rewards</h2>
+               </div>
+               
+               {/* Bullet Points */}
+               <ul className="space-y-4">
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/blue-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Bullet point text here</span>
+                 </li>
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/blue-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Bullet point text here</span>
+                 </li>
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/blue-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Bullet point text here</span>
+                 </li>
+               </ul>
+             </div>
+           </div>
+         </div>
+       </div>
+      </div>
+    );
+  }

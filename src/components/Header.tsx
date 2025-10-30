@@ -31,65 +31,47 @@ export default function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" onClick={closeMobileMenu}>
+            <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-3">
               <Image
-                src="/logo.png"
+                src="/key_ring_logo_lock_v1.svg"
                 alt="KeyRing Protocol"
-                width={160}
-                height={53}
-                className="h-14 w-auto cursor-pointer"
+                width={40}
+                height={40}
+                className="h-10 w-10 cursor-pointer"
               />
+              <span className="text-xl text-white">KEYRING</span>
             </Link>
           </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center flex-1 justify-center">
             <nav className="flex space-x-8">
               <Link 
-                href="/" 
-                className={`transition-colors ${
-                  isActive('/') && pathname === '/'
-                    ? 'text-primary hover:text-primary-dark' 
-                    : 'text-foreground hover:text-primary'
-                }`}
-              >
-                Registry
-              </Link>
-              <Link 
                 href="/signers" 
-                className={`transition-colors ${
+                className={`text-xl transition-colors ${
                   isActive('/signers')
-                    ? 'text-primary hover:text-primary-dark' 
-                    : 'text-foreground hover:text-primary'
+                    ? 'text-teal hover:text-teal' 
+                    : 'text-foreground hover:text-teal'
                 }`}
               >
-                Become a Signer
+                For Signers
               </Link>
               <Link 
                 href="/register" 
-                className={`transition-colors ${
+                className={`text-xl transition-colors ${
                   isActive('/register')
-                    ? 'text-primary hover:text-primary-dark' 
-                    : 'text-foreground hover:text-primary'
+                    ? 'text-teal hover:text-teal' 
+                    : 'text-foreground hover:text-teal'
                 }`}
               >
-                Register List
-              </Link>
-              <Link 
-                href="/signer-dashboard" 
-                className={`transition-colors ${
-                  isActive('/signer-dashboard')
-                    ? 'text-primary hover:text-primary-dark' 
-                    : 'text-foreground hover:text-primary'
-                }`}
-              >
-                Signer Dashboard
+                For Projects
               </Link>
             </nav>
+          </div>
             
-            <div className="border-l border-gray-700 pl-8">
-              <WalletButton />
-            </div>
+          {/* Wallet Button */}
+          <div className="hidden md:block">
+            <WalletButton />
           </div>
 
           {/* Mobile menu button */}
@@ -130,48 +112,26 @@ export default function Header() {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-card rounded-lg mt-2 border border-border-dark">
               <Link
-                href="/"
-                onClick={closeMobileMenu}
-                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                  isActive('/') && pathname === '/'
-                    ? 'text-primary bg-primary/10' 
-                    : 'text-foreground hover:text-primary hover:bg-primary/5'
-                }`}
-              >
-                Registry
-              </Link>
-              <Link
                 href="/signers"
                 onClick={closeMobileMenu}
                 className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                   isActive('/signers')
-                    ? 'text-primary bg-primary/10' 
-                    : 'text-foreground hover:text-primary hover:bg-primary/5'
+                    ? 'text-teal bg-teal/10' 
+                    : 'text-foreground hover:text-teal hover:bg-teal/5'
                 }`}
               >
-                Become a Signer
+                For Signers
               </Link>
               <Link
                 href="/register"
                 onClick={closeMobileMenu}
                 className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                   isActive('/register')
-                    ? 'text-primary bg-primary/10' 
-                    : 'text-foreground hover:text-primary hover:bg-primary/5'
+                    ? 'text-teal bg-teal/10' 
+                    : 'text-foreground hover:text-teal hover:bg-teal/5'
                 }`}
               >
-                Register List
-              </Link>
-              <Link
-                href="/signer-dashboard"
-                onClick={closeMobileMenu}
-                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                  isActive('/signer-dashboard')
-                    ? 'text-primary bg-primary/10' 
-                    : 'text-foreground hover:text-primary hover:bg-primary/5'
-                }`}
-              >
-                Signer Dashboard
+                For Projects
               </Link>
               
               {/* Mobile Wallet Button */}
