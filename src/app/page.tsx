@@ -30,8 +30,8 @@ export default function HomePage() {
             <h3 className="mt-4">Despite billions invested, the Web3 ecosystem continues to suffer from trust deficits that hold back adoption and innovation.</h3>
             <h3 className="mt-4">Many security standards, such as SSL certificates, were needed to move web1.0 into web2.0. We still lack adequate trust layers to fully transition from web2.0 into web3.0.</h3>
             <h3 className="mt-4">The result? $3.5 billion lost in rug pulls in 2024 alone.</h3>
-          </div>
-          
+        </div>
+
           {/* Right Panel - Highlight Cards */}
           <div className="space-y-6">
             {/* Card 1 */}
@@ -53,10 +53,10 @@ export default function HomePage() {
                   <div className="flex-1">
                     <h3 className="font-bold mb-4">No Standards or Verifications</h3>
                     <p>Without a standardized way to verify legitimacy, users are forced to trust every new project, token, or coin at face value. Many of these projects feature anonymous teams that could be hiding bad actors.</p>
-                  </div>
-                </div>
+          </div>
+        </div>
               </div>
-            </div>
+              </div>
 
             {/* Card 2 */}
             <div 
@@ -73,15 +73,15 @@ export default function HomePage() {
                       height={64}
                       className="w-16 h-auto object-contain"
                     />
-                  </div>
-                  <div className="flex-1">
+              </div>
+                      <div className="flex-1">
                     <h3 className="font-bold mb-4">Centralized Admin Enables Scammers</h3>
                     <p className="mb-4">Single operators of contracts create a point of centralization that allow for the vast majority of rug pulls, scams, and fraud in web3.</p>
                     <p>Even well intentioned-projects deviate from roadmaps and promises without accountability, leaving communities feeling betrayed.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+                      </div>
+                    </div>
+                          </div>
+                        </div>
 
             {/* Card 3 */}
             <div 
@@ -98,18 +98,18 @@ export default function HomePage() {
                       height={64}
                       className="w-16 h-auto object-contain"
                     />
-                  </div>
+                        </div>
                   <div className="flex-1">
                     <h3 className="font-bold mb-4">Current Solutions Still Fall Short</h3>
                     <p className="mb-4">Options like multi-sigs and DAOs are a step forward, but don't provide enough transparency into signers or provide ways to hold members, many anonymous, accountable.</p>
                     <p>These options also slow down decision making and are expensive to set up, particularly for early stage companies that need them most.</p>
-                  </div>
-                </div>
+                    </div>
+                    </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+            </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         <h1 className="text-center mb-8">How KeyRing Changes Everything</h1>
         <h3 className="text-center mb-24">KeyRing combines transparent oversight, reputation systems, and economic incentives to allow early teams to create real accountability—without sacrificing speed or breaking the bank.</h3>
@@ -178,16 +178,16 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+                    </div>
+                      </div>
        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
-         <h1 className="text-center mb-8">How KeyRing Works</h1>
+         <h1 className="text-center mb-16">How KeyRing Works</h1>
          
-         {/* Two Side-by-Side Boxes */}
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+         {/* Two Side-by-Side Boxes with Arrows */}
+         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
            {/* Orange Box - Projects */}
            <div 
-             className="rounded-lg p-[3px]"
+             className="rounded-lg p-[3px] flex flex-col"
              style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
            >
              <div className="bg-background rounded-lg p-6 h-full">
@@ -200,10 +200,10 @@ export default function HomePage() {
                    className="w-16 h-auto object-contain"
                  />
                  <h2>Projects Maintain Threshold Lists</h2>
-               </div>
+                      </div>
                
                {/* Bullet Points */}
-               <ul className="space-y-4">
+               <ul className="space-y-4 ml-8">
                  <li className="flex gap-3 items-start">
                    <Image
                      src="/icons/orange-bullet.png"
@@ -212,7 +212,7 @@ export default function HomePage() {
                      height={24}
                      className="w-6 h-6 flex-shrink-0 mt-1"
                    />
-                   <span>Bullet point text here</span>
+                   <span>Projects generate a list of signers on KeyRing to replace their centralized admin account and rewards these signers in KYRNG tokens for reviewing and approving project changes.</span>
                  </li>
                  <li className="flex gap-3 items-start">
                    <Image
@@ -222,7 +222,7 @@ export default function HomePage() {
                      height={24}
                      className="w-6 h-6 flex-shrink-0 mt-1"
                    />
-                   <span>Bullet point text here</span>
+                   <span>Projects get fast, decentralized approval of their changes and can demonstrate their accountability to their community.</span>
                  </li>
                  <li className="flex gap-3 items-start">
                    <Image
@@ -232,15 +232,36 @@ export default function HomePage() {
                      height={24}
                      className="w-6 h-6 flex-shrink-0 mt-1"
                    />
-                   <span>Bullet point text here</span>
+                   <span>Projects deposit KYRNG, KeyRing's incentive token, to deploy a threshold list, and select signers to replace their centralized admin account.</span>
+                 </li>
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/orange-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Each change a project wants to make needs to be approved by signers and paid for in KYRNG.</span>
                  </li>
                </ul>
-             </div>
+                      </div>
+                    </div>
+
+           {/* Arrows - Hidden on mobile */}
+           <div className="hidden md:flex items-center justify-center self-center">
+             <Image
+               src="/icons/howitworks-arrows.png"
+               alt="Arrows"
+               width={40}
+               height={40}
+               className="w-10 h-auto object-contain"
+             />
            </div>
 
            {/* Blue Box - Signers */}
            <div 
-             className="rounded-lg p-[3px]"
+             className="rounded-lg p-[3px] flex flex-col"
              style={{ background: 'linear-gradient(to right, #408FC7, #8CCBBA)' }}
            >
              <div className="bg-background rounded-lg p-6 h-full">
@@ -256,7 +277,7 @@ export default function HomePage() {
                </div>
                
                {/* Bullet Points */}
-               <ul className="space-y-4">
+               <ul className="space-y-4 ml-8">
                  <li className="flex gap-3 items-start">
                    <Image
                      src="/icons/blue-bullet.png"
@@ -265,7 +286,7 @@ export default function HomePage() {
                      height={24}
                      className="w-6 h-6 flex-shrink-0 mt-1"
                    />
-                   <span>Bullet point text here</span>
+                   <span>Verified signers review transactions, enforce rules, and maintain accountability for projects that add them to a threshold list.</span>
                  </li>
                  <li className="flex gap-3 items-start">
                    <Image
@@ -275,7 +296,7 @@ export default function HomePage() {
                      height={24}
                      className="w-6 h-6 flex-shrink-0 mt-1"
                    />
-                   <span>Bullet point text here</span>
+                   <span>Signers independently approve or reject a proposal by a project based on on-chain and contract analysis.</span>
                  </li>
                  <li className="flex gap-3 items-start">
                    <Image
@@ -285,13 +306,23 @@ export default function HomePage() {
                      height={24}
                      className="w-6 h-6 flex-shrink-0 mt-1"
                    />
-                   <span>Bullet point text here</span>
+                   <span>Signers are rewarded with KYRNG that projects deposited for each verified activity, creating a transparent, community-owned ecosystem.</span>
+                 </li>
+                 <li className="flex gap-3 items-start">
+                   <Image
+                     src="/icons/blue-bullet.png"
+                     alt="Bullet"
+                     width={24}
+                     height={24}
+                     className="w-6 h-6 flex-shrink-0 mt-1"
+                   />
+                   <span>Every good decision increases a signer's on-chain reputation score, leading to more opportunities and higher rewards.</span>
                  </li>
                </ul>
-             </div>
-           </div>
-         </div>
-       </div>
+                      </div>
+                    </div>
+                  </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
