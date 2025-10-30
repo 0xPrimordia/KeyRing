@@ -912,7 +912,18 @@ export default function SignerDashboard() {
                             </span>
                           )}
                         </div>
-                        <p className="text-muted-foreground font-mono">{thresholdListId}</p>
+                        <p className="text-muted-foreground">
+                          <span className="font-semibold">Account ID:</span>{' '}
+                          <a 
+                            href={`https://hashscan.io/testnet/account/${thresholdListId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono hover:text-teal transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {thresholdListId}
+                          </a>
+                        </p>
                         {listInfo && (
                           <p className="text-muted-foreground mt-1">{listInfo.memo}</p>
                         )}
@@ -972,7 +983,18 @@ export default function SignerDashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-muted-foreground font-mono">{schedule.schedule_id}</p>
+                                <p className="text-muted-foreground">
+                                  <span className="font-semibold">Schedule ID:</span>{' '}
+                                  <a 
+                                    href={`https://hashscan.io/testnet/schedule/${schedule.schedule_id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono hover:text-teal transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {schedule.schedule_id}
+                                  </a>
+                                </p>
                               </div>
                               <svg className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
