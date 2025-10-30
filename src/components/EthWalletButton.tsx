@@ -37,7 +37,7 @@ export default function EthWalletButton() {
         </a>
         <button
           onClick={() => disconnect()}
-          className="text-2xl text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
+          className="text-base text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
           style={{ paddingTop: '0.875rem' }}
         >
           Disconnect
@@ -77,7 +77,8 @@ export default function EthWalletButton() {
                 return (
                   <button
                     onClick={openConnectModal}
-                    className="bg-primary text-background px-4 py-2 rounded-lg font-semibold text-sm hover:bg-primary-dark transition-colors"
+                    className="text-base text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
+                    style={{ paddingTop: '0.875rem' }}
                   >
                     Connect Ethereum
                   </button>

@@ -39,7 +39,7 @@ export default function Header() {
                 height={40}
                 className="h-10 w-10 cursor-pointer"
               />
-              <span className="text-2xl text-white">KEYRING</span>
+              <span className="text-xl text-white">KEYRING</span>
             </Link>
           </div>
           
@@ -48,7 +48,7 @@ export default function Header() {
             <nav className="flex space-x-8">
               <Link 
                 href="/signers" 
-                className={`text-2xl transition-colors ${
+                className={`text-xl transition-colors ${
                   isActive('/signers')
                     ? 'text-teal hover:text-teal' 
                     : 'text-foreground hover:text-teal'
@@ -58,7 +58,7 @@ export default function Header() {
               </Link>
               <Link 
                 href="/register" 
-                className={`text-2xl transition-colors ${
+                className={`text-xl transition-colors ${
                   isActive('/register')
                     ? 'text-teal hover:text-teal' 
                     : 'text-foreground hover:text-teal'

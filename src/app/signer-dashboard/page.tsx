@@ -655,7 +655,7 @@ export default function SignerDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-6">
         {/* Header */}
         <div className="mb-8 mt-12 flex items-center justify-between">
-          <h1 className="text-5xl font-bold">Signer Dashboard</h1>
+          <h1 className="font-bold">Signer Dashboard</h1>
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-3 bg-muted/30 hover:bg-muted/50 rounded-xl transition-colors"
@@ -698,7 +698,7 @@ export default function SignerDashboard() {
               
               {rewardBalance.pending > 0 ? (
                 <button
-                  className="text-black text-2xl px-6 py-3 rounded-lg hover:opacity-80 transition-opacity"
+                  className="text-black text-xl px-6 py-3 rounded-lg hover:opacity-80 transition-opacity"
                   style={{
                     background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
                     border: '3px solid #8CCBBA'
@@ -736,7 +736,7 @@ export default function SignerDashboard() {
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-5xl font-bold mt-4">Account Settings</h2>
+                      <h2 className="font-bold mt-4">Account Settings</h2>
                       <p className="text-sm text-muted-foreground font-mono">{accountId}</p>
                     </div>
                   </div>
@@ -802,7 +802,7 @@ export default function SignerDashboard() {
         {pendingSchedules.length > 0 && (
           <div className="flex items-center justify-between mb-6 mt-12">
             <div>
-              <h2 className="text-4xl font-bold">My Threshold Lists</h2>
+              <h2 className="font-bold">My Threshold Lists</h2>
               <p className="text-muted-foreground mt-1">
                 {pendingSchedules.length} pending transaction{pendingSchedules.length !== 1 ? 's' : ''} awaiting signature
               </p>
@@ -810,7 +810,7 @@ export default function SignerDashboard() {
             <button
               onClick={loadPendingSchedules}
               disabled={loading}
-              className="text-2xl text-teal hover:opacity-80 transition-opacity flex items-center gap-1.5 px-4 py-2 rounded-lg"
+              className="text-xl text-teal hover:opacity-80 transition-opacity flex items-center gap-1.5 px-4 py-2 rounded-lg"
             >
               <svg className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -889,7 +889,7 @@ export default function SignerDashboard() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-2xl font-bold">Threshold List</h3>
+                          <h3 className="text-xl font-bold">Threshold List</h3>
                           {listInfo && (
                             <span 
                               className="relative inline-block rounded-full p-[2px] ml-3"
@@ -932,7 +932,7 @@ export default function SignerDashboard() {
                     <div className="flex items-center gap-8">
                       <div className="text-center">
                         <h2 className="text-4xl font-bold text-teal">{schedules.length}</h2>
-                        <div className="text-2xl text-muted-foreground">Transactions</div>
+                        <div className="text-xl text-muted-foreground">Transactions</div>
                       </div>
                       <svg 
                         className={`w-6 h-6 text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`} 
@@ -962,7 +962,7 @@ export default function SignerDashboard() {
                             <div className="flex items-start justify-between gap-4 mb-3">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-2xl font-bold group-hover:text-primary transition-colors">
+                                  <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
                                     {schedule.memo || 'Scheduled Transaction'}
                                   </h3>
                                   {riskInfo && (

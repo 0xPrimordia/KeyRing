@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Epilogue } from "next/font/google";
+import { Epilogue, Krub } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "../providers/WalletProvider";
 import { RainbowKitProvider } from "../providers/RainbowKitProvider";
@@ -15,6 +15,13 @@ const epilogue = Epilogue({
   display: 'swap',
 });
 
+const krub = Krub({
+  variable: "--font-krub",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: "KeyRing Protocol",
   description: "Hedera Trust Layer for Threshold Keys",
@@ -26,9 +33,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={epilogue.variable}>
+    <html lang="en" className={`${epilogue.variable} ${krub.variable}`}>
       <body
-        className={`${epilogue.className} antialiased flex flex-col min-h-screen`}
+        className={`${krub.className} antialiased flex flex-col min-h-screen`}
       >
         <RainbowKitProvider>
           <WalletProvider>

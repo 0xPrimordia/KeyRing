@@ -23,9 +23,9 @@ export default function Footer() {
           
           <nav className="flex space-x-6">
             <Link 
-              href="/" 
+              href="/registry" 
               className={`text-sm transition-colors ${
-                isActive('/') && pathname === '/'
+                isActive('/registry')
                   ? 'text-primary hover:text-primary-dark' 
                   : 'text-gray-400 hover:text-primary'
               }`}

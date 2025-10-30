@@ -103,7 +103,7 @@ export default function WalletButton() {
         </a>
         <button
           onClick={handleDisconnect}
-          className="text-2xl text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
+          className="text-base text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
           style={{ paddingTop: '0.875rem' }}
         >
           Disconnect
@@ -117,7 +117,8 @@ export default function WalletButton() {
       <button
         onClick={() => setShowWalletOptions(!showWalletOptions)}
         disabled={isConnecting}
-        className="bg-primary text-background px-4 py-2 rounded-lg font-semibold text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="text-base text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ paddingTop: '0.875rem' }}
       >
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
