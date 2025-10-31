@@ -216,9 +216,9 @@ export default function ScheduleDetailsPage() {
       setThresholdListData(thresholdList);
       console.log('[REJECTIONS] Threshold list data:', thresholdList);
 
-      // Subscribe to rejection topic (only in browser)
-      if (thresholdList.hcs_topic_id && typeof window !== 'undefined') {
-        await subscribeToHCSTopic(thresholdList.hcs_topic_id);
+      // Fetch topic messages from Mirror Node API
+      if (thresholdList.hcs_topic_id) {
+        await fetchTopicMessages(thresholdList.hcs_topic_id);
       }
 
     } catch (err: any) {
@@ -228,56 +228,54 @@ export default function ScheduleDetailsPage() {
     }
   }
 
-  async function subscribeToHCSTopic(topicId: string) {
-    // Only run in browser
-    if (typeof window === 'undefined') {
-      console.log('[REJECTIONS] Skipping subscription in SSR');
-      return;
-    }
-
+  async function fetchTopicMessages(topicId: string) {
     try {
-      console.log('[REJECTIONS] Subscribing to rejection topic:', topicId);
+      console.log('[REJECTIONS] Fetching messages from topic:', topicId);
 
-      const client = Client.forTestnet();
-      
-      // Subscribe to rejection topic and filter messages related to this schedule
-      new TopicMessageQuery()
-        .setTopicId(topicId)
-        .setStartTime(0) // Get all historical rejections
-        .subscribe(client, null, (message) => {
-          const messageString = Buffer.from(message.contents).toString('utf8');
-          console.log('[REJECTIONS] Received message:', messageString);
+      // Fetch messages from Mirror Node REST API
+      const response = await fetch(
+        `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages?limit=100&order=desc`
+      );
 
-          // Parse message to check if it's related to this schedule
+      if (!response.ok) {
+        throw new Error(`Failed to fetch topic messages: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('[REJECTIONS] Topic messages response:', data);
+
+      if (data.messages && data.messages.length > 0) {
+        // Parse messages and filter for this schedule
+        const messages: HCSMessage[] = [];
+        
+        for (const msg of data.messages) {
           try {
-            const messageData = JSON.parse(messageString);
-            if (messageData.scheduleId === scheduleId || messageString.includes(scheduleId)) {
-              const hcsMessage: HCSMessage = {
-                consensusTimestamp: message.consensusTimestamp.toDate().toISOString(),
-                message: messageString,
-                sequenceNumber: message.sequenceNumber.toNumber(),
-                runningHash: Buffer.from(message.runningHash).toString('base64')
-              };
+            // Decode base64 message
+            const messageString = Buffer.from(msg.message, 'base64').toString('utf8');
+            console.log('[REJECTIONS] Decoded message:', messageString);
 
-              setHcsMessages(prev => [...prev, hcsMessage]);
+            // Check if message is related to this schedule
+            if (messageString.includes(scheduleId)) {
+              messages.push({
+                consensusTimestamp: msg.consensus_timestamp,
+                message: messageString,
+                sequenceNumber: msg.sequence_number,
+                runningHash: msg.running_hash
+              });
             }
           } catch (e) {
-            // If not JSON, check if schedule ID is in plain text
-            if (messageString.includes(scheduleId)) {
-              const hcsMessage: HCSMessage = {
-                consensusTimestamp: message.consensusTimestamp.toDate().toISOString(),
-                message: messageString,
-                sequenceNumber: message.sequenceNumber.toNumber(),
-                runningHash: Buffer.from(message.runningHash).toString('base64')
-              };
-
-              setHcsMessages(prev => [...prev, hcsMessage]);
-            }
+            console.error('[REJECTIONS] Error parsing message:', e);
           }
-        });
+        }
+
+        console.log('[REJECTIONS] Filtered messages for this schedule:', messages);
+        setHcsMessages(messages);
+      } else {
+        console.log('[REJECTIONS] No messages found on topic');
+      }
 
     } catch (err: any) {
-      console.error('[REJECTIONS] Error subscribing to topic:', err);
+      console.error('[REJECTIONS] Error fetching topic messages:', err);
     }
   }
 
@@ -340,10 +338,12 @@ export default function ScheduleDetailsPage() {
       setShowRejectForm(false);
       setRejectionFeedback('');
       
-      // Reload messages to show the new rejection
+      // Reload messages to show the new rejection (wait for mirror node to process)
       setTimeout(() => {
-        loadHCSMessages(schedule!.payer_account_id);
-      }, 2000);
+        if (thresholdListData?.hcs_topic_id) {
+          fetchTopicMessages(thresholdListData.hcs_topic_id);
+        }
+      }, 3000);
 
     } catch (err: any) {
       console.error('[REJECTIONS] Error submitting rejection:', err);
