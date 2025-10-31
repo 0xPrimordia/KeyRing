@@ -186,7 +186,7 @@ export default function SignersPage() {
 
         {/* How to Get Started */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground text-center mb-12">How to Get Started</h2>
+          <h2 className="text-3xl font-bold text-foreground text-center mb-24 mt-24">How to Get Started</h2>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-stretch">
             <div className="text-center">
               <DynamicGradientCard gradientFrom="#8CCBBA" gradientTo="#408FC7" className="mb-4 relative h-full">
@@ -274,6 +274,32 @@ export default function SignersPage() {
               </DynamicGradientCard>
             </div>
           </div>
+        </div>
+
+        {/* Bottom CTA Button */}
+        <div className="mt-16 text-center">
+          <button
+            onClick={handleStartVerification}
+            disabled={isVerified || isCheckingVerification}
+            className="inline-block text-black text-xl px-8 py-3 rounded-lg hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
+              border: '3px solid #8CCBBA'
+            }}
+          >
+            {isCheckingVerification ? (
+              'Checking...'
+            ) : isVerified ? (
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                You are verified
+              </span>
+            ) : (
+              'Become A Signer'
+            )}
+          </button>
         </div>
 
       </div>
