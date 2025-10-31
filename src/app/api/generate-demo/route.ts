@@ -23,9 +23,11 @@ const supabaseServiceKey = process.env.SUPABASE_SECRET!;
  * 3. Generate educational boost transactions for the threshold list
  */
 export async function POST(request: NextRequest) {
+  let connectedAccountId: string | undefined;
+
   try {
     const body = await request.json();
-    const { connectedAccountId } = body;
+    connectedAccountId = body.connectedAccountId;
 
     if (!connectedAccountId) {
       return NextResponse.json(
@@ -106,8 +108,10 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ Error generating demo:', error);
     
-    // Store error in progress
-    setError(connectedAccountId, error.message || 'Unknown error occurred');
+    // Store error in progress if we have the account ID
+    if (connectedAccountId) {
+      setError(connectedAccountId, error.message || 'Unknown error occurred');
+    }
     
     return NextResponse.json(
       { 
