@@ -1,6 +1,7 @@
 import Header from '../components/Header';
 import Image from 'next/image';
 import Link from 'next/link';
+import DynamicGradientCard from '../components/DynamicGradientCard';
 
 export default function HomePage() {
   return (
@@ -51,7 +52,7 @@ export default function HomePage() {
             Become a Signer
           </Link>
         </div>
-      </div>
+          </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -66,10 +67,7 @@ export default function HomePage() {
           {/* Right Panel - Highlight Cards */}
           <div className="space-y-6">
             {/* Card 1 */}
-            <div 
-              className="rounded-lg p-[3px]"
-              style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
-            >
+            <DynamicGradientCard gradientFrom="#B63B2B" gradientTo="#E77C39">
               <div className="bg-background rounded-lg p-6">
                 <div className="flex gap-6 items-center">
                   <div className="flex-shrink-0">
@@ -87,13 +85,10 @@ export default function HomePage() {
           </div>
         </div>
               </div>
-              </div>
+            </DynamicGradientCard>
 
             {/* Card 2 */}
-            <div 
-              className="rounded-lg p-[3px]"
-              style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
-            >
+            <DynamicGradientCard gradientFrom="#B63B2B" gradientTo="#E77C39">
               <div className="bg-background rounded-lg p-6">
                 <div className="flex gap-6 items-center">
                   <div className="flex-shrink-0">
@@ -112,13 +107,10 @@ export default function HomePage() {
                       </div>
                     </div>
                           </div>
-                        </div>
+            </DynamicGradientCard>
 
             {/* Card 3 */}
-            <div 
-              className="rounded-lg p-[3px]"
-              style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
-            >
+            <DynamicGradientCard gradientFrom="#B63B2B" gradientTo="#E77C39">
               <div className="bg-background rounded-lg p-6">
                 <div className="flex gap-6 items-center">
                   <div className="flex-shrink-0">
@@ -137,7 +129,7 @@ export default function HomePage() {
                     </div>
                     </div>
               </div>
-            </div>
+            </DynamicGradientCard>
           </div>
         </div>
             </div>
@@ -148,10 +140,7 @@ export default function HomePage() {
         {/* Three Cards in a Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <div 
-            className="rounded-lg p-[3px]"
-            style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
-          >
+          <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
             <div className="bg-background rounded-lg p-6 h-full">
               <div className="flex flex-col">
                 <Image
@@ -166,13 +155,10 @@ export default function HomePage() {
                 <p className="mt-4">This standard and transparent approach allows projects to prove their commitment to users and build trust from day one.</p>
               </div>
             </div>
-          </div>
+          </DynamicGradientCard>
 
           {/* Card 2 */}
-          <div 
-            className="rounded-lg p-[3px]"
-            style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
-          >
+          <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
             <div className="bg-background rounded-lg p-6 h-full">
               <div className="flex flex-col">
                 <Image
@@ -187,13 +173,10 @@ export default function HomePage() {
                 <p className="mt-4">This structure provides public accountability and reputation verification for all actions between signers and projects on the platform.</p>
               </div>
             </div>
-          </div>
+          </DynamicGradientCard>
 
           {/* Card 3 */}
-          <div 
-            className="rounded-lg p-[3px]"
-            style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
-          >
+          <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
             <div className="bg-background rounded-lg p-6 h-full">
               <div className="flex flex-col">
                 <Image
@@ -208,7 +191,7 @@ export default function HomePage() {
                 <p className="mt-4">As trust becomes built-in, users, investors, and businesses feel safe to participate, unlocking Web3's full potential.</p>
               </div>
             </div>
-          </div>
+          </DynamicGradientCard>
                     </div>
                       </div>
        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
@@ -217,10 +200,7 @@ export default function HomePage() {
          {/* Two Side-by-Side Boxes with Arrows */}
          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
            {/* Orange Box - Projects */}
-           <div 
-             className="rounded-lg p-[3px] flex flex-col"
-             style={{ background: 'linear-gradient(to right, #B63B2B, #E77C39)' }}
-           >
+           <DynamicGradientCard gradientFrom="#B63B2B" gradientTo="#E77C39" className="flex flex-col">
              <div className="bg-background rounded-lg p-6 h-full">
                <div className="flex gap-6 items-center mb-6">
                  <Image
@@ -277,7 +257,7 @@ export default function HomePage() {
                  </li>
                </ul>
                       </div>
-                    </div>
+           </DynamicGradientCard>
 
            {/* Arrows - Hidden on mobile */}
            <div className="hidden md:flex items-center justify-center self-center">
@@ -291,10 +271,7 @@ export default function HomePage() {
            </div>
 
            {/* Blue Box - Signers */}
-           <div 
-             className="rounded-lg p-[3px] flex flex-col"
-             style={{ background: 'linear-gradient(to right, #408FC7, #8CCBBA)' }}
-           >
+           <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA" className="flex flex-col">
              <div className="bg-background rounded-lg p-6 h-full">
                <div className="flex gap-6 items-center mb-6">
                  <Image
@@ -351,7 +328,7 @@ export default function HomePage() {
                  </li>
                </ul>
                       </div>
-                    </div>
+           </DynamicGradientCard>
                   </div>
       </div>
     </div>

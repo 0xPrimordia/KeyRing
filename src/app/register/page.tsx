@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Image from 'next/image';
 import Link from 'next/link';
+import DynamicGradientCard from '@/components/DynamicGradientCard';
 
 // const pricingTiers = [
 //   {
@@ -129,7 +130,8 @@ export default function RegisterListPage() {
             <p className="text-lg text-gray-400">Ready to build trust with KeyRing Protocol? Reach out to us directly.</p>
           </div>
 
-          <div className="bg-gray-800 rounded-2xl p-12 border border-gray-700 text-center">
+          <DynamicGradientCard gradientFrom="#1f2937" gradientTo="#374151" className="rounded-2xl">
+            <div className="bg-gray-800 rounded-2xl p-12 text-center">
             <div className="mb-8">
               <h3 className="text-2xl font-semibold text-foreground mb-4">Contact Us</h3>
               <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
@@ -169,7 +171,8 @@ export default function RegisterListPage() {
                 We typically respond within 24 hours and can schedule a demo to show you how KeyRing Protocol works.
               </p>
             </div>
-          </div>
+            </div>
+          </DynamicGradientCard>
         </div>
 
         {/* How It Works */}

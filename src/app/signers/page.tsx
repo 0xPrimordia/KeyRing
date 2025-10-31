@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import VerificationModal from '../../components/VerificationModal';
 import Header from '@/components/Header';
 import Image from 'next/image';
+import DynamicGradientCard from '@/components/DynamicGradientCard';
 
 
 export default function SignersPage() {
@@ -135,10 +136,7 @@ export default function SignersPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Box 1 - Earn Rewards */}
-            <div 
-              className="rounded-lg p-[3px]"
-              style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
-            >
+            <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
               <div className="bg-background rounded-lg p-6 h-full">
                 <Image
                   src="/icons/blue-award.png"
@@ -150,13 +148,10 @@ export default function SignersPage() {
                 <h2 className="mb-4">Earn Rewards</h2>
                 <p>Monitor projects and allow them to move quickly by reviewing proposals and earning rewards for your expertise.</p>
               </div>
-            </div>
+            </DynamicGradientCard>
 
             {/* Box 2 - Realize the Web3 Vision */}
-            <div 
-              className="rounded-lg p-[3px]"
-              style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
-            >
+            <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
               <div className="bg-background rounded-lg p-6 h-full">
                 <Image
                   src="/icons/blue-brain.png"
@@ -169,13 +164,10 @@ export default function SignersPage() {
                 <p className="mb-4">Fight back against bad actors and rug pulls.</p>
                 <p>Help web3 finally thrive by being part of the trust solution.</p>
               </div>
-            </div>
+            </DynamicGradientCard>
 
             {/* Box 3 - Build On-chain Reputation */}
-            <div 
-              className="rounded-lg p-[3px]"
-              style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
-            >
+            <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
               <div className="bg-background rounded-lg p-6 h-full">
                 <Image
                   src="/icons/blue-ribbon.png"
@@ -187,64 +179,99 @@ export default function SignersPage() {
                 <h2 className="mb-4">Build On-chain Reputation</h2>
                 <p>Your KeyRing reputation will be based on your on-chain activity and can be portable across any web3 platform.</p>
               </div>
-            </div>
+            </DynamicGradientCard>
           </div>
         </div>
 
 
-        {/* How It Works */}
+        {/* How to Get Started */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground text-center mb-12">How It Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          <h2 className="text-3xl font-bold text-foreground text-center mb-12">How to Get Started</h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-stretch">
             <div className="text-center">
-              <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
-                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
-              >
-                1
-              </div>
-              <h4 className="font-semibold text-foreground mb-2">Apply & Verify</h4>
-              <p className="text-sm text-gray-400">Complete KYC through Entrust and create your signer profile</p>
+              <DynamicGradientCard gradientFrom="#8CCBBA" gradientTo="#408FC7" className="mb-4 relative h-full">
+                <div 
+                  className="rounded-lg p-6 pt-12 h-full flex flex-col"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,1))' }}
+                >
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-2xl absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+                  >
+                    1
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-2">Apply & Verify</h4>
+                  <p className="text-sm text-white font-krub">Complete KYC through Entrust and create your signer profile</p>
+                </div>
+              </DynamicGradientCard>
             </div>
             <div className="text-center">
-              <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
-                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
-              >
-                2
-              </div>
-              <h4 className="font-semibold text-foreground mb-2">Get Selected</h4>
-              <p className="text-sm text-gray-400">Projects randomly select you for their multi-sig lists and pay list bonus</p>
+              <DynamicGradientCard gradientFrom="#8CCBBA" gradientTo="#408FC7" className="mb-4 relative h-full">
+                <div 
+                  className="rounded-lg p-6 pt-12 h-full flex flex-col"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,1))' }}
+                >
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-2xl absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+                  >
+                    2
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-2">Get Selected</h4>
+                  <p className="text-sm text-white font-krub">Projects randomly select you for their multi-sig lists and pay list bonus</p>
+                </div>
+              </DynamicGradientCard>
             </div>
             <div className="text-center">
-              <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
-                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
-              >
-                3
-              </div>
-              <h4 className="font-semibold text-foreground mb-2">Review Transactions</h4>
-              <p className="text-sm text-gray-400">Get notified of admin actions and review with agent assistance</p>
+              <DynamicGradientCard gradientFrom="#8CCBBA" gradientTo="#408FC7" className="mb-4 relative h-full">
+                <div 
+                  className="rounded-lg p-6 pt-12 h-full flex flex-col"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,1))' }}
+                >
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-2xl absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+                  >
+                    3
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-2">Review Transactions</h4>
+                  <p className="text-sm text-white font-krub">Get notified of admin actions and review with agent assistance</p>
+                </div>
+              </DynamicGradientCard>
             </div>
             <div className="text-center">
-              <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
-                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
-              >
-                4
-              </div>
-              <h4 className="font-semibold text-foreground mb-2">Approve or Reject</h4>
-              <p className="text-sm text-gray-400">Make informed decisions and sign transactions in your wallet</p>
+              <DynamicGradientCard gradientFrom="#8CCBBA" gradientTo="#408FC7" className="mb-4 relative h-full">
+                <div 
+                  className="rounded-lg p-6 pt-12 h-full flex flex-col"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,1))' }}
+                >
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-2xl absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+                  >
+                    4
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-2">Approve or Reject</h4>
+                  <p className="text-sm text-white font-krub">Make informed decisions and sign transactions in your wallet</p>
+                </div>
+              </DynamicGradientCard>
             </div>
             <div className="text-center">
-              <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
-                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
-              >
-                5
-              </div>
-              <h4 className="font-semibold text-foreground mb-2">Qualify for Airdrops</h4>
-              <p className="text-sm text-gray-400">Verified signers qualify for KYRNG airdrops when the token releases</p>
+              <DynamicGradientCard gradientFrom="#8CCBBA" gradientTo="#408FC7" className="mb-4 relative h-full">
+                <div 
+                  className="rounded-lg p-6 pt-12 h-full flex flex-col"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,1))' }}
+                >
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-2xl absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+                  >
+                    5
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-2">Qualify for Airdrops</h4>
+                  <p className="text-sm text-white font-krub">Verified signers qualify for KYRNG airdrops when the token releases</p>
+                </div>
+              </DynamicGradientCard>
             </div>
           </div>
         </div>
