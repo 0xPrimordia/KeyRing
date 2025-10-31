@@ -13,6 +13,11 @@ The platform addresses a critical trust gap in the African blockchain ecosystem:
 **Live Mainnet Deployment**: [keyring.lynxify.xyz](https://keyring.lynxify.xyz/)  
 **Status**: ✅ Live on Hedera Mainnet | 🚧 Onboarding signers for first threshold lists
 
+### 📺 Demo & Presentation
+
+- **Video Demo**: [Watch on YouTube](https://www.youtube.com/watch?v=QBxSfG5lw54)
+- **Pitch Deck**: [View on Google Drive](https://drive.google.com/file/d/1Qvh__XQbXIOT5wmOvvt9DLaHPkAr4NUg/view?usp=sharing)
+
 ---
 
 ## Hedera Integration Summary
