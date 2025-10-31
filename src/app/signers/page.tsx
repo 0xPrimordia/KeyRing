@@ -128,87 +128,65 @@ export default function SignersPage() {
           </div>
         </div>
 
-        {/* Airdrop Qualification */}
+        {/* Why Become a Signer */}
         <div className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Airdrop Qualification</h2>
-            <p className="text-lg text-gray-400">Qualify for KYRNG airdrops by becoming a verified signer</p>
-          </div>
+          <h1 className="text-center mb-6">Why Become a Signer</h1>
+          <h3 className="text-center mb-12">Turn your expertise into income while building the web3 ecosystem you want to see</h3>
 
-          <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
-            {/* Onboarding Bonus Banner */}
-            <div className="bg-gradient-to-r from-primary/20 to-primary-dark/20 rounded-xl p-6 border-2 border-primary/50 mb-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mr-4">
-                    <svg className="w-6 h-6 text-background" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground mb-1">Airdrop Qualified</h3>
-                    <p className="text-gray-300 text-sm">Qualify for KYRNG airdrops by completing identity verification</p>
-                  </div>
-                </div>
-                <div className="ml-6">
-                  <button 
-                    onClick={handleStartVerification}
-                    disabled={isInitializing || isConnecting}
-                    className="bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    {isInitializing 
-                      ? 'Initializing...' 
-                      : isConnecting 
-                        ? 'Connecting...' 
-                        : isConnected 
-                          ? 'Continue Verification' 
-                          : 'Start Verification'
-                    }
-                  </button>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Box 1 - Earn Rewards */}
+            <div 
+              className="rounded-lg p-[3px]"
+              style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
+            >
+              <div className="bg-background rounded-lg p-6 h-full">
+                <Image
+                  src="/icons/blue-award.png"
+                  alt="Award"
+                  width={64}
+                  height={64}
+                  className="w-16 h-auto object-contain mb-4"
+                />
+                <h2 className="mb-4">Earn Rewards</h2>
+                <p>Monitor projects and allow them to move quickly by reviewing proposals and earning rewards for your expertise.</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">List Addition</h3>
-                <p className="text-gray-400 text-sm">Base rate bonus when selected for multi-sig lists</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">Transaction Reviews</h3>
-                <p className="text-gray-400 text-sm">Higher rate for reviewing admin transactions with AI agent assistance</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">Reputation Multiplier</h3>
-                <p className="text-gray-400 text-sm">Up to 2x bonus based on reliability and response time</p>
+
+            {/* Box 2 - Realize the Web3 Vision */}
+            <div 
+              className="rounded-lg p-[3px]"
+              style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
+            >
+              <div className="bg-background rounded-lg p-6 h-full">
+                <Image
+                  src="/icons/blue-brain.png"
+                  alt="Brain"
+                  width={64}
+                  height={64}
+                  className="w-16 h-auto object-contain mb-4"
+                />
+                <h2 className="mb-4">Realize the Web3 Vision</h2>
+                <p className="mb-4">Fight back against bad actors and rug pulls.</p>
+                <p>Help web3 finally thrive by being part of the trust solution.</p>
               </div>
             </div>
-            
-            <div className="border-t border-gray-700 pt-6">
-              <div className="flex items-center mb-3">
-                <svg className="w-6 h-6 text-primary mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h4 className="text-lg font-semibold text-foreground">Future Token Distribution</h4>
+
+            {/* Box 3 - Build On-chain Reputation */}
+            <div 
+              className="rounded-lg p-[3px]"
+              style={{ background: 'linear-gradient(to bottom, #408FC7, #8CCBBA)' }}
+            >
+              <div className="bg-background rounded-lg p-6 h-full">
+                <Image
+                  src="/icons/blue-ribbon.png"
+                  alt="Ribbon"
+                  width={64}
+                  height={64}
+                  className="w-16 h-auto object-contain mb-4"
+                />
+                <h2 className="mb-4">Build On-chain Reputation</h2>
+                <p>Your KeyRing reputation will be based on your on-chain activity and can be portable across any web3 platform.</p>
               </div>
-              <p className="text-gray-300 text-sm">
-                Verified signers will qualify for KYRNG airdrops when the token launches. 
-                Early participants may receive additional allocation based on their contribution to the network.
-              </p>
             </div>
           </div>
         </div>
@@ -219,35 +197,50 @@ export default function SignersPage() {
           <h2 className="text-3xl font-bold text-foreground text-center mb-12">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-background font-bold text-lg">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
+                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+              >
                 1
               </div>
               <h4 className="font-semibold text-foreground mb-2">Apply & Verify</h4>
               <p className="text-sm text-gray-400">Complete KYC through Entrust and create your signer profile</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-background font-bold text-lg">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
+                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+              >
                 2
               </div>
               <h4 className="font-semibold text-foreground mb-2">Get Selected</h4>
               <p className="text-sm text-gray-400">Projects randomly select you for their multi-sig lists and pay list bonus</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-background font-bold text-lg">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
+                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+              >
                 3
               </div>
               <h4 className="font-semibold text-foreground mb-2">Review Transactions</h4>
               <p className="text-sm text-gray-400">Get notified of admin actions and review with agent assistance</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-background font-bold text-lg">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
+                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+              >
                 4
               </div>
               <h4 className="font-semibold text-foreground mb-2">Approve or Reject</h4>
               <p className="text-sm text-gray-400">Make informed decisions and sign transactions in your wallet</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-background font-bold text-lg">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-black font-bold text-lg"
+                style={{ background: 'linear-gradient(to right, #8CCBBA, #408FC7)' }}
+              >
                 5
               </div>
               <h4 className="font-semibold text-foreground mb-2">Qualify for Airdrops</h4>
@@ -256,110 +249,6 @@ export default function SignersPage() {
           </div>
         </div>
 
-        {/* Reviewer Agent */}
-        <div className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Agentic Review Flow</h2>
-            <p className="text-lg text-gray-400">AI-powered assistance for every transaction review</p>
-          </div>
-
-          <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div>
-                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6">
-                  <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">Smart Transaction Analysis</h3>
-                <p className="text-gray-300 mb-6">
-                  Every admin transaction comes with comprehensive AI analysis including contract ABI diffs, 
-                  risk assessment, and clear recommendations to help you make informed decisions.
-                </p>
-                <ul className="space-y-3">
-                  <li className="flex items-center text-sm">
-                    <svg className="w-4 h-4 text-primary mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-300">Contract upgrade safety checks</span>
-                  </li>
-                  <li className="flex items-center text-sm">
-                    <svg className="w-4 h-4 text-primary mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-300">Permission surface analysis</span>
-                  </li>
-                  <li className="flex items-center text-sm">
-                    <svg className="w-4 h-4 text-primary mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-300">Red flag detection and alerts</span>
-                  </li>
-                  <li className="flex items-center text-sm">
-                    <svg className="w-4 h-4 text-primary mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-300">Human-readable transaction summaries</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
-                <div className="text-xs text-gray-400 mb-3">AGENT ANALYSIS EXAMPLE</div>
-                <div className="space-y-4">
-                  <div className="bg-gray-600 rounded-lg p-4">
-                    <div className="text-sm font-semibold text-foreground mb-2">Transaction: Update Token Supply Key</div>
-                    <div className="text-xs text-gray-300 mb-3">Changing supply key from current contract to new implementation</div>
-                    <div className="flex items-center text-xs">
-                      <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                      <span className="text-green-400">SAFE - Standard upgrade pattern detected</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 rounded-lg p-4">
-                    <div className="text-sm font-semibold text-foreground mb-2">Risk Assessment</div>
-                    <div className="text-xs text-gray-300 mb-2">• New contract maintains same permissions</div>
-                    <div className="text-xs text-gray-300 mb-2">• No suspicious external calls detected</div>
-                    <div className="text-xs text-gray-300">• Upgrade follows established patterns</div>
-                  </div>
-                  <div className="text-xs text-primary font-semibold">
-                    ✓ Recommendation: APPROVE
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        {/* CTA Section */}
-        <div className="text-center bg-gradient-to-r from-primary/20 to-primary-dark/20 rounded-2xl p-12 border border-primary/30">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Ready to Qualify for Airdrops?</h2>
-          <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join KeyRing&apos;s network of verified signers and help secure the future of decentralized governance 
-            while qualifying for KYRNG airdrops when the token releases.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              onClick={handleStartVerification}
-              disabled={isInitializing || isConnecting}
-              className="bg-primary text-background px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {isInitializing 
-                ? 'Initializing...' 
-                : isConnecting 
-                  ? 'Connecting...' 
-                  : isConnected 
-                    ? 'Continue Verification' 
-                    : 'Start Verification'
-              }
-            </button>
-            <button className="border border-primary text-primary px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary/10 transition-colors">
-              Learn More
-            </button>
-          </div>
-          <div className="mt-6 text-sm text-gray-400">
-            Verification typically takes 24-48 hours • No upfront costs
-          </div>
-        </div>
       </div>
 
       {/* Verification Modal */}
