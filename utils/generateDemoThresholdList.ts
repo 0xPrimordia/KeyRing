@@ -61,8 +61,8 @@ export async function generateDemoThresholdList(connectedAccountId: string): Pro
     
     console.log(`✓ Retrieved connected account public key`);
     
-    // Combine connected account key with existing keys
-    const allKeyStrings = [connectedPublicKey, ...EXISTING_PUBLIC_KEYS];
+    // Combine connected account key with only the first 2 existing keys for 2-of-3 threshold
+    const allKeyStrings = [connectedPublicKey, ...EXISTING_PUBLIC_KEYS.slice(0, 2)];
     
     // Convert all keys to PublicKey objects
     const publicKeys: PublicKey[] = allKeyStrings.map((keyString, index) => {
@@ -90,10 +90,10 @@ export async function generateDemoThresholdList(connectedAccountId: string): Pro
       }
     });
     
-    // Create a threshold KeyList - 2 of 4 keys required to sign
+    // Create a threshold KeyList - 2 of 3 keys required to sign
     const keyList = new KeyList(publicKeys, 2);
     
-    console.log(`✓ Created KeyList with ${publicKeys.length} keys (2-of-4 threshold)`);
+    console.log(`✓ Created KeyList with ${publicKeys.length} keys (2-of-3 threshold)`);
     
     // Create an account with this KeyList as admin key
     console.log(`\n📝 Creating threshold list account...`);
@@ -101,7 +101,7 @@ export async function generateDemoThresholdList(connectedAccountId: string): Pro
     const accountCreateTx = new AccountCreateTransaction()
       .setKey(keyList)
       .setInitialBalance(new Hbar(5))
-      .setAccountMemo(`KeyRing Demo Threshold List for ${connectedAccountId}`)
+      .setAccountMemo("KeyRing Protocol KeyList Test Account")
       .freezeWith(client);
     
     const accountCreateSign = await accountCreateTx.sign(PrivateKey.fromString(operatorKey));
@@ -115,7 +115,7 @@ export async function generateDemoThresholdList(connectedAccountId: string): Pro
     
     console.log(`✅ Threshold List Created: ${accountId}`);
     console.log(`   Threshold: 2-of-${publicKeys.length}`);
-    console.log(`   Memo: KeyRing Demo Threshold List for ${connectedAccountId}`);
+    console.log(`   Memo: KeyRing Protocol KeyList Test Account`);
     console.log(`🔗 https://hashscan.io/testnet/account/${accountId}\n`);
     
     // Verify the account was created with correct details

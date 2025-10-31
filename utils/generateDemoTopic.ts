@@ -63,8 +63,8 @@ export async function generateDemoTopic(thresholdListId: string, connectedAccoun
     
     console.log(`✓ Retrieved connected account public key`);
     
-    // Combine connected account key with existing keys
-    const allKeyStrings = [connectedPublicKey, ...EXISTING_PUBLIC_KEYS];
+    // Combine connected account key with only the first 2 existing keys (matching threshold list)
+    const allKeyStrings = [connectedPublicKey, ...EXISTING_PUBLIC_KEYS.slice(0, 2)];
     
     // Convert all keys to PublicKey objects
     const publicKeys: PublicKey[] = allKeyStrings.map((keyString, index) => {
@@ -92,10 +92,10 @@ export async function generateDemoTopic(thresholdListId: string, connectedAccoun
       }
     });
     
-    // Create a KeyList WITHOUT threshold - any of the keys can submit messages
-    const submitKeyList = new KeyList(publicKeys);
+    // Create a KeyList with threshold of 1 - any single key can submit messages
+    const submitKeyList = new KeyList(publicKeys, 1);
     
-    console.log(`✓ Created KeyList with ${publicKeys.length} keys (any can post)`);
+    console.log(`✓ Created KeyList with ${publicKeys.length} keys (1-of-${publicKeys.length} threshold - any can post)`);
     
     // Create HCS-2 indexed topic for rejection feedback and activity
     // submitKey set to KeyList of all threshold list members

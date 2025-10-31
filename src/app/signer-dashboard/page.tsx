@@ -261,8 +261,31 @@ export default function SignerDashboard() {
       setError(null);
 
       console.log('[DEMO] Starting demo generation for:', accountId);
-      setDemoGenerationStep('Creating threshold list...');
+      setDemoGenerationStep('Initializing...');
 
+      // Start polling for progress
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`/api/generate-demo/status?accountId=${accountId}`);
+          const statusData = await statusResponse.json();
+          
+          if (statusData.step) {
+            setDemoGenerationStep(statusData.step);
+          }
+          
+          if (statusData.completed) {
+            clearInterval(pollInterval);
+            
+            if (statusData.error) {
+              throw new Error(statusData.error);
+            }
+          }
+        } catch (pollError) {
+          console.error('[DEMO] Error polling status:', pollError);
+        }
+      }, 1000); // Poll every second
+
+      // Start the actual generation
       const response = await fetch('/api/generate-demo', {
         method: 'POST',
         headers: {
@@ -272,6 +295,8 @@ export default function SignerDashboard() {
           connectedAccountId: accountId,
         }),
       });
+
+      clearInterval(pollInterval);
 
       const data = await response.json();
 
@@ -843,7 +868,7 @@ export default function SignerDashboard() {
               <button
                 onClick={generateDemoList}
                 disabled={generatingDemo}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-dark disabled:bg-muted/50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:shadow-none"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-teal hover:bg-teal/80 disabled:bg-muted/50 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:shadow-none"
               >
                 {generatingDemo ? (
                   <>

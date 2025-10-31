@@ -3,6 +3,7 @@ import { generateDemoThresholdList } from '../../../../utils/generateDemoThresho
 import { generateDemoTopic } from '../../../../utils/generateDemoTopic';
 import { generateDemoTransactions } from '../../../../utils/generateDemoTransactions';
 import { createClient } from '@supabase/supabase-js';
+import { setProgress, setComplete, setError, clearProgress } from './progress';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -44,16 +45,22 @@ export async function POST(request: NextRequest) {
     console.log('\n🚀 Starting Demo Generation Flow');
     console.log('═══════════════════════════════════════════\n');
 
+    // Clear any existing progress
+    clearProgress(connectedAccountId);
+
     // Step 1: Create threshold list
-    console.log('Step 1/3: Creating threshold list...');
+    console.log('Step 1/4: Creating threshold list...');
+    setProgress(connectedAccountId, 'Creating threshold list...');
     const thresholdListId = await generateDemoThresholdList(connectedAccountId);
 
     // Step 2: Create HCS-2 topic
-    console.log('\nStep 2/3: Creating HCS-2 topic...');
+    console.log('\nStep 2/4: Creating HCS-2 topic...');
+    setProgress(connectedAccountId, 'Creating HCS-2 topic...');
     const topicId = await generateDemoTopic(thresholdListId, connectedAccountId);
 
     // Step 3: Save to database
     console.log('\nStep 3/4: Saving to database...');
+    setProgress(connectedAccountId, 'Saving to database...');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const { data: thresholdListData, error: dbError } = await supabase
@@ -75,11 +82,15 @@ export async function POST(request: NextRequest) {
     console.log('✅ Saved to database:', thresholdListData.id);
 
     // Step 4: Generate transactions
-    console.log('\nStep 4/4: Generating boost transactions...');
+    console.log('\nStep 4/4: Generating demo transactions...');
+    setProgress(connectedAccountId, 'Generating demo transactions...');
     const scheduleIds = await generateDemoTransactions(thresholdListId);
 
     console.log('\n═══════════════════════════════════════════');
     console.log('✅ Demo Generation Complete!\n');
+    
+    // Mark as complete
+    setComplete(connectedAccountId);
 
     return NextResponse.json({
       success: true,
@@ -94,6 +105,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Error generating demo:', error);
+    
+    // Store error in progress
+    setError(connectedAccountId, error.message || 'Unknown error occurred');
     
     return NextResponse.json(
       { 
