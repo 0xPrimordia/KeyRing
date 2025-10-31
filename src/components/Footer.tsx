@@ -18,7 +18,18 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row items-center justify-between">
           <div className="text-sm text-gray-400 mb-4 md:mb-0">
-            © 2025 KeyRing Protocol. All rights reserved.
+            <div>© 2025 KeyRing Protocol. All rights reserved.</div>
+            <div className="mt-1">
+              A product of{' '}
+              <a 
+                href="https://lynxify.xyz/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-teal hover:text-primary transition-colors"
+              >
+                Lynxify
+              </a>
+            </div>
           </div>
           
           <nav className="flex space-x-6">

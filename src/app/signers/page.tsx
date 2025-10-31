@@ -83,7 +83,7 @@ export default function SignersPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16 mt-16 mb-32">
           {/* Left Panel - Signers Hero Image */}
           <div className="relative w-full">
             <Image
@@ -132,7 +132,7 @@ export default function SignersPage() {
         {/* Why Become a Signer */}
         <div className="mb-16">
           <h1 className="text-center mb-6">Why Become a Signer</h1>
-          <h3 className="text-center mb-12">Turn your expertise into income while building the web3 ecosystem you want to see</h3>
+          <h3 className="text-center mb-16">Turn your expertise into income while building the web3 ecosystem you want to see</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Box 1 - Earn Rewards */}
@@ -186,7 +186,7 @@ export default function SignersPage() {
 
         {/* How to Get Started */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground text-center mb-24 mt-24">How to Get Started</h2>
+          <h1 className="text-3xl font-bold text-foreground text-center mb-24 mt-28">How to Get Started</h1>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-stretch">
             <div className="text-center">
               <DynamicGradientCard gradientFrom="#8CCBBA" gradientTo="#408FC7" className="mb-4 relative h-full">
