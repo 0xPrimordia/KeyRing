@@ -1,4 +1,6 @@
 import Header from '@/components/Header';
+import Image from 'next/image';
+import Link from 'next/link';
 
 // const pricingTiers = [
 //   {
@@ -60,33 +62,32 @@ export default function RegisterListPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-foreground mb-6">
-            Certify Your Admin Keys
-          </h1>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Transform your project&apos;s trust profile with KeyRing-certified threshold lists. 
-            Show users your admin keys are controlled by verified, independent signers.
-          </p>
-          <div className="flex items-center justify-center space-x-8 text-sm text-gray-400">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Instant trust signal
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              No protocol lock-in
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Hedera-native
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16 mt-16">
+          {/* Left Panel */}
+          <div>
+            <h1 className="mb-6">The Future of Web3 is Trustworthy</h1>
+            <h3 className="mb-8">Join the Web3 projects already using Keyring to decentralize their admin keys while maintaining accountability and trust with their communities.</h3>
+            <Link
+              href="#"
+              className="inline-block text-black text-xl px-8 py-3 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
+              style={{
+                background: 'linear-gradient(to right, #F1BD5C, #E77C39)',
+                border: '3px solid #F1BD5C'
+              }}
+            >
+              Schedule a Demo
+            </Link>
+          </div>
+
+          {/* Right Panel - Project Hero Image */}
+          <div className="relative w-full">
+            <Image
+              src="/project-hero.png"
+              alt="KeyRing Project Hero"
+              width={800}
+              height={600}
+              className="w-full h-auto"
+            />
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import Header from '../components/Header';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function HomePage() {
   return (
@@ -22,14 +23,44 @@ export default function HomePage() {
           />
         </div>
       </div>
+
+      {/* CTA Buttons */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
+          {/* Secure Your Project Button */}
+          <Link
+            href="/register"
+            className="text-black text-xl px-8 py-3 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
+            style={{
+              background: 'linear-gradient(to right, #F1BD5C, #E77C39)',
+              border: '3px solid #F1BD5C'
+            }}
+          >
+            Secure Your Project
+          </Link>
+
+          {/* Become a Signer Button */}
+          <Link
+            href="/signers"
+            className="text-black text-xl px-8 py-3 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
+            style={{
+              background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
+              border: '3px solid #8CCBBA'
+            }}
+          >
+            Become a Signer
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Panel */}
           <div className="mt-60 pr-16">
             <h2 className="font-bold mb-6">Why Trust is the Real Problem</h2>
             <h3 className="mt-4">Despite billions invested, the Web3 ecosystem continues to suffer from trust deficits that hold back adoption and innovation.</h3>
             <h3 className="mt-4">Many security standards, such as SSL certificates, were needed to move web1.0 into web2.0. We still lack adequate trust layers to fully transition from web2.0 into web3.0.</h3>
-            <h3 className="mt-4">The result? $3.5 billion lost in rug pulls in 2024 alone.</h3>
+            <h3 className="mt-4">The result? <span style={{ color: '#E77C39' }}>$3.5 billion</span> lost in rug pulls in 2024 alone.</h3>
         </div>
 
           {/* Right Panel - Highlight Cards */}

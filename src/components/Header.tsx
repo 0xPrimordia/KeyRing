@@ -60,8 +60,8 @@ export default function Header() {
                 href="/register" 
                 className={`text-xl transition-colors ${
                   isActive('/register')
-                    ? 'text-teal hover:text-teal' 
-                    : 'text-foreground hover:text-teal'
+                    ? 'text-yellow hover:text-yellow' 
+                    : 'text-foreground hover:text-yellow'
                 }`}
               >
                 For Projects
@@ -127,8 +127,8 @@ export default function Header() {
                 onClick={closeMobileMenu}
                 className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                   isActive('/register')
-                    ? 'text-teal bg-teal/10' 
-                    : 'text-foreground hover:text-teal hover:bg-teal/5'
+                    ? 'text-yellow bg-yellow/10' 
+                    : 'text-foreground hover:text-yellow hover:bg-yellow/5'
                 }`}
               >
                 For Projects

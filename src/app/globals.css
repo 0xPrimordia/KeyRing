@@ -8,6 +8,7 @@
   --primary-dark: #00A8C0;
   --teal: #8CCBBA;
   --light-blue: #408FC7;
+  --yellow: #F1BD5C;
   --light-red: #B63B2B;
   --orange: #E77C39;
   --risk-low: #586022;
@@ -26,6 +27,7 @@
   --color-primary-dark: var(--primary-dark);
   --color-teal: var(--teal);
   --color-light-blue: var(--light-blue);
+  --color-yellow: var(--yellow);
   --color-light-red: var(--light-red);
   --color-orange: var(--orange);
   --color-risk-low: var(--risk-low);

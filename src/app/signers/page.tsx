@@ -2,16 +2,51 @@
 
 import { useWallet } from '../../providers/WalletProvider';
 import { useAccount } from 'wagmi';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VerificationModal from '../../components/VerificationModal';
 import Header from '@/components/Header';
+import Image from 'next/image';
 
 
 export default function SignersPage() {
-  const { connectWallet, isConnected, isInitializing } = useWallet();
-  const { isConnected: isEthConnected } = useAccount();
+  const { connectWallet, isConnected, isInitializing, connection } = useWallet();
+  const { isConnected: isEthConnected, address: ethAddress } = useAccount();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [isCheckingVerification, setIsCheckingVerification] = useState(false);
+
+  // Check verification status when wallet is connected
+  useEffect(() => {
+    const checkVerification = async () => {
+      const accountToCheck = connection?.accountId || ethAddress;
+      
+      if (!accountToCheck) {
+        setIsVerified(false);
+        return;
+      }
+
+      setIsCheckingVerification(true);
+      try {
+        const response = await fetch(`/api/signers/lookup?account=${accountToCheck}`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsVerified(data.verified === true);
+        } else {
+          setIsVerified(false);
+        }
+      } catch (error) {
+        console.error('Failed to check verification status:', error);
+        setIsVerified(false);
+      } finally {
+        setIsCheckingVerification(false);
+      }
+    };
+
+    if (isConnected || isEthConnected) {
+      checkVerification();
+    }
+  }, [isConnected, isEthConnected, connection?.accountId, ethAddress]);
 
   const handleStartVerification = async () => {
     // Check if we have an ETH connection via RainbowKit
@@ -47,33 +82,49 @@ export default function SignersPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-foreground mb-6">
-            Become a Verified Signer
-          </h1>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Qualify for KYRNG airdrops by helping secure the Hedera ecosystem. Join KeyRing&apos;s network of 
-            verified signers and get paid to review admin transactions with AI agent assistance.
-          </p>
-          <div className="flex items-center justify-center space-x-8 text-sm text-gray-400">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Qualify for airdrops
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Flexible participation
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Build reputation
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16 mt-16">
+          {/* Left Panel - Signers Hero Image */}
+          <div className="relative w-full">
+            <Image
+              src="/signers-hero.png"
+              alt="KeyRing Signers Hero"
+              width={800}
+              height={600}
+              className="w-full h-auto"
+            />
+          </div>
+
+          {/* Right Panel */}
+          <div>
+            <h1 className="mb-6">Get Rewarded for Securing Web3</h1>
+            <h3 className="mb-8">Secure Web3 projects, ensure transparency, and earn rewards as a verified signer on Keyring. Help projects decentralize early, ship fast, and build trust in the ecosystem.</h3>
+            
+            {isVerified ? (
+              <div
+                className="inline-flex items-center gap-2 text-black text-xl px-8 py-3 rounded-lg cursor-default"
+                style={{
+                  background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
+                  border: '3px solid #8CCBBA'
+                }}
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Verified
+              </div>
+            ) : (
+              <button
+                onClick={handleStartVerification}
+                disabled={isConnecting || isCheckingVerification}
+                className="text-black text-xl px-8 py-3 rounded-lg hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
+                  border: '3px solid #8CCBBA'
+                }}
+              >
+                {isConnecting || isCheckingVerification ? 'Loading...' : 'Become A Signer'}
+              </button>
+            )}
           </div>
         </div>
 
