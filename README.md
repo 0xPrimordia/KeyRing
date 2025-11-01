@@ -10,6 +10,7 @@ KeyRing Protocol is a decentralized governance and security platform that enable
 
 The platform addresses a critical trust gap in the African blockchain ecosystem: how can users verify that project admin keys are truly decentralized and not controlled by a single entity? KeyRing provides cryptographic proof of distributed control through Hedera's native primitives, making it immediately verifiable on-chain.
 
+**🎯 Hackathon Demo**: [keyring-hackathon.vercel.app](https://keyring-hackathon.vercel.app/)  
 **Live Mainnet Deployment**: [keyring.lynxify.xyz](https://keyring.lynxify.xyz/)  
 **Status**: ✅ Live on Hedera Mainnet | 🚧 Onboarding signers for first threshold lists
 
