@@ -57,8 +57,6 @@ export default function SignerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
-  const [generatingDemo, setGeneratingDemo] = useState(false);
-  const [demoGenerationStep, setDemoGenerationStep] = useState<string>('');
 
   // Get account ID from connection
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
@@ -247,78 +245,6 @@ export default function SignerDashboard() {
       console.error('Error loading reward balance:', err);
       // Show zero balance on error
       setRewardBalance({ total: 0, pending: 0, paid: 0 });
-    }
-  }
-
-  async function generateDemoList() {
-    if (!accountId) {
-      setError('Please connect your wallet first');
-      return;
-    }
-
-    try {
-      setGeneratingDemo(true);
-      setError(null);
-
-      console.log('[DEMO] Starting demo generation for:', accountId);
-      setDemoGenerationStep('Initializing...');
-
-      // Start polling for progress
-      const pollInterval = setInterval(async () => {
-        try {
-          const statusResponse = await fetch(`/api/generate-demo/status?accountId=${accountId}`);
-          const statusData = await statusResponse.json();
-          
-          if (statusData.step) {
-            setDemoGenerationStep(statusData.step);
-          }
-          
-          if (statusData.completed) {
-            clearInterval(pollInterval);
-            
-            if (statusData.error) {
-              throw new Error(statusData.error);
-            }
-          }
-        } catch (pollError) {
-          console.error('[DEMO] Error polling status:', pollError);
-        }
-      }, 1000); // Poll every second
-
-      // Start the actual generation
-      const response = await fetch('/api/generate-demo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          connectedAccountId: accountId,
-        }),
-      });
-
-      clearInterval(pollInterval);
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.details || data.error || 'Failed to generate demo');
-      }
-
-      console.log('[DEMO] Generation complete:', data);
-      setDemoGenerationStep('Demo created successfully!');
-
-      // Reload pending schedules to show the new transactions
-      setTimeout(() => {
-        loadPendingSchedules();
-        setGeneratingDemo(false);
-        setDemoGenerationStep('');
-      }, 2000);
-
-    } catch (err: any) {
-      console.error('[DEMO] Error generating demo:', err);
-      setError(err.message || 'Failed to generate demo list');
-      setGeneratingDemo(false);
-      setDemoGenerationStep('');
     }
   }
 
@@ -860,39 +786,9 @@ export default function SignerDashboard() {
                 </svg>
               </div>
               <h3 className="text-sm font-medium">No pending transactions</h3>
-              <p className="mt-1 text-sm text-muted-foreground mb-6">
+              <p className="mt-1 text-sm text-muted-foreground">
                 You have no scheduled transactions awaiting your approval
               </p>
-              
-              {/* Generate Demo List Button */}
-              <button
-                onClick={generateDemoList}
-                disabled={generatingDemo}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-teal hover:bg-teal/80 disabled:bg-muted/50 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:shadow-none"
-              >
-                {generatingDemo ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>{demoGenerationStep || 'Generating...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>Generate Demo List</span>
-                  </>
-                )}
-              </button>
-              
-              {demoGenerationStep && !generatingDemo && (
-                <p className="mt-4 text-sm text-green-500 font-semibold">
-                  ✓ {demoGenerationStep}
-                </p>
-              )}
             </div>
           ) : (
             Object.entries(schedulesByThresholdList).map(([thresholdListId, schedules]) => {
