@@ -1,0 +1,92 @@
+{
+  "SIMPLE_BOOST": {
+    "risk": "low",
+    "recommendation": "This is a low-risk transaction that simply increments a counter on-chain. It's commonly used for testing multi-signature workflows and tracking engagement metrics.",
+    "keyPoints": [
+      "No token transfers or financial impact",
+      "Safe for testing and learning",
+      "Good practice for new signers"
+    ],
+    "action": "Safe to approve"
+  },
+  "TOKEN_MINT": {
+    "risk": "high",
+    "recommendation": "Token minting increases circulating supply and can impact token economics. Verify the mint amount aligns with the project's tokenomics schedule and distribution plan.",
+    "keyPoints": [
+      "Check if amount matches published tokenomics",
+      "Verify recipient is the intended distribution wallet",
+      "Consider inflation impact on token value",
+      "Ensure proper community communication"
+    ],
+    "action": "Review carefully before approving"
+  },
+  "TOKEN_BURN": {
+    "risk": "high",
+    "recommendation": "Token burning permanently removes tokens from circulation. This is typically positive for token value but should align with the project's buyback program or deflationary schedule.",
+    "keyPoints": [
+      "Verify burn amount matches announced program",
+      "Confirm this aligns with roadmap commitments",
+      "Check if community was notified in advance",
+      "Burns are irreversible - double-check amount"
+    ],
+    "action": "Verify burn program details"
+  },
+  "TREASURY_TRANSFER": {
+    "risk": "high",
+    "recommendation": "Treasury transfers move significant funds and require careful verification. Large transfers should align with approved budgets and have clear purposes documented.",
+    "keyPoints": [
+      "Verify recipient address is legitimate",
+      "Check if transfer amount is within approved budget",
+      "Ensure proper documentation exists",
+      "Consider if amount is appropriate for stated purpose"
+    ],
+    "action": "Verify recipient and purpose"
+  },
+  "ACCOUNT_ALLOWANCE": {
+    "risk": "medium",
+    "recommendation": "Account allowances grant spending permissions to third-party contracts (like DEXs). Verify the contract is legitimate and the allowance amount is reasonable for the intended use.",
+    "keyPoints": [
+      "Verify the contract address is the official DEX/protocol",
+      "Check if allowance amount is appropriate",
+      "Consider if unlimited allowance is necessary",
+      "Research the protocol's security track record"
+    ],
+    "action": "Verify contract legitimacy"
+  },
+  "FEE_SCHEDULE_UPDATE": {
+    "risk": "medium",
+    "recommendation": "Fee schedule changes affect all token holders. Verify the new fees are reasonable and align with network conditions. Excessive fees can negatively impact user adoption.",
+    "keyPoints": [
+      "Check if new fee is competitive with similar tokens",
+      "Verify community was consulted on changes",
+      "Consider impact on small transactions",
+      "Ensure fees don't discourage trading activity"
+    ],
+    "action": "Review fee reasonability"
+  },
+  "TOKEN_PAUSE": {
+    "risk": "critical",
+    "recommendation": "⚠️ CRITICAL: Token pausing halts ALL transfers and should only be used in emergency situations. Verify there is a legitimate security threat or critical bug before approving.",
+    "keyPoints": [
+      "Confirm there is a verified security vulnerability",
+      "Check if team has communicated the issue publicly",
+      "Verify a fix is being developed",
+      "Consider impact on token holders and exchanges",
+      "Ensure unpause plan exists"
+    ],
+    "action": "⚠️ Only approve for verified emergencies"
+  },
+  "SUPPLY_KEY_TRANSFER": {
+    "risk": "critical",
+    "recommendation": "⚠️ CRITICAL: Transferring the supply key changes fundamental token control. This should only occur for planned governance upgrades to more secure multi-sig setups. Verify the recipient address exhaustively.",
+    "keyPoints": [
+      "Verify recipient is the correct new multi-sig address",
+      "Confirm upgrade was announced to community",
+      "Check if new setup improves security (e.g., 2-of-3 to 3-of-5)",
+      "Ensure all signers understand new key holders",
+      "IRREVERSIBLE - triple-check recipient address"
+    ],
+    "action": "⚠️ Verify recipient address multiple times"
+  }
+}
+

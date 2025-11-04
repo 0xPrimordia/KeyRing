@@ -1,20 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Epilogue, Krub } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "../providers/WalletProvider";
 import { RainbowKitProvider } from "../providers/RainbowKitProvider";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import Footer from "../components/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const epilogue = Epilogue({
+  variable: "--font-epilogue",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const krub = Krub({
+  variable: "--font-krub",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -28,13 +33,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${epilogue.variable} ${krub.variable}`}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${krub.className} antialiased flex flex-col min-h-screen`}
       >
         <RainbowKitProvider>
           <WalletProvider>
-            {children}
+            <div className="flex flex-col min-h-screen">
+              {children}
+              <Footer />
+            </div>
             <Toaster 
               position="bottom-right" 
               theme="dark"

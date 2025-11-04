@@ -486,7 +486,9 @@ export class KeyRingDB {
     signerId: string, 
     rewardType: 'onboarding' | 'list_addition' | 'transaction_review', 
     amount: number,
-    currency: string = 'KYRNG'
+    currency: string = 'KYRNG',
+    signatureTransactionId?: string,
+    scheduleId?: string
   ): Promise<{ success: boolean; reward?: KeyringReward; error?: string }> {
     try {
       const { data: reward, error } = await supabase
@@ -496,6 +498,8 @@ export class KeyRingDB {
           reward_type: rewardType,
           amount,
           currency,
+          signature_transaction_id: signatureTransactionId || null,
+          schedule_id: scheduleId || null,
         })
         .select()
         .single();

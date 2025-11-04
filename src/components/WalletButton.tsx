@@ -88,14 +88,23 @@ export default function WalletButton() {
   if (isConnected && connection && connection.type === 'hedera') {
     return (
       <div className="flex items-center space-x-3">
-        <div className="flex items-center bg-gray-800 rounded-lg px-3 py-2 border border-gray-700">
-          <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-          <span className="text-xs text-gray-400 mr-2 capitalize">{connection.type}:</span>
-          <span className="text-sm font-medium text-foreground">{formatAddress(connection)}</span>
-        </div>
+        <a
+          href="/signer-dashboard"
+          className="flex items-center px-4 rounded-lg transition-colors hover:bg-white/10 leading-relaxed"
+          style={{ paddingTop: '0.875rem', paddingBottom: '0.75rem' }}
+        >
+          <div 
+            className="w-5 h-5 rounded-full mr-3 flex items-center justify-center"
+            style={{ backgroundColor: '#F1BD5C' }}
+          >
+            <span className="text-black text-sm font-bold leading-none" style={{ paddingTop: '2px' }}>ℏ</span>
+          </div>
+          <span className="text-base font-bold text-foreground capitalize">{connection.type}: Dashboard</span>
+        </a>
         <button
           onClick={handleDisconnect}
-          className="text-sm text-gray-400 hover:text-foreground transition-colors"
+          className="text-base text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
+          style={{ paddingTop: '0.875rem' }}
         >
           Disconnect
         </button>
@@ -108,7 +117,8 @@ export default function WalletButton() {
       <button
         onClick={() => setShowWalletOptions(!showWalletOptions)}
         disabled={isConnecting}
-        className="bg-primary text-background px-4 py-2 rounded-lg font-semibold text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="text-base text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ paddingTop: '0.875rem' }}
       >
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </button>

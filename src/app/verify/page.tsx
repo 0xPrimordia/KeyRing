@@ -772,13 +772,37 @@ function VerifyPageContent() {
                 <p className="text-gray-400 mb-8 max-w-md mx-auto">
                   Click below to start the verification process. You&apos;ll be guided through document upload and identity confirmation.
                 </p>
-                <button
-                  onClick={startVerification}
-                  disabled={isLoading}
-                  className="bg-primary text-background px-8 py-4 rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Starting...' : 'Start Identity Verification'}
-                </button>
+                <div className="space-y-3 max-w-md mx-auto">
+                  <button
+                    onClick={startVerification}
+                    disabled={isLoading}
+                    className="w-full bg-primary text-background px-8 py-4 rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Starting...' : 'Start Identity Verification'}
+                  </button>
+                  
+                  {/* Hackathon: Bypass KYC Button */}
+                  <div className="border-t border-gray-600 pt-3">
+                    <button
+                      onClick={() => {
+                        // Skip Sumsub and proceed directly to profile creation
+                        const demoApplicantId = `demo_${Date.now()}`;
+                        setSumsubData({
+                          applicantId: demoApplicantId,
+                          reviewResult: 'GREEN'
+                        });
+                        storeVerificationData(demoApplicantId, 'GREEN');
+                      }}
+                      disabled={isLoading}
+                      className="w-full bg-yellow-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-yellow-700 transition-colors border border-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      🎯 Bypass KYC (Hackathon Demo)
+                    </button>
+                    <p className="text-xs text-gray-400 mt-2 text-center">
+                      For judges and demo purposes only. Skips Sumsub verification.
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : accessToken ? (
               // Show Sumsub WebSDK React Component with overlay button
