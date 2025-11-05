@@ -541,12 +541,19 @@ export class KeyRingDB {
    */
   static async updateRewardStatus(rewardId: string, status: 'pending' | 'paid'): Promise<{ success: boolean; error?: string }> {
     try {
+      const updateData: any = { 
+        status,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Set paid_at timestamp when marking as paid
+      if (status === 'paid') {
+        updateData.paid_at = new Date().toISOString();
+      }
+      
       const { error } = await supabase
         .from('keyring_rewards')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', rewardId);
 
       if (error) {

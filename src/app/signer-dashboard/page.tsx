@@ -55,6 +55,7 @@ export default function SignerDashboard() {
   }>({ total: 0, pending: 0, paid: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
   const [claimingRewards, setClaimingRewards] = useState(false);
@@ -314,6 +315,7 @@ export default function SignerDashboard() {
     try {
       setClaimingRewards(true);
       setError(null);
+      setSuccessMessage(null);
 
       console.log('[DASHBOARD] Claiming rewards for:', accountId);
 
@@ -391,16 +393,17 @@ export default function SignerDashboard() {
 
       console.log('[DASHBOARD] Rewards claimed successfully:', data);
 
-      // Reset reward balance to 0 immediately for better UX
-      setRewardBalance({ total: 0, pending: 0, paid: 0 });
-
-      // Then reload from server to get accurate data
-      setTimeout(() => {
-        loadRewardBalance();
-      }, 1000);
-
       // Show success message
-      alert(`Successfully claimed ${data.amount} KYRNG! Transaction ID: ${data.transactionId}`);
+      setSuccessMessage(`Successfully claimed ${data.amount} KYRNG! Transaction ID: ${data.transactionId}`);
+      setError(null);
+
+      // Reload reward balance from database to reflect the 'paid' status
+      await loadRewardBalance();
+
+      // Clear success message after 10 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 10000);
 
     } catch (err: any) {
       console.error('[DASHBOARD] Error claiming rewards:', err);
@@ -833,6 +836,52 @@ export default function SignerDashboard() {
             </svg>
           </button>
         </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-green-400 text-sm">{successMessage}</p>
+              </div>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="text-green-500 hover:text-green-400 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-500 hover:text-red-400 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Rewards Balance Widget */}
         <div 
