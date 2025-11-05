@@ -63,13 +63,21 @@ export default function SignerDashboard() {
   // Get account ID from connection
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
   
+  // Get network configuration
+  const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+  const mirrorNodeUrl = network === 'mainnet'
+    ? 'https://mainnet.mirrornode.hedera.com'
+    : 'https://testnet.mirrornode.hedera.com';
+  
   // Debug wallet state
   useEffect(() => {
     console.log('Dashboard wallet state:', { 
       isConnected, 
       connection: JSON.stringify(connection), 
       accountId,
-      connectionType: connection?.type 
+      connectionType: connection?.type,
+      network,
+      mirrorNodeUrl
     });
   }, [isConnected, connection, accountId]);
 
@@ -139,7 +147,7 @@ export default function SignerDashboard() {
 
       // Fetch account info from Mirror Node
       const accountResponse = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`
+        `${mirrorNodeUrl}/api/v1/accounts/${accountId}`
       );
 
       if (!accountResponse.ok) {
@@ -155,7 +163,7 @@ export default function SignerDashboard() {
 
       // Fetch recent transactions to find threshold list participation
       const txResponse = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/transactions?account.id=${accountId}&limit=20&order=desc`
+        `${mirrorNodeUrl}/api/v1/transactions?account.id=${accountId}&limit=20&order=desc`
       );
 
       const txData = await txResponse.json();
@@ -322,10 +330,6 @@ export default function SignerDashboard() {
       console.log('[DASHBOARD] Checking token association for:', kyrngTokenId);
 
       // Check if KYRNG token is associated with the account
-      const mirrorNodeUrl = network === 'mainnet'
-        ? 'https://mainnet.mirrornode.hedera.com'
-        : 'https://testnet.mirrornode.hedera.com';
-      
       const tokenBalanceResponse = await fetch(
         `${mirrorNodeUrl}/api/v1/accounts/${accountId}/tokens?token.id=${kyrngTokenId}`
       );
@@ -417,7 +421,7 @@ export default function SignerDashboard() {
 
       // Get my public key first
       const myAccountResponse = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`
+        `${mirrorNodeUrl}/api/v1/accounts/${accountId}`
       );
       const myAccountData = await myAccountResponse.json();
       const myPublicKey = myAccountData.key?._type === 'ED25519' ? myAccountData.key.key : null;
@@ -444,7 +448,7 @@ export default function SignerDashboard() {
         console.log('[DASHBOARD] Querying schedules from operator:', operatorId);
         
         const response = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/schedules?account.id=${operatorId}&order=desc&limit=50`
+          `${mirrorNodeUrl}/api/v1/schedules?account.id=${operatorId}&order=desc&limit=50`
         );
 
         if (!response.ok) continue;
@@ -518,7 +522,7 @@ export default function SignerDashboard() {
               // Fetch account to check if it has a KeyList
               try {
                 const acctResponse = await fetch(
-                  `https://testnet.mirrornode.hedera.com/api/v1/accounts/${acctId}`
+                  `${mirrorNodeUrl}/api/v1/accounts/${acctId}`
                 );
                 
                 if (!acctResponse.ok) continue;
@@ -590,7 +594,7 @@ export default function SignerDashboard() {
 
       // First, get detailed schedule information to check signatures
       const scheduleResponse = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/schedules/${scheduleId}`
+        `${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`
       );
       
       if (!scheduleResponse.ok) {

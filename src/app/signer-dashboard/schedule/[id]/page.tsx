@@ -150,6 +150,12 @@ export default function ScheduleDetailsPage() {
   const { connection, dAppConnector } = useWallet();
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
 
+  // Get network configuration
+  const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+  const mirrorNodeUrl = network === 'mainnet'
+    ? 'https://mainnet.mirrornode.hedera.com'
+    : 'https://testnet.mirrornode.hedera.com';
+
   const [schedule, setSchedule] = useState<ScheduleDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,7 +177,7 @@ export default function ScheduleDetailsPage() {
       setError(null);
 
       const response = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/schedules/${scheduleId}`
+        `${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`
       );
 
       if (!response.ok) {
@@ -234,7 +240,7 @@ export default function ScheduleDetailsPage() {
 
       // Fetch messages from Mirror Node REST API
       const response = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages?limit=100&order=desc`
+        `${mirrorNodeUrl}/api/v1/topics/${topicId}/messages?limit=100&order=desc`
       );
 
       if (!response.ok) {
@@ -367,7 +373,7 @@ export default function ScheduleDetailsPage() {
 
       // Fetch schedule details to check if already signed
       const scheduleResponse = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/schedules/${scheduleId}`
+        `${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`
       );
 
       if (!scheduleResponse.ok) {
@@ -379,7 +385,7 @@ export default function ScheduleDetailsPage() {
 
       // Check if the user has already signed
       const userPublicKeyResponse = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`
+        `${mirrorNodeUrl}/api/v1/accounts/${accountId}`
       );
       const userData = await userPublicKeyResponse.json();
       const userPublicKey = userData.key?.key;
@@ -1291,7 +1297,7 @@ export default function ScheduleDetailsPage() {
                   View on HashScan →
                 </a>
                 <a
-                  href={`https://testnet.mirrornode.hedera.com/api/v1/schedules/${schedule.schedule_id}`}
+                  href={`${mirrorNodeUrl}/api/v1/schedules/${schedule.schedule_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                     className="block text-sm text-primary hover:text-primary-dark font-semibold bg-muted/30 hover:bg-muted/40 p-3 rounded-xl transition-colors"
