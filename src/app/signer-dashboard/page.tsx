@@ -57,6 +57,8 @@ export default function SignerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
+  const [claimingRewards, setClaimingRewards] = useState(false);
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
 
   // Get account ID from connection
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
@@ -71,14 +73,21 @@ export default function SignerDashboard() {
     });
   }, [isConnected, connection, accountId]);
 
-  // Load pending schedules and metadata when wallet connects
+  // Check registration status when wallet connects
   useEffect(() => {
     if (accountId) {
+      checkRegistrationStatus();
+    }
+  }, [accountId]);
+
+  // Load data only if registered
+  useEffect(() => {
+    if (accountId && isRegistered === true) {
       loadAccountMetadata();
       loadPendingSchedules();
       loadRewardBalance();
     }
-  }, [accountId]);
+  }, [accountId, isRegistered]);
 
   async function connectWallet() {
     try {
@@ -89,6 +98,36 @@ export default function SignerDashboard() {
       setError(err.message || 'Failed to connect wallet');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function checkRegistrationStatus() {
+    if (!accountId) return;
+
+    try {
+      console.log('[DASHBOARD] Checking registration status for:', accountId);
+      
+      const response = await fetch('/api/signers/lookup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accountId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        console.log('[DASHBOARD] Account is registered:', data.signer);
+        setIsRegistered(true);
+      } else {
+        console.log('[DASHBOARD] Account is not registered');
+        setIsRegistered(false);
+      }
+    } catch (err: any) {
+      console.error('[DASHBOARD] Error checking registration:', err);
+      // If there's an error, assume not registered to be safe
+      setIsRegistered(false);
     }
   }
 
@@ -245,6 +284,125 @@ export default function SignerDashboard() {
       console.error('Error loading reward balance:', err);
       // Show zero balance on error
       setRewardBalance({ total: 0, pending: 0, paid: 0 });
+    }
+  }
+
+  async function claimRewards() {
+    if (!accountId) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    if (rewardBalance.pending <= 0) {
+      setError('No pending rewards to claim');
+      return;
+    }
+
+    if (!dAppConnector) {
+      setError('Wallet not connected properly');
+      return;
+    }
+
+    try {
+      setClaimingRewards(true);
+      setError(null);
+
+      console.log('[DASHBOARD] Claiming rewards for:', accountId);
+
+      // Get network-specific token ID
+      const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+      const kyrngTokenId = network === 'mainnet'
+        ? process.env.NEXT_PUBLIC_MAINNET_KYRNG
+        : process.env.NEXT_PUBLIC_TESTNET_KYRNG;
+
+      if (!kyrngTokenId) {
+        throw new Error('KYRNG token ID not configured');
+      }
+
+      console.log('[DASHBOARD] Checking token association for:', kyrngTokenId);
+
+      // Check if KYRNG token is associated with the account
+      const mirrorNodeUrl = network === 'mainnet'
+        ? 'https://mainnet.mirrornode.hedera.com'
+        : 'https://testnet.mirrornode.hedera.com';
+      
+      const tokenBalanceResponse = await fetch(
+        `${mirrorNodeUrl}/api/v1/accounts/${accountId}/tokens?token.id=${kyrngTokenId}`
+      );
+
+      const tokenData = await tokenBalanceResponse.json();
+      const isAssociated = tokenData.tokens && tokenData.tokens.length > 0;
+
+      console.log('[DASHBOARD] Token association status:', isAssociated);
+
+      // If not associated, request association from user's wallet
+      if (!isAssociated) {
+        console.log('[DASHBOARD] Token not associated, requesting association...');
+        
+        const { TokenAssociateTransaction, TokenId } = await import('@hashgraph/sdk');
+        
+        // Get signer from dAppConnector
+        const signer = dAppConnector.getSigner(AccountId.fromString(accountId));
+        
+        const associateTx = new TokenAssociateTransaction()
+          .setAccountId(accountId)
+          .setTokenIds([TokenId.fromString(kyrngTokenId)]);
+
+        console.log('[DASHBOARD] Requesting token association signature from wallet...');
+
+        // Execute with signer
+        const frozenAssociateTx = await associateTx.freezeWithSigner(signer);
+        const associateResponse = await frozenAssociateTx.executeWithSigner(signer);
+
+        const associateTransactionId = associateResponse.transactionId?.toString();
+        
+        if (!associateTransactionId) {
+          throw new Error('Token association failed or was rejected');
+        }
+
+        console.log('[DASHBOARD] Token association successful:', associateTransactionId);
+        
+        // Wait a moment for the mirror node to update
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      // Now proceed with claiming rewards
+      console.log('[DASHBOARD] Requesting token transfer...');
+
+      const response = await fetch('/api/rewards/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          accountId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to claim rewards');
+      }
+
+      console.log('[DASHBOARD] Rewards claimed successfully:', data);
+
+      // Reset reward balance to 0 immediately for better UX
+      setRewardBalance({ total: 0, pending: 0, paid: 0 });
+
+      // Then reload from server to get accurate data
+      setTimeout(() => {
+        loadRewardBalance();
+      }, 1000);
+
+      // Show success message
+      alert(`Successfully claimed ${data.amount} KYRNG! Transaction ID: ${data.transactionId}`);
+
+    } catch (err: any) {
+      console.error('[DASHBOARD] Error claiming rewards:', err);
+      setError(err.message || 'Failed to claim rewards');
+    } finally {
+      setClaimingRewards(false);
     }
   }
 
@@ -598,6 +756,59 @@ export default function SignerDashboard() {
     );
   }
 
+  // Show loading screen while checking registration
+  if (isRegistered === null) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center p-4 pt-20">
+          <div className="max-w-md w-full bg-card rounded-lg border border-border p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Checking account registration...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show verification prompt if account is not registered
+  if (isRegistered === false) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center p-4 pt-20">
+          <div className="max-w-md w-full bg-card rounded-lg border border-border p-8">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/30 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold mb-2">
+                Account Not Registered
+              </h1>
+              <p className="text-muted-foreground mb-2">
+                Your account <span className="font-mono text-primary">{accountId}</span> is not registered with KeyRing.
+              </p>
+              <p className="text-muted-foreground">
+                Please complete the verification process to become a registered signer.
+              </p>
+            </div>
+
+            <button
+              onClick={() => router.push('/verify')}
+              className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              Go to Verification
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -649,13 +860,15 @@ export default function SignerDashboard() {
               
               {rewardBalance.pending > 0 ? (
                 <button
-                  className="text-black text-xl px-6 py-3 rounded-lg hover:opacity-80 transition-opacity"
+                  onClick={claimRewards}
+                  disabled={claimingRewards}
+                  className="text-black text-xl px-6 py-3 rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
                     border: '3px solid #8CCBBA'
                   }}
                 >
-                  Claim Rewards
+                  {claimingRewards ? 'Claiming...' : 'Claim Rewards'}
                 </button>
               ) : (
                 <p className="text-muted-foreground">
@@ -984,7 +1197,7 @@ export default function SignerDashboard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal mt-0.5">→</span>
-                    <span>Earn 10 KYRNG for each transaction you sign</span>
+                    <span>Earn KYRNG rewards for each transaction you sign</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal mt-0.5">→</span>

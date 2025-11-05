@@ -50,7 +50,7 @@ export class KeyRingDB {
       }
 
       // Add onboarding reward
-      await this.addReward(signer.id, 'onboarding', 10);
+      await this.addReward(signer.id, 'onboarding', 100);
 
       return { success: true, signer };
     } catch (error: unknown) {
@@ -93,7 +93,7 @@ export class KeyRingDB {
       }
 
       // Add onboarding reward
-      await this.addReward(signer.id, 'onboarding', 10);
+      await this.addReward(signer.id, 'onboarding', 100);
 
       return { success: true, signer };
     } catch (error: unknown) {
@@ -170,9 +170,6 @@ export class KeyRingDB {
         console.error('Database error completing signer profile:', error);
         return { success: false, error: error.message };
       }
-
-      // Add onboarding reward for completed profile
-      await this.addReward(signerId, 'onboarding', 10);
 
       // Get the updated signer data
       const updatedSigner = await this.getSignerById(signerId);
@@ -512,6 +509,54 @@ export class KeyRingDB {
       return { success: true, reward };
     } catch (error: unknown) {
       console.error('Error adding reward:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Get rewards for a signer
+   */
+  static async getSignerRewards(signerId: string): Promise<{ success: boolean; rewards?: KeyringReward[]; error?: string }> {
+    try {
+      const { data: rewards, error } = await supabase
+        .from('keyring_rewards')
+        .select('*')
+        .eq('signer_id', signerId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Database error fetching rewards:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, rewards: rewards || [] };
+    } catch (error: unknown) {
+      console.error('Error fetching rewards:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Update reward status (e.g., from 'pending' to 'paid')
+   */
+  static async updateRewardStatus(rewardId: string, status: 'pending' | 'paid'): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase
+        .from('keyring_rewards')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rewardId);
+
+      if (error) {
+        console.error('Database error updating reward status:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error: unknown) {
+      console.error('Error updating reward status:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }

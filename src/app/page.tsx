@@ -195,7 +195,8 @@ export default function HomePage() {
                     </div>
                       </div>
        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
-         <h1 className="text-center mb-16">How KeyRing Works</h1>
+         <h1 className="text-center mb-12">How KeyRing Works</h1>
+         <h3 className="text-center mb-16">Our token model aligns incentives between projects seeking transparency and key holders providing accountability services.</h3>
          
          {/* Two Side-by-Side Boxes with Arrows */}
          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
@@ -330,6 +331,90 @@ export default function HomePage() {
                       </div>
            </DynamicGradientCard>
                   </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
+        <h1 className="text-center mb-12">Community Token Ownership</h1>
+        <h3 className="text-center mb-16">Token supply dynamically expands and contrasts through Boost Projects to respond to network demand and activity levels.</h3>
+        
+        {/* Token Distribution Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          {/* Left Side - Three Stacked Boxes */}
+          <div className="space-y-6">
+            {/* Circulating Supply */}
+            <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
+              <div className="bg-background rounded-lg p-6">
+                <div className="flex gap-6 items-center">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/icons/blue-circulating.png"
+                      alt="Circulating Supply"
+                      width={64}
+                      height={64}
+                      className="w-16 h-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-4">Circulating Supply</h3>
+                    <p>Majority of the token should be in the hands of the community, rewarding signers and decentralizing projects decision-making.</p>
+                  </div>
+                </div>
+              </div>
+            </DynamicGradientCard>
+
+            {/* Treasury Reserve */}
+            <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
+              <div className="bg-background rounded-lg p-6">
+                <div className="flex gap-6 items-center">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/icons/blue-treasure.png"
+                      alt="Treasury Reserve"
+                      width={64}
+                      height={64}
+                      className="w-16 h-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-4">Treasury Reserve</h3>
+                    <p>Hold deposits from projects to systematically pay signers, burn tokens as needed, or sell to liquidity pools.</p>
+                  </div>
+                </div>
+              </div>
+            </DynamicGradientCard>
+
+            {/* Team Allocation */}
+            <DynamicGradientCard gradientFrom="#408FC7" gradientTo="#8CCBBA">
+              <div className="bg-background rounded-lg p-6">
+                <div className="flex gap-6 items-center">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/icons/blue-team.png"
+                      alt="Team Allocation"
+                      width={64}
+                      height={64}
+                      className="w-16 h-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-4">Team Allocation</h3>
+                    <p>Allows the team to bootstrap the ecosystem and fund Boost Projects - test projects to drive activity and release tokens to early signers.</p>
+                  </div>
+                </div>
+              </div>
+            </DynamicGradientCard>
+          </div>
+
+          {/* Right Side - Token Chart Image */}
+          <div className="flex items-center justify-center">
+            <Image
+              src="/token-chart.png"
+              alt="Token Distribution Chart"
+              width={600}
+              height={600}
+              className="w-full h-auto"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
