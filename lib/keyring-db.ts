@@ -542,8 +542,7 @@ export class KeyRingDB {
   static async updateRewardStatus(rewardId: string, status: 'pending' | 'paid'): Promise<{ success: boolean; error?: string }> {
     try {
       const updateData: any = { 
-        status,
-        updated_at: new Date().toISOString()
+        status
       };
       
       // Set paid_at timestamp when marking as paid

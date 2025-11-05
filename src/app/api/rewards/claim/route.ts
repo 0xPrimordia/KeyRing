@@ -108,11 +108,25 @@ export async function POST(request: NextRequest) {
 
     // Update all pending rewards to 'paid'
     const rewardIds = pendingRewards.map((r: any) => r.id);
+    console.log('[API] Updating rewards to paid status:', rewardIds);
+    
+    let successCount = 0;
+    let failCount = 0;
+    
     for (const rewardId of rewardIds) {
-      await KeyRingDB.updateRewardStatus(rewardId, 'paid');
+      console.log('[API] Updating reward:', rewardId);
+      const result = await KeyRingDB.updateRewardStatus(rewardId, 'paid');
+      
+      if (result.success) {
+        successCount++;
+        console.log('[API] Successfully updated reward:', rewardId);
+      } else {
+        failCount++;
+        console.error('[API] Failed to update reward:', rewardId, result.error);
+      }
     }
 
-    console.log('[API] Updated', rewardIds.length, 'rewards to paid status');
+    console.log('[API] Updated', successCount, 'rewards to paid status,', failCount, 'failed');
 
     return NextResponse.json({
       success: true,
