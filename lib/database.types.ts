@@ -27,6 +27,7 @@ export type Database = {
           sumsub_review_result: 'GREEN' | 'RED' | 'YELLOW' | null
           verified_name: string | null
           document_type: string | null
+          is_testnet: boolean
           created_at: string
           updated_at: string
         }
@@ -47,6 +48,7 @@ export type Database = {
           sumsub_review_result?: 'GREEN' | 'RED' | 'YELLOW' | null
           verified_name?: string | null
           document_type?: string | null
+          is_testnet?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -67,6 +69,7 @@ export type Database = {
           sumsub_review_result?: 'GREEN' | 'RED' | 'YELLOW' | null
           verified_name?: string | null
           document_type?: string | null
+          is_testnet?: boolean
           created_at?: string
           updated_at?: string
         }

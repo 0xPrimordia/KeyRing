@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Initialize HCS-11 client
     const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
+    const isTestnet = network === 'testnet';
     const operatorAccountId = network === 'mainnet' 
       ? process.env.HEDERA_MAINNET_ACCOUNT_ID!
       : process.env.HEDERA_TESTNET_ACCOUNT_ID!;
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
             profileTopicId: inscriptionResult.profileTopicId,
             codeName: keyringId,
             verificationProvider: verificationProvider,
-            // Include Sumsub data if available
+            isTestnet,
             ...(sumsubData && {
               sumsubApplicantId: sumsubData.applicantId,
               sumsubReviewResult: sumsubData.reviewResult,

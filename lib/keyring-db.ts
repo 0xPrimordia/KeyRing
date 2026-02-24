@@ -23,6 +23,7 @@ export class KeyRingDB {
     verificationProvider?: 'entrust' | 'sumsub';
     sumsubApplicantId?: string;
     sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
+    isTestnet?: boolean;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       const signerData: KeyringSignerInsert = {
@@ -36,6 +37,7 @@ export class KeyRingDB {
         verification_date: new Date().toISOString(),
         sumsub_applicant_id: data.sumsubApplicantId || null,
         sumsub_review_result: data.sumsubReviewResult || null,
+        is_testnet: data.isTestnet ?? false,
       };
 
       const { data: signer, error } = await supabase
@@ -68,6 +70,7 @@ export class KeyRingDB {
     verificationProvider?: 'entrust' | 'sumsub';
     sumsubApplicantId?: string;
     sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
+    isTestnet?: boolean;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       const signerData: KeyringSignerInsert = {
@@ -79,6 +82,7 @@ export class KeyRingDB {
         verification_date: new Date().toISOString(),
         sumsub_applicant_id: data.sumsubApplicantId || null,
         sumsub_review_result: data.sumsubReviewResult || null,
+        is_testnet: data.isTestnet ?? false,
       };
 
       const { data: signer, error } = await supabase
@@ -109,6 +113,7 @@ export class KeyRingDB {
     accountId: string;
     applicantId: string;
     reviewResult: 'GREEN' | 'RED' | 'YELLOW';
+    isTestnet?: boolean;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       // Generate proper KeyRing ID from account ID
@@ -116,16 +121,17 @@ export class KeyRingDB {
       const codeName = generateKeyRingId(data.accountId);
       
       const signerData: KeyringSignerInsert = {
-        account_type: 'hedera', // Default to hedera for existing functionality
+        account_type: 'hedera',
         account_id: data.accountId,
-        public_key: '', // Will be filled when profile is created
-        profile_topic_id: '', // Will be filled when profile is created
-        code_name: codeName, // Generate proper KeyRing ID
+        public_key: '',
+        profile_topic_id: '',
+        code_name: codeName,
         verification_status: data.reviewResult === 'GREEN' ? 'verified' : 'pending',
         verification_provider: 'sumsub',
         verification_date: new Date().toISOString(),
         sumsub_applicant_id: data.applicantId,
         sumsub_review_result: data.reviewResult,
+        is_testnet: data.isTestnet ?? false,
       };
 
       const { data: signer, error } = await supabase

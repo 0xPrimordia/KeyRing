@@ -39,16 +39,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate a KeyRing ID from the wallet address (since no public key for Ethereum)
     const codeName = generateKeyRingId(wallet_address);
+    const isTestnet = process.env.NEXT_PUBLIC_HEDERA_NETWORK !== 'mainnet';
 
-    // Register the Ethereum signer
     const result = await KeyRingDB.registerEthereumSigner({
       walletAddress: wallet_address,
       codeName,
       verificationProvider: 'sumsub',
       sumsubApplicantId: sumsub_applicant_id,
-      sumsubReviewResult: sumsub_review_result || 'GREEN'
+      sumsubReviewResult: sumsub_review_result || 'GREEN',
+      isTestnet,
     });
 
     if (!result.success) {

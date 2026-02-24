@@ -23,6 +23,7 @@ CREATE TABLE keyring_signers (
     verification_status verification_status DEFAULT 'pending',
     verification_provider verification_provider DEFAULT 'entrust',
     verification_date TIMESTAMPTZ,
+    is_testnet BOOLEAN NOT NULL DEFAULT false, -- true = testnet registration, false = mainnet
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -85,6 +86,7 @@ CREATE TABLE keyring_rewards (
 CREATE INDEX idx_keyring_signers_account_id ON keyring_signers(account_id);
 CREATE INDEX idx_keyring_signers_public_key ON keyring_signers(public_key);
 CREATE INDEX idx_keyring_signers_verification_status ON keyring_signers(verification_status);
+CREATE INDEX idx_keyring_signers_is_testnet ON keyring_signers(is_testnet);
 CREATE INDEX idx_keyring_projects_company_name ON keyring_projects(company_name);
 CREATE INDEX idx_keyring_threshold_lists_project_id ON keyring_threshold_lists(project_id);
 CREATE INDEX idx_keyring_threshold_lists_account_id ON keyring_threshold_lists(threshold_account_id);

@@ -46,11 +46,12 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
     } else {
-      // Create new incomplete signer record (no profile topic ID yet)
+      const isTestnet = process.env.NEXT_PUBLIC_HEDERA_NETWORK !== 'mainnet';
       const dbResult = await KeyRingDB.registerIncompleteSignerVerification({
         accountId,
         applicantId,
         reviewResult,
+        isTestnet,
       });
 
       if (dbResult.success) {

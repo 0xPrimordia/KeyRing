@@ -98,8 +98,16 @@ async function sendTestProject() {
             publicRecordUrl: "https://wyobiz.wyo.gov/Business/FilingDetails.aspx?eFNum=006087115039222233134008027248138231208044036098",
             owners: ["Jason Cox", "Kevin Compton"],
             metadata: {
-                description: "Lynxify is a Wyoming-based company that provides a suite of tools for the Hedera ecosystem.",
+                description: "Lynx Token DAO — a diversified token basket on Hedera. Mint LYNX by depositing multiple assets, burn to redeem underlying tokens.",
+                website: "https://token.lynxify.xyz",
                 hederaAccountId: operatorId.toString(),
+                contracts: {
+                    lynxToken: "0.0.7841860",
+                    proxyTreasury: "0.0.7842637",
+                    implementation: "0.0.7752722",
+                    lpVault: "0.0.7916817"
+                },
+                hashscan: `https://hashscan.io/${NETWORK}/contract/0.0.7842637`,
                 status: "verified"
             }
         };
