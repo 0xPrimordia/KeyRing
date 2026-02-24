@@ -114,16 +114,16 @@ export class KeyRingDB {
     applicantId: string;
     reviewResult: 'GREEN' | 'RED' | 'YELLOW';
     isTestnet?: boolean;
+    publicKey?: string;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
-      // Generate proper KeyRing ID from account ID
       const { generateKeyRingId } = await import('./codename-generator');
       const codeName = generateKeyRingId(data.accountId);
       
       const signerData: KeyringSignerInsert = {
         account_type: 'hedera',
         account_id: data.accountId,
-        public_key: '',
+        public_key: data.publicKey || null,
         profile_topic_id: '',
         code_name: codeName,
         verification_status: data.reviewResult === 'GREEN' ? 'verified' : 'pending',

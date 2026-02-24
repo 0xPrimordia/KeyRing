@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
 
+async function fetchPublicKeyFromMirrorNode(accountId: string, network: string): Promise<string | null> {
+  try {
+    const mirrorNodeUrl = network === 'mainnet'
+      ? 'https://mainnet-public.mirrornode.hedera.com'
+      : 'https://testnet.mirrornode.hedera.com';
+
+    const response = await fetch(`${mirrorNodeUrl}/api/v1/accounts/${accountId}`);
+    if (!response.ok) return null;
+
+    const accountData = await response.json();
+    if (accountData?.key?._type === 'ED25519' && accountData.key.key) {
+      return accountData.key.key;
+    }
+    return null;
+  } catch (error) {
+    console.error('[API] Mirror Node public key fetch failed:', error);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { accountId, applicantId, reviewResult } = await request.json();
@@ -12,17 +32,27 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
+    const isTestnet = network !== 'mainnet';
+
     console.log('[API] Storing Sumsub verification:', { 
       accountId, 
       applicantId, 
-      reviewResult 
+      reviewResult,
+      network 
     });
 
-    // Check if signer already exists
+    // Fetch public key from Mirror Node immediately so it's never left empty
+    const publicKey = await fetchPublicKeyFromMirrorNode(accountId, network);
+    if (publicKey) {
+      console.log('[API] Public key fetched from Mirror Node:', publicKey.substring(0, 20) + '...');
+    } else {
+      console.warn('[API] Could not fetch public key from Mirror Node for', accountId);
+    }
+
     const existingSigner = await KeyRingDB.getSignerByAccountId(accountId);
     
     if (existingSigner) {
-      // Update existing signer with Sumsub data
       const updateResult = await KeyRingDB.updateSignerVerification(existingSigner.id, {
         verificationStatus: reviewResult === 'GREEN' ? 'verified' : 'pending',
         verificationProvider: 'sumsub',
@@ -31,11 +61,22 @@ export async function POST(request: NextRequest) {
         sumsubReviewResult: reviewResult,
       });
 
+      // Backfill public key if missing on existing record
+      if (publicKey && !existingSigner.public_key) {
+        await KeyRingDB.completeSignerProfile(existingSigner.id, {
+          publicKey,
+          profileTopicId: existingSigner.profile_topic_id || '',
+          codeName: existingSigner.code_name,
+        });
+        console.log('[API] Backfilled public key for existing signer:', existingSigner.id);
+      }
+
       if (updateResult.success) {
         console.log('[API] Updated existing signer with Sumsub data:', existingSigner.id);
         return NextResponse.json({
           success: true,
-          signer: existingSigner,
+          signer: { ...existingSigner, public_key: publicKey || existingSigner.public_key },
+          publicKey,
           isUpdate: true
         });
       } else {
@@ -46,23 +87,24 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
     } else {
-      const isTestnet = process.env.NEXT_PUBLIC_HEDERA_NETWORK !== 'mainnet';
       const dbResult = await KeyRingDB.registerIncompleteSignerVerification({
         accountId,
         applicantId,
         reviewResult,
         isTestnet,
+        publicKey: publicKey || undefined,
       });
 
       if (dbResult.success) {
-        console.log('[API] Created incomplete signer record:', dbResult.signer?.id);
+        console.log('[API] Created signer record:', dbResult.signer?.id, publicKey ? '(with public key)' : '(no public key)');
         return NextResponse.json({
           success: true,
           signer: dbResult.signer,
+          publicKey,
           isUpdate: false
         });
       } else {
-        console.error('[API] Failed to create incomplete signer record:', dbResult.error);
+        console.error('[API] Failed to create signer record:', dbResult.error);
         return NextResponse.json({
           success: false,
           error: dbResult.error

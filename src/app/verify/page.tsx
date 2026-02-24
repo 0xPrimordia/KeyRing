@@ -53,7 +53,7 @@ function VerifyPageContent() {
   const [verificationCompleted, setVerificationCompleted] = useState(false);
   const [sumsubData, setSumsubData] = useState<SumsubCompletionData | null>(null);
   const [sumsubVerificationComplete, setSumsubVerificationComplete] = useState(false); // Track when Sumsub actually completes
-  const [existingSigner, setExistingSigner] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string; profileTopicId?: string; sumsubApplicantId?: string; sumsubReviewResult?: string } | null>(null);
+  const [existingSigner, setExistingSigner] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string; profileTopicId?: string; sumsubApplicantId?: string; sumsubReviewResult?: string; publicKey?: string } | null>(null);
   const [creationProgress, setCreationProgress] = useState<ProfileCreationProgress>({
     step: 'idle',
     message: '',
@@ -151,6 +151,7 @@ function VerifyPageContent() {
                 profileTopicId: data.signer.profile_topic_id || data.signer.profileTopicId,
                 sumsubApplicantId: data.signer.sumsub_applicant_id || data.signer.sumsubApplicantId,
                 sumsubReviewResult: data.signer.sumsub_review_result || data.signer.sumsubReviewResult,
+                publicKey: data.signer.public_key || data.signer.publicKey || undefined,
               });
               
               // For Ethereum wallets, only mark as complete if they have SumSub verification data
@@ -266,7 +267,7 @@ function VerifyPageContent() {
           setHasStarted(false);
           setAccessToken(null);
           
-          // Update existing signer state
+          // Update existing signer state (includes public key fetched from Mirror Node)
           if (data.signer) {
             setExistingSigner({
               id: data.signer.id,
@@ -277,6 +278,7 @@ function VerifyPageContent() {
               profileTopicId: data.signer.profile_topic_id,
               sumsubApplicantId: data.signer.sumsub_applicant_id,
               sumsubReviewResult: data.signer.sumsub_review_result,
+              publicKey: data.publicKey || data.signer.public_key || undefined,
             });
           }
         } else {
@@ -297,9 +299,9 @@ function VerifyPageContent() {
     setCreationProgress({ step: 'creating', message: 'Preparing profile creation...', progress: 10 });
     
     try {
-      let currentPublicKey = publicKey;
+      // Use public key already fetched during verification, fall back to wallet state or Mirror Node
+      let currentPublicKey = existingSigner?.publicKey || publicKey;
       
-      // Get public key if we don't have it
       if (!currentPublicKey) {
         setCreationProgress({ step: 'creating', message: 'Getting public key...', progress: 20 });
         currentPublicKey = await getPublicKey(accountId);

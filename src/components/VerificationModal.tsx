@@ -27,7 +27,7 @@ interface CreatedProfile {
 export default function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
   const { getPublicKey, isConnected, accountId, publicKey, dAppConnector, connection } = useWallet();
   const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null);
-  const [existingAccount, setExistingAccount] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string } | null>(null);
+  const [existingAccount, setExistingAccount] = useState<{ id: string; codeName: string; accountId: string; verificationStatus: string; createdAt: string; publicKey?: string } | null>(null);
   const [isCheckingAccount, setIsCheckingAccount] = useState(false);
   const [creationProgress, setCreationProgress] = useState<ProfileCreationProgress>({
     step: 'idle',
@@ -176,9 +176,8 @@ export default function VerificationModal({ isOpen, onClose }: VerificationModal
         // Hedera wallet flow
         if (!accountId) return;
         
-        let currentPublicKey = publicKey;
+        let currentPublicKey = existingAccount?.publicKey || publicKey;
         
-        // Get public key if we don't have it
         if (!currentPublicKey) {
           setCreationProgress({ step: 'creating', message: 'Getting public key...', progress: 20 });
           currentPublicKey = await getPublicKey(accountId);
