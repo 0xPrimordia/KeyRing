@@ -727,6 +727,12 @@ export default function ScheduleDetailsPage() {
               <div className="bg-muted/20 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm">
                 <div className="px-6 py-5">
                   <div className="space-y-5">
+                  {schedule?.memo && (
+                    <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Developer Memo</label>
+                      <p className="text-sm font-medium">{schedule.memo}</p>
+                    </div>
+                  )}
                   <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Transaction Type</label>
                       <div className="flex items-center gap-2 flex-wrap">
