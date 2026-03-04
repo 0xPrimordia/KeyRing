@@ -344,12 +344,12 @@ export default function SignerDashboard() {
         : process.env.NEXT_PUBLIC_TESTNET_KYRNG;
 
       if (!kyrngTokenId) {
-        throw new Error('KYRNG token ID not configured');
+        throw new Error('LYNX token ID not configured');
       }
 
       console.log('[DASHBOARD] Checking token association for:', kyrngTokenId);
 
-      // Check if KYRNG token is associated with the account
+      // Check if LYNX token is associated with the account
       const tokenBalanceResponse = await fetch(
         `${mirrorNodeUrl}/api/v1/accounts/${accountId}/tokens?token.id=${kyrngTokenId}`
       );
@@ -412,7 +412,7 @@ export default function SignerDashboard() {
       console.log('[DASHBOARD] Rewards claimed successfully:', data);
 
       // Show success message
-      setSuccessMessage(`Successfully claimed ${data.amount} KYRNG! Transaction ID: ${data.transactionId}`);
+      setSuccessMessage(`Successfully claimed ${data.amount} LYNX! Transaction ID: ${data.transactionId}`);
       setError(null);
 
       // Reload reward balance from database to reflect the 'paid' status
@@ -939,20 +939,20 @@ export default function SignerDashboard() {
           <div className="bg-background rounded-2xl p-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-5">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center overflow-hidden">
                   <img 
-                    src="/key_ring_logo_lock_v1.svg" 
-                    alt="KeyRing" 
-                    className="w-14 h-14"
+                    src="/lynx.png" 
+                    alt="Lynx" 
+                    className="w-14 h-14 object-contain"
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">KYRNG Rewards</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">LYNX Rewards</h3>
                   <div className="flex items-baseline space-x-2.5">
                     <span className="text-5xl font-bold text-teal">
-                      {rewardBalance.pending.toLocaleString()}
+                      {rewardBalance.pending.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                     </span>
-                    <span className="text-xl text-muted-foreground font-semibold">KYRNG</span>
+                    <span className="text-xl text-muted-foreground font-semibold">LYNX</span>
                   </div>
                 </div>
               </div>
@@ -1342,7 +1342,7 @@ export default function SignerDashboard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal mt-0.5">→</span>
-                    <span>Earn KYRNG rewards for each transaction you sign</span>
+                    <span>Earn LYNX rewards for each transaction you sign</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal mt-0.5">→</span>

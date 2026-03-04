@@ -32,12 +32,13 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Add transaction_review reward (10 KYRNG)
+    // Add transaction_review reward (0.5-1 LYNX)
+    const amount = parseFloat((Math.random() * 0.5 + 0.5).toFixed(2));
     const rewardResult = await KeyRingDB.addReward(
       signer.id,
       'transaction_review',
-      10,
-      'KYRNG',
+      amount,
+      'LYNX',
       transactionId, // signature_transaction_id
       scheduleId // schedule_id
     );
@@ -53,15 +54,15 @@ export async function POST(request: NextRequest) {
     console.log('[API] Signature reward recorded successfully:', {
       signerId: signer.id,
       rewardId: rewardResult.reward?.id,
-      amount: 10,
+      amount,
       transactionId
     });
 
     return NextResponse.json({
       success: true,
       reward: {
-        amount: 10,
-        currency: 'KYRNG',
+        amount,
+        currency: 'LYNX',
         transactionId,
         scheduleId
       }

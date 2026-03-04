@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = pendingRewards.reduce((sum: number, r: any) => sum + parseFloat(r.amount), 0);
 
-    console.log('[API] Total pending rewards:', totalAmount, 'KYRNG');
+    console.log('[API] Total pending rewards:', totalAmount, 'LYNX');
 
     // Determine network and credentials
     const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
@@ -61,9 +61,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!kyrngTokenId) {
-      console.error('[API] Missing KYRNG token ID');
+      console.error('[API] Missing LYNX token ID');
       return NextResponse.json({
-        error: 'KYRNG token not configured'
+        error: 'LYNX token not configured'
       }, { status: 500 });
     }
 
@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
     
     client.setOperator(operatorAccountId, operatorPrivateKey);
 
-    console.log('[API] Transferring', totalAmount, 'KYRNG to', accountId);
+    console.log('[API] Transferring', totalAmount, 'LYNX to', accountId);
 
-    // Transfer KYRNG tokens
+    // Transfer LYNX tokens
     // Note: Token amounts need to be in the smallest unit (considering decimals)
     // Assuming KYRNG has 8 decimals like most Hedera tokens
     const amountInSmallestUnit = Math.floor(totalAmount * 100000000); // 8 decimals
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       // Check if it's a token association error
       if (transferError.message?.includes('TOKEN_NOT_ASSOCIATED')) {
         return NextResponse.json({
-          error: 'Token not associated with account. Please associate the KYRNG token first.',
+          error: 'Token not associated with account. Please associate the LYNX token first.',
           code: 'TOKEN_NOT_ASSOCIATED'
         }, { status: 400 });
       }
