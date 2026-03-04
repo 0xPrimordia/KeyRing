@@ -43,6 +43,16 @@ interface AccountMetadata {
   }[];
 }
 
+interface RejectionInfo {
+  scheduleId: string;
+  reviewer: string;
+  functionName?: string;
+  reason: string;
+  riskLevel?: string;
+  timestamp?: string;
+  consensusTimestamp?: string;
+}
+
 export default function SignerDashboard() {
   const router = useRouter();
   const { isConnected, connection, connectWallet: connectWalletProvider, dAppConnector } = useWallet();
@@ -60,6 +70,8 @@ export default function SignerDashboard() {
   const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
   const [claimingRewards, setClaimingRewards] = useState(false);
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
+  const [rejections, setRejections] = useState<Record<string, RejectionInfo>>({});
+  const [rejectedByMeIds, setRejectedByMeIds] = useState<Set<string>>(new Set());
 
   // Get account ID from connection
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
@@ -95,6 +107,7 @@ export default function SignerDashboard() {
       loadAccountMetadata();
       loadPendingSchedules();
       loadRewardBalance();
+      loadRejections();
     }
   }, [accountId, isRegistered]);
 
@@ -248,7 +261,9 @@ export default function SignerDashboard() {
   }
 
   // Group schedules by payer_account_id (threshold list)
-  const schedulesByThresholdList = pendingSchedules.reduce((acc, schedule) => {
+  // Filter out schedules user rejected
+  const displaySchedules = pendingSchedules.filter((s) => !rejectedByMeIds.has(s.schedule_id));
+  const schedulesByThresholdList = displaySchedules.reduce((acc, schedule) => {
     const thresholdList = schedule.payer_account_id;
     if (!acc[thresholdList]) {
       acc[thresholdList] = [];
@@ -293,6 +308,19 @@ export default function SignerDashboard() {
       console.error('Error loading reward balance:', err);
       // Show zero balance on error
       setRewardBalance({ total: 0, pending: 0, paid: 0 });
+    }
+  }
+
+  async function loadRejections() {
+    try {
+      const response = await fetch('/api/rejections');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success && data.data) {
+        setRejections(data.data);
+      }
+    } catch (err) {
+      console.error('[DASHBOARD] Error loading rejections:', err);
     }
   }
 
@@ -573,6 +601,34 @@ export default function SignerDashboard() {
       }
 
       console.log('[DASHBOARD] Total pending schedules requiring my signature:', allPendingSchedules.length);
+
+      // Fetch schedule IDs this user has rejected (HCS message on threshold topic)
+      let rejectedIds = new Set<string>();
+      if (allPendingSchedules.length > 0) {
+        try {
+          const res = await fetch('/api/rejections/by-signer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accountId,
+              schedules: allPendingSchedules.map((s) => ({
+                schedule_id: s.schedule_id,
+                payer_account_id: s.payer_account_id,
+              })),
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            rejectedIds = new Set(data.rejectedIds || []);
+            if (rejectedIds.size > 0) {
+              console.log('[DASHBOARD] Found', rejectedIds.size, 'schedules rejected by me');
+            }
+          }
+        } catch (err) {
+          console.warn('[DASHBOARD] Could not load my rejections:', err);
+        }
+      }
+      setRejectedByMeIds(rejectedIds);
       setPendingSchedules(allPendingSchedules);
 
     } catch (err: any) {
@@ -823,7 +879,7 @@ export default function SignerDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-6">
         {/* Header */}
-        <div className="mb-8 mt-12 flex items-center justify-between">
+        <div className="mb-8 mt-12 flex items-center justify-between flex-wrap gap-4">
           <h1 className="font-bold">Signer Dashboard</h1>
           <button
             onClick={() => setShowSettings(!showSettings)}
@@ -1025,15 +1081,18 @@ export default function SignerDashboard() {
               </p>
             </div>
             <button
-              onClick={loadPendingSchedules}
-              disabled={loading}
-              className="text-xl text-teal hover:opacity-80 transition-opacity flex items-center gap-1.5 px-4 py-2 rounded-lg"
-            >
-              <svg className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
+                onClick={() => {
+                  loadPendingSchedules();
+                  loadRejections();
+                }}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-teal hover:opacity-80 transition-opacity bg-muted/30 hover:bg-muted/50"
+              >
+                <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {loading ? 'Refreshing...' : 'Refresh'}
+              </button>
           </div>
         )}
 
@@ -1137,6 +1196,7 @@ export default function SignerDashboard() {
                     <div className="space-y-3 p-6 pt-0 pl-20">
                       {schedules.map((schedule) => {
                         const riskInfo = getRiskLevelFromMemo(schedule.memo);
+                        const rejection = rejections[schedule.schedule_id];
                         return (
                           <div 
                             key={schedule.schedule_id} 
@@ -1148,10 +1208,15 @@ export default function SignerDashboard() {
                           >
                             <div className="flex items-start justify-between gap-4 mb-3">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
                                   <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
                                     {schedule.memo || 'Scheduled Transaction'}
                                   </h3>
+                                  {rejection && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/50">
+                                      REJECTED BY AGENT
+                                    </span>
+                                  )}
                                   {riskInfo && (
                                     <span 
                                       className="inline-flex items-center rounded-full uppercase tracking-wider text-white ml-3"
@@ -1208,6 +1273,41 @@ export default function SignerDashboard() {
                                 <span>Expires {new Date(parseFloat(schedule.expiration_time) * 1000).toLocaleDateString()}</span>
                               </div>
                             </div>
+
+                            {rejection && (
+                              <div className="mt-3 pt-3 border-t border-red-500/30 bg-red-500/5 -mx-5 px-5 py-3 rounded-b-xl">
+                                <div className="flex items-start gap-3">
+                                  <div className="flex-shrink-0 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 font-bold">
+                                    !
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-sm font-semibold text-red-400">Agent Rejection</span>
+                                      {rejection.riskLevel && (
+                                        <span className={`text-xs px-2 py-0.5 rounded font-semibold uppercase ${
+                                          rejection.riskLevel === 'critical' ? 'bg-red-600/80 text-white' :
+                                          rejection.riskLevel === 'high' ? 'bg-orange-600/80 text-white' :
+                                          'bg-amber-600/80 text-white'
+                                        }`}>
+                                          {rejection.riskLevel} Risk
+                                        </span>
+                                      )}
+                                    </div>
+                                    {rejection.functionName && (
+                                      <div className="text-xs text-muted-foreground mb-1">
+                                        Function: <code className="bg-muted/60 px-1 py-0.5 rounded">{rejection.functionName}</code>
+                                      </div>
+                                    )}
+                                    <p className="text-sm text-red-200/90 leading-relaxed">
+                                      {rejection.reason}
+                                    </p>
+                                    <div className="text-xs text-muted-foreground mt-2">
+                                      Rejected by: {rejection.reviewer}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}

@@ -166,6 +166,16 @@ export default function ScheduleDetailsPage() {
   const [hcsMessages, setHcsMessages] = useState<HCSMessage[]>([]);
   const [thresholdListData, setThresholdListData] = useState<ThresholdListData | null>(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [agentRejection, setAgentRejection] = useState<{
+    scheduleId: string;
+    reviewer: string;
+    functionName?: string;
+    reason: string;
+    riskLevel?: string;
+    timestamp?: string;
+  } | null>(null);
+  const [expandedSigIndex, setExpandedSigIndex] = useState<number | null>(null);
+  const [technicalDetailsExpanded, setTechnicalDetailsExpanded] = useState(false);
 
   useEffect(() => {
     loadScheduleDetails();
@@ -190,6 +200,21 @@ export default function ScheduleDetailsPage() {
       // Load rejection messages for this transaction
       if (data.payer_account_id) {
         loadHCSMessages(data.payer_account_id);
+      }
+
+      // Load agent rejections from PROJECT_REJECTION_TOPIC
+      try {
+        const rejRes = await fetch('/api/rejections');
+        if (rejRes.ok) {
+          const rejData = await rejRes.json();
+          if (rejData.success && rejData.data?.[scheduleId]) {
+            setAgentRejection(rejData.data[scheduleId]);
+          } else {
+            setAgentRejection(null);
+          }
+        }
+      } catch {
+        setAgentRejection(null);
       }
 
     } catch (err: any) {
@@ -747,15 +772,19 @@ export default function ScheduleDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-6">
         {/* Back Button & Header */}
         <div className="mb-8">
-          <Link
-            href="/signer-dashboard"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4 transition-colors"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Dashboard
-          </Link>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <Link
+              href="/signer-dashboard"
+              className="inline-flex items-center hover:text-primary transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Dashboard
+            </Link>
+            <span className="text-muted-foreground/50">/</span>
+            <span>Schedule: <span className="font-mono">{scheduleId}</span></span>
+          </div>
           <h1 className="text-3xl font-bold">Transaction Details</h1>
       </div>
 
@@ -780,33 +809,23 @@ export default function ScheduleDetailsPage() {
             {transactionInfo && (
               <div className="bg-muted/20 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm">
                 <div className="px-6 py-5">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      What This Transaction Does
-                    </h2>
-                  {transactionInfo.risk && (
-                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        transactionInfo.risk === 'low' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                        transactionInfo.risk === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                        transactionInfo.risk === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                        transactionInfo.risk === 'critical' ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
-                        'bg-slate-500/20 text-slate-400 border border-slate-500/30'
-                    }`}>
-                      {transactionInfo.risk} RISK
-                    </span>
-                  )}
-                </div>
                   <div className="space-y-5">
                   <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Transaction Type</label>
-                      <p className="text-lg font-bold">{transactionInfo.type}</p>
-                  </div>
-                  <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Description</label>
-                      <p className="text-sm leading-relaxed">{transactionInfo.description}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-lg font-bold">{transactionInfo.type}</p>
+                        {transactionInfo.risk && (
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                            transactionInfo.risk === 'low' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                            transactionInfo.risk === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                            transactionInfo.risk === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                            transactionInfo.risk === 'critical' ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
+                            'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                          }`}>
+                            {transactionInfo.risk} RISK
+                          </span>
+                        )}
+                      </div>
                   </div>
                     {/* Show accounts involved if we decoded them */}
                     {transactionInfo.details.accounts && transactionInfo.details.accounts.length > 0 && (
@@ -846,38 +865,47 @@ export default function ScheduleDetailsPage() {
                     )}
 
                     <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setTechnicalDetailsExpanded((v) => !v)}
+                        className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                      >
+                        <svg className={`w-4 h-4 transition-transform ${technicalDetailsExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                         Technical Details
-                      </label>
-                      <div className="space-y-3">
-                        {transactionInfo.details.hex && (
-                          <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Protobuf Hex</span>
-                            <div className="bg-muted/40 rounded-xl p-3 overflow-x-auto">
-                              <pre className="text-[10px] font-mono text-emerald-500">
-                                {transactionInfo.details.hex}
+                      </button>
+                      {technicalDetailsExpanded && (
+                        <div className="mt-3 space-y-3">
+                          {transactionInfo.details.hex && (
+                            <div>
+                              <span className="text-xs text-muted-foreground block mb-1">Protobuf Hex</span>
+                              <div className="bg-muted/40 rounded-xl p-3 overflow-x-auto">
+                                <pre className="text-[10px] font-mono text-emerald-500">
+                                  {transactionInfo.details.hex}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+                          {transactionInfo.details.raw && (
+                            <div>
+                              <span className="text-xs text-muted-foreground block mb-1">Base64 Encoded</span>
+                              <div className="bg-muted/40 rounded-xl p-3 overflow-x-auto">
+                                <pre className="text-[10px] font-mono break-all whitespace-pre-wrap text-slate-400">
+                                  {transactionInfo.details.raw}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+                          {!transactionInfo.details.hex && !transactionInfo.details.raw && (
+                            <div className="bg-muted/40 rounded-xl p-4 overflow-x-auto">
+                              <pre className="text-xs font-mono whitespace-pre-wrap">
+                                {JSON.stringify(transactionInfo.details, null, 2)}
                               </pre>
                             </div>
-                          </div>
-                        )}
-                        {transactionInfo.details.raw && (
-                  <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Base64 Encoded</span>
-                            <div className="bg-muted/40 rounded-xl p-3 overflow-x-auto">
-                              <pre className="text-[10px] font-mono break-all whitespace-pre-wrap text-slate-400">
-                                {transactionInfo.details.raw}
-                              </pre>
-                            </div>
-                          </div>
-                        )}
-                        {!transactionInfo.details.hex && !transactionInfo.details.raw && (
-                          <div className="bg-muted/40 rounded-xl p-4 overflow-x-auto">
-                            <pre className="text-xs font-mono whitespace-pre-wrap">
-                        {JSON.stringify(transactionInfo.details, null, 2)}
-                      </pre>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1100,13 +1128,27 @@ export default function ScheduleDetailsPage() {
                 </h2>
                 {schedule.signatures && schedule.signatures.length > 0 ? (
                   <div className="space-y-3">
-                    {schedule.signatures.map((sig, index: number) => (
-                      <div key={index} className="bg-muted/30 p-4 rounded-xl">
-                        <div className="flex items-start gap-3 mb-3">
+                    {schedule.signatures.map((sig, index: number) => {
+                      const agentPublicKey = process.env.NEXT_PUBLIC_VALIDATION_AGENT_PUBLIC_KEY;
+                      let isAgent = false;
+                      if (agentPublicKey) {
+                        try {
+                          const sigKeyHex = Buffer.from(sig.public_key_prefix, 'base64').toString('hex');
+                          const sigKeyRaw = sigKeyHex.length > 64 ? sigKeyHex.slice(-64) : sigKeyHex;
+                          const agentKeyRaw = agentPublicKey.length > 64 ? agentPublicKey.slice(-64) : agentPublicKey;
+                          isAgent = sigKeyRaw === agentKeyRaw || sigKeyHex.includes(agentKeyRaw) || agentKeyRaw.includes(sigKeyRaw);
+                        } catch {
+                          // ignore
+                        }
+                      }
+                      const isExpanded = expandedSigIndex === index;
+                      return (
+                      <div key={index} className={`p-4 rounded-xl ${isAgent ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-muted/30'}`}>
+                        <div className="flex items-start gap-3">
                           <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                             <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold">Signature {index + 1}</p>
@@ -1114,26 +1156,46 @@ export default function ScheduleDetailsPage() {
                               {new Date(parseFloat(sig.consensus_timestamp) * 1000).toLocaleString()}
                             </p>
                           </div>
-                          <span className="text-xs bg-green-500/20 text-green-500 font-semibold px-2 py-1 rounded-full">
-                            {sig.type}
-                          </span>
-                        </div>
-                        <div className="space-y-2 text-xs">
-                          <div>
-                            <span className="text-muted-foreground font-semibold block mb-1">Public Key Prefix</span>
-                            <p className="font-mono bg-muted/40 p-2 rounded break-all">
-                              {sig.public_key_prefix}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground font-semibold block mb-1">Signature</span>
-                            <p className="font-mono bg-muted/40 p-2 rounded break-all text-[10px] leading-relaxed">
-                              {sig.signature}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            {isAgent && (
+                              <span className="text-xs bg-purple-500/30 text-purple-300 font-semibold px-2 py-1 rounded-full">
+                                Validator Agent
+                              </span>
+                            )}
+                            <span className="text-xs bg-green-500/20 text-green-500 font-semibold px-2 py-1 rounded-full">
+                              {sig.type}
+                            </span>
                           </div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedSigIndex(isExpanded ? null : index)}
+                          className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <svg className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                          {isExpanded ? 'Hide' : 'Show'} key & signature
+                        </button>
+                        {isExpanded && (
+                          <div className="mt-3 pt-3 border-t border-muted/50 space-y-2 text-xs">
+                            <div>
+                              <span className="text-muted-foreground font-semibold block mb-1">Public Key Prefix</span>
+                              <p className="font-mono bg-muted/40 p-2 rounded break-all text-[10px]">
+                                {sig.public_key_prefix}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground font-semibold block mb-1">Signature</span>
+                              <p className="font-mono bg-muted/40 p-2 rounded break-all text-[10px] leading-relaxed">
+                                {sig.signature}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -1148,8 +1210,8 @@ export default function ScheduleDetailsPage() {
                 )}
               </div>
 
-              {/* Rejections (HCS Messages) */}
-              {thresholdListData && (
+              {/* Rejections (Agent + HCS Messages) */}
+              {(thresholdListData || agentRejection) && (
                 <div className="px-6 py-5 pt-8 border-t border-muted/30">
                   <h2 className="text-lg font-bold flex items-center gap-2 mb-4">
                     <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1157,6 +1219,37 @@ export default function ScheduleDetailsPage() {
                     </svg>
                     Rejections
                   </h2>
+
+                  {agentRejection && (
+                    <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 font-bold flex-shrink-0">
+                          !
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-semibold text-red-400">Agent Rejection</span>
+                            {agentRejection.riskLevel && (
+                              <span className={`text-xs px-2 py-0.5 rounded font-semibold uppercase ${
+                                agentRejection.riskLevel === 'critical' ? 'bg-red-600 text-white' :
+                                agentRejection.riskLevel === 'high' ? 'bg-orange-600 text-white' :
+                                'bg-amber-600 text-white'
+                              }`}>
+                                {agentRejection.riskLevel} Risk
+                              </span>
+                            )}
+                          </div>
+                          {agentRejection.functionName && (
+                            <div className="text-xs text-muted-foreground mb-1">
+                              Function: <code className="bg-muted/60 px-1 py-0.5 rounded">{agentRejection.functionName}</code>
+                            </div>
+                          )}
+                          <p className="text-sm text-red-200 leading-relaxed">{agentRejection.reason}</p>
+                          <div className="text-xs text-muted-foreground mt-2">Rejected by: {agentRejection.reviewer}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   {loadingMessages ? (
                     <div className="text-center py-4">
@@ -1173,7 +1266,9 @@ export default function ScheduleDetailsPage() {
                           parsedMessage = { message: msg.message };
                         }
 
-                        const isRejection = parsedMessage.type === 'rejection';
+                        const isRejection = parsedMessage.type === 'rejection' || parsedMessage.reason;
+                        const displayReason = parsedMessage.reason || parsedMessage.feedback || parsedMessage.message;
+                        const displaySigner = parsedMessage.reviewer || parsedMessage.signer || 'Signer';
 
                         return (
                           <div key={index} className={`p-4 rounded-xl ${isRejection ? 'bg-red-500/10 border border-red-500/30' : 'bg-muted/30'}`}>
@@ -1188,13 +1283,22 @@ export default function ScheduleDetailsPage() {
                                 </svg>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
                                   <p className="text-sm font-bold">
-                                    {parsedMessage.signer ? `${parsedMessage.signer.substring(0, 10)}...` : 'Signer'}
+                                    {typeof displaySigner === 'string' && displaySigner.length > 12 ? `${displaySigner.substring(0, 12)}...` : displaySigner}
                                   </p>
                                   {isRejection && (
                                     <span className="text-xs bg-red-500/20 text-red-500 font-semibold px-2 py-0.5 rounded-full">
                                       Rejected
+                                    </span>
+                                  )}
+                                  {parsedMessage.riskLevel && (
+                                    <span className={`text-xs px-2 py-0.5 rounded font-semibold uppercase ${
+                                      parsedMessage.riskLevel === 'critical' ? 'bg-red-600/80 text-white' :
+                                      parsedMessage.riskLevel === 'high' ? 'bg-orange-600/80 text-white' :
+                                      'bg-amber-600/80 text-white'
+                                    }`}>
+                                      {parsedMessage.riskLevel}
                                     </span>
                                   )}
                                 </div>
@@ -1204,7 +1308,7 @@ export default function ScheduleDetailsPage() {
                               </div>
                             </div>
                             <p className="text-sm mt-2 leading-relaxed">
-                              {parsedMessage.feedback || parsedMessage.message}
+                              {displayReason}
                             </p>
                           </div>
                         );
@@ -1222,14 +1326,16 @@ export default function ScheduleDetailsPage() {
                     </div>
                   )}
 
-                  <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-semibold text-red-500">Rejection Topic:</span> {thresholdListData.hcs_topic_id}
-                    </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      Rejection feedback is posted on-chain for transparency
-                    </p>
-                  </div>
+                  {thresholdListData?.hcs_topic_id && (
+                    <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-semibold text-red-500">Rejection Topic:</span> {thresholdListData.hcs_topic_id}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        Rejection feedback is posted on-chain for transparency
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "hedera:threshold": "tsx utils/createThresholdList.ts",
+    "hedera:threshold:testnet": "tsx utils/createTestnetThresholdList.ts",
     "hedera:query": "tsx utils/queryMirrorNode.ts",
     "hedera:hashscan": "tsx utils/queryHashScan.ts",
     "hedera:project": "tsx utils/send-test-project.ts",
