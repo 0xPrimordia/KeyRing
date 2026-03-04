@@ -72,6 +72,7 @@ export default function SignerDashboard() {
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const [rejections, setRejections] = useState<Record<string, RejectionInfo>>({});
   const [rejectedByMeIds, setRejectedByMeIds] = useState<Set<string>>(new Set());
+  const [validatorReviews, setValidatorReviews] = useState<Record<string, { riskLevel?: string; recommendation?: string }>>({});
 
   // Get account ID from connection
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
@@ -108,6 +109,7 @@ export default function SignerDashboard() {
       loadPendingSchedules();
       loadRewardBalance();
       loadRejections();
+      loadValidatorReviews();
     }
   }, [accountId, isRegistered]);
 
@@ -223,31 +225,6 @@ export default function SignerDashboard() {
     }
   }
 
-  function getRiskLevelFromMemo(memo: string): { level: 'low' | 'medium' | 'high' | 'critical'; label: string } | null {
-    const memoLower = memo?.toLowerCase() || '';
-    
-    if (!memoLower.includes('boostproject:')) {
-      return null;
-    }
-
-    const txTypeMatch = memoLower.match(/boostproject:\s*(\w+)/);
-    if (!txTypeMatch) return null;
-    
-    const txType = txTypeMatch[1].toUpperCase();
-    
-    if (txType === 'SIMPLE_BOOST') {
-      return { level: 'low', label: 'LOW RISK' };
-    } else if (txType === 'TOKEN_PAUSE' || txType === 'SUPPLY_KEY_TRANSFER') {
-      return { level: 'critical', label: 'CRITICAL' };
-    } else if (txType === 'TOKEN_MINT' || txType === 'TOKEN_BURN' || txType === 'TREASURY_TRANSFER') {
-      return { level: 'high', label: 'HIGH RISK' };
-    } else if (txType === 'ACCOUNT_ALLOWANCE' || txType === 'FEE_SCHEDULE_UPDATE') {
-      return { level: 'medium', label: 'MEDIUM RISK' };
-    }
-    
-    return { level: 'medium', label: 'REVIEW' };
-  }
-
   function toggleThresholdList(listId: string) {
     setCollapsedLists(prev => {
       const newSet = new Set(prev);
@@ -321,6 +298,19 @@ export default function SignerDashboard() {
       }
     } catch (err) {
       console.error('[DASHBOARD] Error loading rejections:', err);
+    }
+  }
+
+  async function loadValidatorReviews() {
+    try {
+      const response = await fetch('/api/validator-reviews');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success && data.data) {
+        setValidatorReviews(data.data);
+      }
+    } catch (err) {
+      console.error('[DASHBOARD] Error loading validator reviews:', err);
     }
   }
 
@@ -1082,9 +1072,10 @@ export default function SignerDashboard() {
             </div>
             <button
                 onClick={() => {
-                  loadPendingSchedules();
-                  loadRejections();
-                }}
+              loadPendingSchedules();
+                loadRejections();
+                loadValidatorReviews();
+              }}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-teal hover:opacity-80 transition-opacity bg-muted/30 hover:bg-muted/50"
               >
@@ -1195,8 +1186,9 @@ export default function SignerDashboard() {
                   {!isCollapsed && (
                     <div className="space-y-3 p-6 pt-0 pl-20">
                       {schedules.map((schedule) => {
-                        const riskInfo = getRiskLevelFromMemo(schedule.memo);
                         const rejection = rejections[schedule.schedule_id];
+                        const validator = validatorReviews[schedule.schedule_id];
+                        const riskLevel = rejection?.riskLevel || validator?.riskLevel;
                         return (
                           <div 
                             key={schedule.schedule_id} 
@@ -1217,21 +1209,21 @@ export default function SignerDashboard() {
                                       REJECTED BY AGENT
                                     </span>
                                   )}
-                                  {riskInfo && (
+                                  {riskLevel && (
                                     <span 
                                       className="inline-flex items-center rounded-full uppercase tracking-wider text-white ml-3"
                                       style={{
-                                        backgroundColor: riskInfo.level === 'low' ? '#586022' :
-                                                       riskInfo.level === 'medium' ? '#B89048' :
-                                                       riskInfo.level === 'high' ? '#B0602E' :
-                                                       riskInfo.level === 'critical' ? '#762616' : '#000000',
+                                        backgroundColor: riskLevel === 'low' ? '#586022' :
+                                                       riskLevel === 'medium' ? '#B89048' :
+                                                       riskLevel === 'high' ? '#B0602E' :
+                                                       riskLevel === 'critical' ? '#762616' : '#4a5568',
                                         paddingLeft: '1rem',
                                         paddingRight: '1rem',
                                         paddingTop: '0.5rem',
                                         paddingBottom: '0.375rem'
                                       }}
                                     >
-                                      {riskInfo.label}
+                                      {riskLevel} RISK
                                     </span>
                                   )}
                                 </div>

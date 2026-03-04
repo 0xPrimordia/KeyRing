@@ -17,98 +17,6 @@ import {
   PrivateKey
 } from '@hashgraph/sdk';
 
-const aiRecommendations = {
-  "SIMPLE_BOOST": {
-    "risk": "low",
-    "recommendation": "This is a low-risk transaction that simply increments a counter on-chain. It's commonly used for testing multi-signature workflows and tracking engagement metrics.",
-    "keyPoints": [
-      "No token transfers or financial impact",
-      "Safe for testing and learning",
-      "Good practice for new signers"
-    ],
-    "action": "Safe to approve"
-  },
-  "TOKEN_MINT": {
-    "risk": "high",
-    "recommendation": "Token minting increases circulating supply and can impact token economics. Verify the mint amount aligns with the project's tokenomics schedule and distribution plan.",
-    "keyPoints": [
-      "Check if amount matches published tokenomics",
-      "Verify recipient is the intended distribution wallet",
-      "Consider inflation impact on token value",
-      "Ensure proper community communication"
-    ],
-    "action": "Review carefully before approving"
-  },
-  "TOKEN_BURN": {
-    "risk": "high",
-    "recommendation": "Token burning permanently removes tokens from circulation. This is typically positive for token value but should align with the project's buyback program or deflationary schedule.",
-    "keyPoints": [
-      "Verify burn amount matches announced program",
-      "Confirm this aligns with roadmap commitments",
-      "Check if community was notified in advance",
-      "Burns are irreversible - double-check amount"
-    ],
-    "action": "Verify burn program details"
-  },
-  "TREASURY_TRANSFER": {
-    "risk": "high",
-    "recommendation": "Treasury transfers move significant funds and require careful verification. Large transfers should align with approved budgets and have clear purposes documented.",
-    "keyPoints": [
-      "Verify recipient address is legitimate",
-      "Check if transfer amount is within approved budget",
-      "Ensure proper documentation exists",
-      "Consider if amount is appropriate for stated purpose"
-    ],
-    "action": "Verify recipient and purpose"
-  },
-  "ACCOUNT_ALLOWANCE": {
-    "risk": "medium",
-    "recommendation": "Account allowances grant spending permissions to third-party contracts (like DEXs). Verify the contract is legitimate and the allowance amount is reasonable for the intended use.",
-    "keyPoints": [
-      "Verify the contract address is the official DEX/protocol",
-      "Check if allowance amount is appropriate",
-      "Consider if unlimited allowance is necessary",
-      "Research the protocol's security track record"
-    ],
-    "action": "Verify contract legitimacy"
-  },
-  "FEE_SCHEDULE_UPDATE": {
-    "risk": "medium",
-    "recommendation": "Fee schedule changes affect all token holders. Verify the new fees are reasonable and align with network conditions. Excessive fees can negatively impact user adoption.",
-    "keyPoints": [
-      "Check if new fee is competitive with similar tokens",
-      "Verify community was consulted on changes",
-      "Consider impact on small transactions",
-      "Ensure fees don't discourage trading activity"
-    ],
-    "action": "Review fee reasonability"
-  },
-  "TOKEN_PAUSE": {
-    "risk": "critical",
-    "recommendation": "⚠️ CRITICAL: Token pausing halts ALL transfers and should only be used in emergency situations. Verify there is a legitimate security threat or critical bug before approving.",
-    "keyPoints": [
-      "Confirm there is a verified security vulnerability",
-      "Check if team has communicated the issue publicly",
-      "Verify a fix is being developed",
-      "Consider impact on token holders and exchanges",
-      "Ensure unpause plan exists"
-    ],
-    "action": "⚠️ Only approve for verified emergencies"
-  },
-  "SUPPLY_KEY_TRANSFER": {
-    "risk": "critical",
-    "recommendation": "⚠️ CRITICAL: Transferring the supply key changes fundamental token control. This should only occur for planned governance upgrades to more secure multi-sig setups. Verify the recipient address exhaustively.",
-    "keyPoints": [
-      "Verify recipient is the correct new multi-sig address",
-      "Confirm upgrade was announced to community",
-      "Check if new setup improves security (e.g., 2-of-3 to 3-of-5)",
-      "Ensure all signers understand new key holders",
-      "IRREVERSIBLE - triple-check recipient address"
-    ],
-    "action": "⚠️ Verify recipient address multiple times"
-  }
-} as const;
-
 interface ScheduleDetails {
   schedule_id: string;
   creator_account_id: string;
@@ -174,6 +82,14 @@ export default function ScheduleDetailsPage() {
     riskLevel?: string;
     timestamp?: string;
   } | null>(null);
+  const [agentValidator, setAgentValidator] = useState<{
+    scheduleId: string;
+    reviewer: string;
+    functionName?: string;
+    recommendation: string;
+    riskLevel?: string;
+    timestamp?: string;
+  } | null>(null);
   const [expandedSigIndex, setExpandedSigIndex] = useState<number | null>(null);
   const [technicalDetailsExpanded, setTechnicalDetailsExpanded] = useState(false);
 
@@ -215,6 +131,21 @@ export default function ScheduleDetailsPage() {
         }
       } catch {
         setAgentRejection(null);
+      }
+
+      // Load agent validator review from PROJECT_VALIDATOR_TOPIC (when agent signed)
+      try {
+        const valRes = await fetch('/api/validator-reviews');
+        if (valRes.ok) {
+          const valData = await valRes.json();
+          if (valData.success && valData.data?.[scheduleId]) {
+            setAgentValidator(valData.data[scheduleId]);
+          } else {
+            setAgentValidator(null);
+          }
+        }
+      } catch {
+        setAgentValidator(null);
       }
 
     } catch (err: any) {
@@ -558,20 +489,6 @@ export default function ScheduleDetailsPage() {
               console.log('[PARSE] Could not extract description from hex:', e);
             }
             
-            // Mock risk assessment based on transaction type (will be replaced with AI)
-            let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'medium';
-            const txTypeRaw = txTypeMatch ? txTypeMatch[1].toUpperCase() : '';
-            
-            if (txTypeRaw === 'SIMPLE_BOOST') {
-              riskLevel = 'low';
-            } else if (txTypeRaw === 'TOKEN_PAUSE' || txTypeRaw === 'SUPPLY_KEY_TRANSFER') {
-              riskLevel = 'critical';
-            } else if (txTypeRaw === 'TOKEN_MINT' || txTypeRaw === 'TOKEN_BURN' || txTypeRaw === 'TREASURY_TRANSFER') {
-              riskLevel = 'high';
-            } else if (txTypeRaw === 'ACCOUNT_ALLOWANCE' || txTypeRaw === 'FEE_SCHEDULE_UPDATE') {
-              riskLevel = 'medium';
-            }
-            
             return {
               type: txType,
               details: { 
@@ -581,7 +498,7 @@ export default function ScheduleDetailsPage() {
                 decoded: accounts.length > 0 ? `Contract call involving: ${accounts.join(', ')}` : 'BoostProject contract interaction'
               },
               description: extractedDescription,
-              risk: riskLevel
+              risk: null
             };
           }
           
@@ -814,15 +731,15 @@ export default function ScheduleDetailsPage() {
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Transaction Type</label>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-lg font-bold">{transactionInfo.type}</p>
-                        {transactionInfo.risk && (
+                        {(agentRejection?.riskLevel || agentValidator?.riskLevel) && (
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                            transactionInfo.risk === 'low' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                            transactionInfo.risk === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                            transactionInfo.risk === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                            transactionInfo.risk === 'critical' ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
+                            (agentRejection?.riskLevel || agentValidator?.riskLevel) === 'low' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                            (agentRejection?.riskLevel || agentValidator?.riskLevel) === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                            (agentRejection?.riskLevel || agentValidator?.riskLevel) === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                            (agentRejection?.riskLevel || agentValidator?.riskLevel) === 'critical' ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
                             'bg-slate-500/20 text-slate-400 border border-slate-500/30'
                           }`}>
-                            {transactionInfo.risk} RISK
+                            {(agentRejection?.riskLevel || agentValidator?.riskLevel)} RISK
                           </span>
                         )}
                       </div>
@@ -949,77 +866,92 @@ export default function ScheduleDetailsPage() {
               </div>
             )}
 
-            {/* AI Recommendation */}
-            {!isExecuted && transactionInfo && (() => {
-              const memoMatch = schedule?.memo?.toLowerCase() || '';
-              const txTypeMatch = memoMatch.match(/boostproject:\s*(\w+)/);
-              const txType = txTypeMatch ? txTypeMatch[1].toUpperCase() : null;
-              const recommendation = txType && aiRecommendations[txType as keyof typeof aiRecommendations];
-              
-              if (!recommendation) return null;
-              
-              const riskColors = {
-                low: 'from-emerald-500/10 to-emerald-500/5 border-emerald-500/30',
-                medium: 'from-amber-500/10 to-amber-500/5 border-amber-500/30',
-                high: 'from-rose-500/10 to-rose-500/5 border-rose-500/30',
-                critical: 'from-red-600/10 to-red-600/5 border-red-600/30'
-              };
-              
-              const iconColors = {
-                low: 'bg-emerald-500/20 text-emerald-500',
-                medium: 'bg-amber-500/20 text-amber-500',
-                high: 'bg-rose-500/20 text-rose-500',
-                critical: 'bg-red-600/20 text-red-600'
-              };
-              
-              return (
-                <div className={`bg-gradient-to-br ${riskColors[recommendation.risk as keyof typeof riskColors]} backdrop-blur-sm rounded-2xl overflow-hidden border-2 shadow-lg`}>
-                  <div className="px-6 py-5">
-                    <div className="flex items-start gap-4">
-                      <div className={`w-10 h-10 ${iconColors[recommendation.risk as keyof typeof iconColors]} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-3">
-                          <h3 className="text-lg font-bold">AI Risk Assessment</h3>
-                          <span className="text-xs text-muted-foreground bg-muted/40 px-2 py-1 rounded-full">
-                            Powered by GPT-4
+            {/* Validator Agent Review - from PROJECT_VALIDATOR_TOPIC when agent signed */}
+            {!isExecuted && agentValidator && !agentRejection && (
+              <div className={`bg-gradient-to-br ${
+                agentValidator.riskLevel === 'low' ? 'from-emerald-500/10 to-emerald-500/5 border-emerald-500/30' :
+                agentValidator.riskLevel === 'medium' ? 'from-amber-500/10 to-amber-500/5 border-amber-500/30' :
+                agentValidator.riskLevel === 'high' ? 'from-rose-500/10 to-rose-500/5 border-rose-500/30' :
+                agentValidator.riskLevel === 'critical' ? 'from-red-600/10 to-red-600/5 border-red-600/30' :
+                'from-primary/10 to-primary/5 border-primary/30'
+              } backdrop-blur-sm rounded-2xl overflow-hidden border-2 shadow-lg`}>
+                <div className="px-6 py-5">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                      agentValidator.riskLevel === 'low' ? 'bg-emerald-500/20 text-emerald-500' :
+                      agentValidator.riskLevel === 'medium' ? 'bg-amber-500/20 text-amber-500' :
+                      agentValidator.riskLevel === 'high' ? 'bg-rose-500/20 text-rose-500' :
+                      agentValidator.riskLevel === 'critical' ? 'bg-red-600/20 text-red-600' :
+                      'bg-primary/20 text-primary'
+                    }`}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <h3 className="text-lg font-bold">Validator Agent Review</h3>
+                        {agentValidator.riskLevel && (
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full uppercase ${
+                            agentValidator.riskLevel === 'low' ? 'bg-emerald-500/20 text-emerald-500' :
+                            agentValidator.riskLevel === 'medium' ? 'bg-amber-500/20 text-amber-500' :
+                            agentValidator.riskLevel === 'high' ? 'bg-rose-500/20 text-rose-500' :
+                            'bg-red-600/20 text-red-600'
+                          }`}>
+                            {agentValidator.riskLevel} risk
                           </span>
-                        </div>
-                        
-                        <p className="text-sm leading-relaxed mb-4">
-                          {recommendation.recommendation}
-                        </p>
-                        
-                        <div className="space-y-2 mb-4">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key Considerations:</p>
-                          {recommendation.keyPoints.map((point: string, idx: number) => (
-                            <div key={idx} className="flex items-start gap-2 text-sm">
-                              <span className="text-primary mt-0.5">•</span>
-                              <span>{point}</span>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm ${
-                          recommendation.risk === 'low' ? 'bg-emerald-500/20 text-emerald-500' :
-                          recommendation.risk === 'medium' ? 'bg-amber-500/20 text-amber-500' :
-                          recommendation.risk === 'high' ? 'bg-rose-500/20 text-rose-500' :
-                          'bg-red-600/20 text-red-600'
-                        }`}>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {recommendation.action}
-                        </div>
+                        )}
                       </div>
+                      <p className="text-sm leading-relaxed">
+                        {agentValidator.recommendation}
+                      </p>
+                      {agentValidator.functionName && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Function: <code className="bg-muted/60 px-1 py-0.5 rounded">{agentValidator.functionName}</code>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
-              );
-            })()}
+              </div>
+            )}
+
+            {/* Agent Rejection - when agent rejected, show in left column for prominence */}
+            {!isExecuted && agentRejection && (
+              <div className="bg-gradient-to-br from-red-600/10 to-red-600/5 backdrop-blur-sm rounded-2xl overflow-hidden border-2 border-red-600/30 shadow-lg">
+                <div className="px-6 py-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-red-600/20 text-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <h3 className="text-lg font-bold text-red-400">Agent Rejection</h3>
+                        {agentRejection.riskLevel && (
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full uppercase ${
+                            agentRejection.riskLevel === 'critical' ? 'bg-red-600 text-white' :
+                            agentRejection.riskLevel === 'high' ? 'bg-orange-600 text-white' :
+                            'bg-amber-600 text-white'
+                          }`}>
+                            {agentRejection.riskLevel} risk
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm leading-relaxed">
+                        {agentRejection.reason}
+                      </p>
+                      {agentRejection.functionName && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Function: <code className="bg-muted/60 px-1 py-0.5 rounded">{agentRejection.functionName}</code>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Sign Transaction Button */}
             {!isExecuted && (
