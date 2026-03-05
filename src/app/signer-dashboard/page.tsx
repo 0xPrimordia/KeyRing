@@ -238,8 +238,17 @@ export default function SignerDashboard() {
   }
 
   // Group schedules by payer_account_id (threshold list)
-  // Filter out schedules user rejected
-  const displaySchedules = pendingSchedules.filter((s) => !rejectedByMeIds.has(s.schedule_id));
+  // Filter out schedules user rejected and expired schedules (defensive filter)
+  const now = Date.now();
+  const displaySchedules = pendingSchedules.filter((s) => {
+    if (rejectedByMeIds.has(s.schedule_id)) return false;
+    const exp = s.expiration_time;
+    if (exp != null && exp !== '') {
+      const expMs = (typeof exp === 'string' ? parseFloat(exp) : Number(exp)) * 1000;
+      if (!Number.isNaN(expMs) && now > expMs) return false;
+    }
+    return true;
+  });
   const schedulesByThresholdList = displaySchedules.reduce((acc, schedule) => {
     const thresholdList = schedule.payer_account_id;
     if (!acc[thresholdList]) {
@@ -469,7 +478,7 @@ export default function SignerDashboard() {
         console.log('[DASHBOARD] Querying schedules from operator:', operatorId);
         
         const response = await fetch(
-          `${mirrorNodeUrl}/api/v1/schedules?account.id=${operatorId}&executed=false&order=desc&limit=50`
+          `${mirrorNodeUrl}/api/v1/schedules?account.id=${operatorId}&order=desc&limit=50`
         );
 
         if (!response.ok) continue;
@@ -486,10 +495,11 @@ export default function SignerDashboard() {
             continue;
           }
 
-          // Skip expired schedules (expiration_time is seconds since epoch)
-          if (schedule.expiration_time) {
-            const expirationMs = parseFloat(schedule.expiration_time) * 1000;
-            if (Date.now() > expirationMs) {
+          // Skip expired schedules (expiration_time is seconds.nanoseconds since epoch)
+          const expTime = schedule.expiration_time;
+          if (expTime != null && expTime !== '') {
+            const expSeconds = typeof expTime === 'string' ? parseFloat(expTime) : Number(expTime);
+            if (!Number.isNaN(expSeconds) && Date.now() > expSeconds * 1000) {
               continue;
             }
           }
