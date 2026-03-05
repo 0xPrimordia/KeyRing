@@ -680,6 +680,9 @@ export default function ScheduleDetailsPage() {
 
   const transactionInfo = parseTransactionBody(schedule.transaction_body);
   const isExecuted = !!schedule.executed_timestamp;
+  const isExpired = schedule.expiration_time
+    ? Date.now() > parseFloat(schedule.expiration_time) * 1000
+    : false;
 
   return (
     <div className="min-h-screen">
@@ -704,6 +707,20 @@ export default function ScheduleDetailsPage() {
           </div>
           <h1 className="text-3xl font-bold">Transaction Details</h1>
       </div>
+
+        {/* Expired Banner */}
+        {!isExecuted && isExpired && (
+          <div className="mb-6 bg-amber-500/10 rounded-2xl p-4 border border-amber-500/30">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className="text-amber-500 font-semibold">This schedule has expired and can no longer be signed.</span>
+            </div>
+          </div>
+        )}
 
         {/* Error Banner */}
         {error && (
@@ -880,7 +897,7 @@ export default function ScheduleDetailsPage() {
             )}
 
             {/* Validator Agent Review - from PROJECT_VALIDATOR_TOPIC when agent signed */}
-            {!isExecuted && agentValidator && !agentRejection && (
+            {!isExecuted && !isExpired && agentValidator && !agentRejection && (
               <div className={`bg-gradient-to-br ${
                 agentValidator.riskLevel === 'low' ? 'from-emerald-500/10 to-emerald-500/5 border-emerald-500/30' :
                 agentValidator.riskLevel === 'medium' ? 'from-amber-500/10 to-amber-500/5 border-amber-500/30' :
@@ -930,7 +947,7 @@ export default function ScheduleDetailsPage() {
             )}
 
             {/* Agent Rejection - when agent rejected, show in left column for prominence */}
-            {!isExecuted && agentRejection && (
+            {!isExecuted && !isExpired && agentRejection && (
               <div className="bg-gradient-to-br from-red-600/10 to-red-600/5 backdrop-blur-sm rounded-2xl overflow-hidden border-2 border-red-600/30 shadow-lg">
                 <div className="px-6 py-5">
                   <div className="flex items-start gap-4">
@@ -967,7 +984,7 @@ export default function ScheduleDetailsPage() {
             )}
 
             {/* Sign Transaction Button */}
-            {!isExecuted && (
+            {!isExecuted && !isExpired && (
               <div className="bg-gradient-to-r from-primary/5 to-primary-dark/5 backdrop-blur-sm rounded-2xl overflow-hidden border-2 border-primary/30 shadow-lg">
                 <div className="px-6 py-6">
                   <div className="flex items-center justify-between">
@@ -1011,7 +1028,7 @@ export default function ScheduleDetailsPage() {
             )}
 
             {/* Rejection Feedback Form */}
-            {!isExecuted && showRejectForm && (
+            {!isExecuted && !isExpired && showRejectForm && (
               <div className="bg-muted/20 backdrop-blur-sm rounded-2xl overflow-hidden border-2 border-red-500/30 shadow-lg">
                 <div className="px-6 py-6">
                   <div className="flex items-center gap-2 mb-4">

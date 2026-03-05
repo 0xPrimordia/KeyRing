@@ -17,12 +17,12 @@ interface Project {
 
 interface ThresholdList {
   id: string;
-  list_topic_id: string;
+  hcs_topic_id: string;
   threshold_account_id: string;
-  required_signatures: number;
-  total_signers: number;
   status: string;
   created_at: string;
+  threshold?: number;
+  total_keys?: number;
 }
 
 interface ProjectPageProps {
@@ -229,9 +229,15 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                         <span className="text-gray-400">Account ID:</span>
                         <span className="text-foreground font-mono text-xs">{list.threshold_account_id}</span>
                       </div>
+                      {list.threshold != null && list.total_keys != null && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Threshold:</span>
+                          <span className="text-foreground">{list.threshold} of {list.total_keys}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Threshold:</span>
-                        <span className="text-foreground">{list.required_signatures} of {list.total_signers}</span>
+                        <span className="text-gray-400">HCS Topic:</span>
+                        <span className="text-foreground font-mono text-xs truncate max-w-[120px]" title={list.hcs_topic_id}>{list.hcs_topic_id}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Created:</span>

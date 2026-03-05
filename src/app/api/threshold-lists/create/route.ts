@@ -1,0 +1,124 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { KeyRingDB } from '../../../../../lib/keyring-db';
+import { createThresholdListAccount } from '../../../../../utils/createThresholdListAccount';
+import { createConfigurableThresholdList } from '../../../../../utils/createConfigurableThresholdList';
+import { createThresholdListTopic } from '../../../../../utils/createThresholdListTopic';
+
+export const dynamic = 'force-dynamic';
+
+interface CreateRequestBody {
+  accountId?: string;
+  projectId?: string;
+  threshold?: number;
+  signerPublicKeys?: string[];
+  includePassiveAgents?: boolean;
+  includeValidatorAgent?: boolean;
+  initialBalanceHbar?: number;
+  memo?: string;
+}
+
+/**
+ * POST /api/threshold-lists/create
+ * Creates a new threshold list for the operator.
+ * Body: { accountId, projectId?, threshold?, signerPublicKeys?, includePassiveAgents?, initialBalanceHbar?, memo? }
+ * When threshold/signerPublicKeys provided, uses configurable flow. Otherwise uses default 2-of-3.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = (await request.json()) as CreateRequestBody;
+    const {
+      accountId,
+      projectId,
+      threshold,
+      signerPublicKeys,
+      includePassiveAgents,
+      includeValidatorAgent,
+      initialBalanceHbar,
+      memo,
+    } = body;
+
+    if (!accountId || !accountId.match(/^\d+\.\d+\.\d+$/)) {
+      return NextResponse.json(
+        { success: false, error: 'Valid accountId (0.0.xxxxx) is required' },
+        { status: 400 }
+      );
+    }
+
+    const operatorAccountId = process.env.NEXT_PUBLIC_OPERATOR_ACCOUNT_ID;
+    if (!operatorAccountId || accountId !== operatorAccountId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Only the configured operator can create threshold lists',
+        },
+        { status: 403 }
+      );
+    }
+
+    const useConfigurable =
+      typeof threshold === 'number' && Array.isArray(signerPublicKeys);
+
+    let thresholdAccountId: string;
+    let memberPublicKeyStrings: string[] | undefined;
+
+    if (useConfigurable) {
+      const result = await createConfigurableThresholdList({
+        connectedAccountId: accountId,
+        threshold,
+        signerPublicKeys: signerPublicKeys.filter((k) => k?.trim()),
+        includePassiveAgents: !!includePassiveAgents,
+        includeValidatorAgent: !!includeValidatorAgent,
+        initialBalanceHbar,
+        memo,
+      });
+      thresholdAccountId = result.accountId;
+      memberPublicKeyStrings = result.allPublicKeyStrings;
+    } else {
+      thresholdAccountId = await createThresholdListAccount(accountId);
+    }
+
+    // Step 2: Create HCS-2 topic for the threshold list
+    const hcsTopicId = await createThresholdListTopic(
+      thresholdAccountId,
+      accountId,
+      memberPublicKeyStrings
+    );
+
+    // Step 3: Save to database
+    const result = await KeyRingDB.registerThresholdList({
+      projectId: projectId || null,
+      hcsTopicId,
+      thresholdAccountId,
+    });
+
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error || 'Failed to save threshold list' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      thresholdList: {
+        id: result.list?.id,
+        thresholdAccountId,
+        hcsTopicId,
+        projectId: projectId || null,
+      },
+    });
+  } catch (error) {
+    console.error(
+      '[API] Error creating threshold list:',
+      error instanceof Error ? error.message : error
+    );
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Failed to create threshold list',
+      },
+      { status: 500 }
+    );
+  }
+}

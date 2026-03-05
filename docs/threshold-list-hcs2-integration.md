@@ -6,7 +6,7 @@ Updated the threshold list system to properly integrate HCS-2 topics for communi
 ## Changes Made
 
 ### 1. HCS-2 Topic Security
-**File**: `utils/generateDemoTopic.ts`
+**File**: `utils/createThresholdListTopic.ts`
 
 - Updated topic creation to reference the threshold list in the memo: `hcs-2:0:86400|{thresholdListId}`
 - Added TODO for production: Submit key should be set to the threshold list's KeyList
@@ -123,7 +123,7 @@ const createTopicTx = new TopicCreateTransaction()
 5. Store topic messages in database for historical analysis
 
 ## Files Changed
-- `utils/generateDemoTopic.ts` - Updated topic creation with threshold list reference
+- `utils/createThresholdListTopic.ts` - Topic creation for threshold list communication
 - `src/app/api/generate-demo/route.ts` - Added database save logic
 - `supabase/migrations/007_simplify_threshold_lists.sql` - Migration script
 - `supabase/schema.sql` - Updated main schema file

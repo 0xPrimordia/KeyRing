@@ -449,23 +449,20 @@ export class KeyRingDB {
 
   /**
    * Register a new threshold list
+   * Threshold and total signers are stored on-chain; we only track the account and HCS topic.
    */
   static async registerThresholdList(data: {
-    projectId: string;
-    listTopicId: string;
+    projectId?: string | null;
+    hcsTopicId: string;
     thresholdAccountId: string;
-    requiredSignatures: number;
-    totalSigners: number;
   }): Promise<{ success: boolean; list?: KeyringThresholdList; error?: string }> {
     try {
       const { data: list, error } = await supabase
         .from('keyring_threshold_lists')
         .insert({
-          project_id: data.projectId,
-          list_topic_id: data.listTopicId,
+          project_id: data.projectId || null,
+          hcs_topic_id: data.hcsTopicId,
           threshold_account_id: data.thresholdAccountId,
-          required_signatures: data.requiredSignatures,
-          total_signers: data.totalSigners,
         })
         .select()
         .single();

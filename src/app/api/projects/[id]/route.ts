@@ -1,6 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../../../lib/supabase';
 
+const getMirrorNodeUrl = () => {
+  const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+  return network === 'mainnet'
+    ? 'https://mainnet.mirrornode.hedera.com'
+    : 'https://testnet.mirrornode.hedera.com';
+};
+
+async function getThresholdFromMirrorNode(
+  accountId: string
+): Promise<{ threshold: number; totalKeys: number }> {
+  try {
+    const res = await fetch(
+      `${getMirrorNodeUrl()}/api/v1/accounts/${accountId}`
+    );
+    if (!res.ok) return { threshold: 0, totalKeys: 0 };
+    const data = await res.json();
+    if (data.key?._type === 'KeyList') {
+      const keys = data.key.keys || [];
+      return {
+        threshold: data.key.threshold ?? keys.length,
+        totalKeys: keys.length,
+      };
+    }
+    return { threshold: 0, totalKeys: 0 };
+  } catch {
+    return { threshold: 0, totalKeys: 0 };
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,10 +44,8 @@ export async function GET(
         *,
         keyring_threshold_lists (
           id,
-          list_topic_id,
+          hcs_topic_id,
           threshold_account_id,
-          required_signatures,
-          total_signers,
           status,
           created_at
         )
@@ -41,9 +68,23 @@ export async function GET(
       }, { status: 500 });
     }
 
+    // Enrich threshold lists with on-chain key structure from Mirror Node
+    const lists = project?.keyring_threshold_lists || [];
+    const enrichedLists = await Promise.all(
+      lists.map(async (list: { threshold_account_id: string }) => {
+        const { threshold, totalKeys } = await getThresholdFromMirrorNode(
+          list.threshold_account_id
+        );
+        return { ...list, threshold, total_keys: totalKeys };
+      })
+    );
+
     return NextResponse.json({
       success: true,
-      project
+      project: {
+        ...project,
+        keyring_threshold_lists: enrichedLists,
+      },
     });
 
   } catch (error: unknown) {

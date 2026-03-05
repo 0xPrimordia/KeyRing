@@ -469,7 +469,7 @@ export default function SignerDashboard() {
         console.log('[DASHBOARD] Querying schedules from operator:', operatorId);
         
         const response = await fetch(
-          `${mirrorNodeUrl}/api/v1/schedules?account.id=${operatorId}&order=desc&limit=50`
+          `${mirrorNodeUrl}/api/v1/schedules?account.id=${operatorId}&executed=false&order=desc&limit=50`
         );
 
         if (!response.ok) continue;
@@ -484,6 +484,14 @@ export default function SignerDashboard() {
           // Skip executed or deleted schedules
           if (schedule.executed_timestamp || schedule.deleted) {
             continue;
+          }
+
+          // Skip expired schedules (expiration_time is seconds since epoch)
+          if (schedule.expiration_time) {
+            const expirationMs = parseFloat(schedule.expiration_time) * 1000;
+            if (Date.now() > expirationMs) {
+              continue;
+            }
           }
 
           // Decode transaction body to find involved accounts

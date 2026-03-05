@@ -86,10 +86,19 @@ export default function WalletButton() {
   
   // Show Hedera wallet connection if connected via WalletProvider
   if (isConnected && connection && connection.type === 'hedera') {
+    const operatorAccountId = process.env.NEXT_PUBLIC_OPERATOR_ACCOUNT_ID || '';
+    const isOperator = !!(
+      operatorAccountId &&
+      connection.accountId &&
+      connection.accountId === operatorAccountId
+    );
+    const dashboardHref = isOperator ? '/project-dashboard' : '/signer-dashboard';
+    const dashboardLabel = isOperator ? 'Project Dashboard' : 'Signer Dashboard';
+
     return (
       <div className="flex items-center space-x-3">
         <a
-          href="/signer-dashboard"
+          href={dashboardHref}
           className="flex items-center px-4 rounded-lg transition-colors hover:bg-white/10 leading-relaxed"
           style={{ paddingTop: '0.875rem', paddingBottom: '0.75rem' }}
         >
@@ -99,7 +108,7 @@ export default function WalletButton() {
           >
             <span className="text-black text-sm font-bold leading-none" style={{ paddingTop: '2px' }}>ℏ</span>
           </div>
-          <span className="text-base font-bold text-foreground capitalize">{connection.type}: Dashboard</span>
+          <span className="text-base font-bold text-foreground capitalize">{dashboardLabel}</span>
         </a>
         <button
           onClick={handleDisconnect}
