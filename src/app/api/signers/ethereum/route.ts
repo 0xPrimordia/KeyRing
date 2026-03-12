@@ -1,42 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
-import { EthereumSignerSchema } from '../../../../../types/signer';
 import { generateKeyRingId } from '../../../../../lib/codename-generator';
 
 /**
  * POST /api/signers/ethereum
- * Register a new Ethereum signer
+ * Register a new Ethereum signer. KYC (sumsub) is optional - complete from dashboard for real projects.
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    // Validate the request body
-    const validation = EthereumSignerSchema.safeParse(body);
-    if (!validation.success) {
+    const wallet_address = body.wallet_address;
+    const sumsub_applicant_id = body.sumsub_applicant_id;
+    const sumsub_review_result = body.sumsub_review_result;
+
+    if (!wallet_address || !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid request data',
-          details: validation.error.issues 
-        },
+        { success: false, error: 'Valid wallet_address is required' },
         { status: 400 }
       );
     }
 
-    const { wallet_address, sumsub_applicant_id, sumsub_review_result } = validation.data;
-
-    // Check if signer already exists
+    // Idempotent: return existing signer if already registered
     const existingSigner = await KeyRingDB.getSignerByWalletAddress(wallet_address);
     if (existingSigner) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Signer already exists with this wallet address',
-          signer: existingSigner
+      return NextResponse.json({
+        success: true,
+        message: 'Signer already registered',
+        signer: {
+          id: existingSigner.id,
+          account_type: existingSigner.account_type,
+          wallet_address: existingSigner.wallet_address,
+          code_name: existingSigner.code_name,
+          verification_status: existingSigner.verification_status,
+          created_at: existingSigner.created_at,
         },
-        { status: 409 }
-      );
+      });
     }
 
     const codeName = generateKeyRingId(wallet_address);

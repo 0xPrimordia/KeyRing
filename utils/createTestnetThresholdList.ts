@@ -38,12 +38,13 @@ async function main() {
   const { supabase } = await import('../lib/supabase');
   console.log('Fetching testnet signers from DB...');
 
+  // Include both verified and pending signers for boost list - pending users can participate in boost transactions without KYC
   const { data: signers, error } = await supabase
     .from('keyring_signers')
-    .select('id, account_id, code_name, public_key')
+    .select('id, account_id, code_name, public_key, verification_status')
     .eq('is_testnet', true)
     .eq('account_type', 'hedera')
-    .eq('verification_status', 'verified')
+    .in('verification_status', ['verified', 'pending'])
     .not('public_key', 'is', null);
 
   if (error) {

@@ -113,6 +113,8 @@ export async function GET(request: NextRequest) {
         public_record_url,
         owners,
         topic_message_id,
+        admin_threshold_account_id,
+        contracts,
         keyring_threshold_lists (
           id,
           hcs_topic_id,
@@ -136,6 +138,10 @@ export async function GET(request: NextRequest) {
         transactionId: string;
         consensusTimestamp: string;
         metadata: Record<string, unknown>;
+        contractId?: string;
+        contractHashscanUrl?: string;
+        contracts?: string[];
+        adminThresholdAccountId?: string;
         thresholdLists: Array<{
           id: string;
           hcsTopicId: string;
@@ -144,16 +150,21 @@ export async function GET(request: NextRequest) {
           createdAt: string;
           threshold?: number;
           totalKeys?: number;
+          adminDisplay?: string;
+          isCurrentAdmin?: boolean;
         }>;
       }
     >();
+
+    const normalize = (s: string | undefined) =>
+      (s ?? '').trim().toLowerCase();
 
     for (const hcs of hcsProjects) {
       const key = `${hcs.companyName}-${hcs.legalEntityName}`;
       const dbMatch = dbProjects?.find(
         (p) =>
-          p.company_name === hcs.companyName &&
-          p.legal_entity_name === hcs.legalEntityName
+          normalize(p.company_name) === normalize(hcs.companyName) &&
+          normalize(p.legal_entity_name) === normalize(hcs.legalEntityName)
       );
 
       const lists = (dbMatch?.keyring_threshold_lists as Array<{
@@ -164,6 +175,14 @@ export async function GET(request: NextRequest) {
         created_at: string;
       }>) || [];
 
+      const dbContracts = (dbMatch as { contracts?: string[] | null } | undefined)?.contracts;
+      const contractId = dbContracts && dbContracts.length > 0 ? dbContracts[0] : undefined;
+      const hashscanUrl = contractId
+        ? `${network === 'mainnet' ? 'https://hashscan.io/mainnet' : 'https://hashscan.io/testnet'}/contract/${contractId}`
+        : undefined;
+
+      const adminThresholdAccountId = (dbMatch as { admin_threshold_account_id?: string } | undefined)?.admin_threshold_account_id;
+
       projectMap.set(key, {
         id: dbMatch?.id || hcs.transactionId,
         companyName: hcs.companyName,
@@ -173,6 +192,10 @@ export async function GET(request: NextRequest) {
         transactionId: hcs.transactionId,
         consensusTimestamp: hcs.consensusTimestamp,
         metadata: hcs.metadata,
+        contractId: contractId || undefined,
+        contractHashscanUrl: hashscanUrl || undefined,
+        contracts: dbContracts && dbContracts.length > 0 ? dbContracts : undefined,
+        adminThresholdAccountId: adminThresholdAccountId ?? undefined,
         thresholdLists: lists.map((l) => ({
           id: l.id,
           hcsTopicId: l.hcs_topic_id,
@@ -222,12 +245,14 @@ export async function GET(request: NextRequest) {
           transactionId: '',
           consensusTimestamp: '',
           metadata: {},
+          contractId: undefined,
+          contractHashscanUrl: undefined,
           thresholdLists: [configList],
         });
       }
     }
 
-    // Fetch threshold key details from Mirror Node for each list
+    // Fetch threshold key details and contract admin from Mirror Node for each list
     const projects = Array.from(projectMap.values());
     for (const project of projects) {
       for (const list of project.thresholdLists) {
@@ -254,6 +279,11 @@ export async function GET(request: NextRequest) {
               list.hcsTopicId = dbList.hcs_topic_id;
             }
           }
+          // Admin from DB (project.admin_threshold_account_id)
+          list.isCurrentAdmin = list.thresholdAccountId === project.adminThresholdAccountId;
+          list.adminDisplay = list.isCurrentAdmin
+            ? 'This list'
+            : (project.adminThresholdAccountId ?? '—');
         } catch {
           // Keep defaults if fetch fails
         }

@@ -5,6 +5,7 @@ import { useState } from 'react';
 export interface CreateThresholdListFormData {
   threshold: number;
   signerPublicKeys: string[];
+  includeOperator: boolean;
   includePassiveAgents: boolean;
   includeValidatorAgent: boolean;
   initialBalanceHbar: number;
@@ -14,6 +15,7 @@ export interface CreateThresholdListFormData {
 const DEFAULT_FORM: CreateThresholdListFormData = {
   threshold: 2,
   signerPublicKeys: [''],
+  includeOperator: true,
   includePassiveAgents: false,
   includeValidatorAgent: false,
   initialBalanceHbar: 5,
@@ -37,9 +39,41 @@ export function CreateThresholdListForm({
 }: CreateThresholdListFormProps) {
   const [form, setForm] = useState<CreateThresholdListFormData>(DEFAULT_FORM);
   const [error, setError] = useState<string | null>(null);
+  const [accountIdInput, setAccountIdInput] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+
+  const handleAddByAccountId = async () => {
+    const id = accountIdInput.trim();
+    if (!id || !id.match(/^\d+\.\d+\.\d+$/)) {
+      setError('Enter a valid Hedera account ID (e.g. 0.0.4372449)');
+      return;
+    }
+    setLookupLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/get-public-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId: id }),
+      });
+      const data = await res.json();
+      if (!data.success || !data.publicKey) {
+        throw new Error(data.error || 'Failed to fetch public key');
+      }
+      setForm((prev) => ({
+        ...prev,
+        signerPublicKeys: [...prev.signerPublicKeys.filter((k) => k.trim()), data.publicKey],
+      }));
+      setAccountIdInput('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to lookup account');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   const totalKeys =
-    1 + // connected account (operator)
+    (form.includeOperator ? 1 : 0) + // connected account (operator)
     form.signerPublicKeys.filter((k) => k.trim()).length +
     (form.includePassiveAgents ? 2 : 0) + // passive agents from env
     (form.includeValidatorAgent ? 1 : 0); // validator agent from env
@@ -88,27 +122,16 @@ export function CreateThresholdListForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-gray-800 border border-gray-700 shadow-xl">
-        <div className="px-6 py-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-foreground">
-            Create Threshold List
-          </h2>
-          {projectName && (
-            <p className="text-sm text-gray-400 mt-1">for {projectName}</p>
-          )}
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+      <div className="w-full max-w-lg rounded-xl bg-gray-800 border border-gray-700 shadow-xl max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+            <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Threshold (signatures required)
-            </label>
+            <label className="block text-xs font-medium text-gray-400 mb-1">Threshold</label>
             <input
               type="number"
               min={1}
@@ -120,29 +143,50 @@ export function CreateThresholdListForm({
                   threshold: parseInt(e.target.value, 10) || 1,
                 }))
               }
-              className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-foreground text-sm focus:border-primary"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              {form.threshold}-of-{totalKeys} (1 operator + {form.signerPublicKeys.filter((k) => k.trim()).length} signers
+            <p className="text-xs text-gray-500 mt-0.5">
+              {form.threshold}-of-{totalKeys}
+              {form.includeOperator ? ' (operator + ' : ' ('}
+              {form.signerPublicKeys.filter((k) => k.trim()).length} signers
               {form.includePassiveAgents ? ' + 2 passive agents' : ''}
               {form.includeValidatorAgent ? ' + validator agent' : ''})
             </p>
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Signer public keys
-              </label>
+            <label className="block text-xs font-medium text-gray-400 mb-1">Add by account ID</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="0.0.4372449"
+                value={accountIdInput}
+                onChange={(e) => {
+                  setAccountIdInput(e.target.value);
+                  setError(null);
+                }}
+                onKeyDown={(e) =>
+                  e.key === 'Enter' && (e.preventDefault(), handleAddByAccountId())
+                }
+                className="flex-1 px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-foreground text-sm font-mono focus:border-primary"
+              />
               <button
                 type="button"
-                onClick={handleAddSigner}
-                className="text-sm text-primary hover:text-primary-dark"
+                onClick={handleAddByAccountId}
+                disabled={lookupLoading || !accountIdInput.trim()}
+                className="px-4 py-2 rounded-lg bg-primary text-black text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                + Add signer
+                {lookupLoading ? '...' : 'Add'}
               </button>
             </div>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
+
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-gray-400">Or paste keys</label>
+              <button type="button" onClick={handleAddSigner} className="text-xs text-primary hover:text-primary-dark">
+                + Add
+              </button>
+            </div>
+            <div className="space-y-1.5 max-h-24 overflow-y-auto">
               {form.signerPublicKeys.map((key, index) => (
                 <div key={index} className="flex gap-2">
                   <input
@@ -150,7 +194,7 @@ export function CreateThresholdListForm({
                     placeholder="DER (302a...) or 64-char hex"
                     value={key}
                     onChange={(e) => handleSignerChange(index, e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-foreground text-sm font-mono focus:border-primary"
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-foreground text-xs font-mono focus:border-primary"
                   />
                   <button
                     type="button"
@@ -165,7 +209,31 @@ export function CreateThresholdListForm({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.includeOperator}
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  includeOperator: !prev.includeOperator,
+                }))
+              }
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                form.includeOperator ? 'bg-primary' : 'bg-gray-600'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition ${
+                  form.includeOperator ? 'translate-x-5' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className="text-xs text-gray-400">Operator</span>
+            </div>
+            <div className="flex items-center gap-2">
             <button
               type="button"
               role="switch"
@@ -186,17 +254,9 @@ export function CreateThresholdListForm({
                 }`}
               />
             </button>
-            <div>
-              <label className="text-sm font-medium text-gray-300">
-                Include passive agents
-              </label>
-              <p className="text-xs text-gray-500">
-                Add 2 passive agent signers from env (PASSIVE_AGENT_1/2_PUBLIC_KEY)
-              </p>
+            <span className="text-xs text-gray-400">Passive</span>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
             <button
               type="button"
               role="switch"
@@ -217,20 +277,13 @@ export function CreateThresholdListForm({
                 }`}
               />
             </button>
-            <div>
-              <label className="text-sm font-medium text-gray-300">
-                Include validator agent
-              </label>
-              <p className="text-xs text-gray-500">
-                Add validator agent from env (VALIDATION_AGENT_PUBLIC_KEY)
-              </p>
+            <span className="text-xs text-gray-400">Validator</span>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Initial balance (HBAR)
-            </label>
+          <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-400 mb-1">Initial balance (HBAR)</label>
             <input
               type="number"
               min={1}
@@ -242,35 +295,33 @@ export function CreateThresholdListForm({
                   initialBalanceHbar: parseFloat(e.target.value) || 5,
                 }))
               }
-              className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-foreground focus:border-primary"
+              className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-foreground text-sm"
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Account memo
-            </label>
+          <div className="flex-1">
+            <label className="block text-xs text-gray-400 mb-1">Memo</label>
             <input
               type="text"
               value={form.memo}
               disabled
               readOnly
-              className="w-full px-4 py-2 rounded-lg bg-gray-700/50 border border-gray-600 text-gray-400 cursor-not-allowed"
+              className="w-full px-3 py-1.5 rounded-lg bg-gray-700/50 border border-gray-600 text-gray-500 text-sm cursor-not-allowed"
             />
           </div>
+          </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm hover:bg-gray-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!isValid || isSubmitting}
-              className="flex-1 px-4 py-2 rounded-lg bg-primary text-black font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-3 py-2 rounded-lg bg-primary text-black text-sm font-semibold hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? 'Creating...' : 'Create Threshold List'}
             </button>

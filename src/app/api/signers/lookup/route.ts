@@ -3,12 +3,12 @@ import { KeyRingDB } from '../../../../../lib/keyring-db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { publicKey, accountId } = await request.json();
+    const { publicKey, accountId, walletAddress } = await request.json();
 
-    if (!publicKey && !accountId) {
+    if (!publicKey && !accountId && !walletAddress) {
       return NextResponse.json({
         success: false,
-        error: 'Either public key or account ID is required'
+        error: 'Either public key, account ID, or wallet address is required'
       }, { status: 400 });
     }
 
@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
     if (publicKey) {
       signer = await KeyRingDB.getSignerByPublicKey(publicKey);
     }
-    // Fallback to account ID lookup
+    // Lookup by wallet address (for Ethereum signers)
+    else if (walletAddress) {
+      signer = await KeyRingDB.getSignerByWalletAddress(walletAddress);
+    }
+    // Fallback to account ID lookup (for Hedera signers)
     else if (accountId) {
       signer = await KeyRingDB.getSignerByAccountId(accountId);
     }

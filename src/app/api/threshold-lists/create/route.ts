@@ -9,8 +9,9 @@ export const dynamic = 'force-dynamic';
 interface CreateRequestBody {
   accountId?: string;
   projectId?: string;
-  threshold?: number;
+  threshold?: number | string;
   signerPublicKeys?: string[];
+  includeOperator?: boolean;
   includePassiveAgents?: boolean;
   includeValidatorAgent?: boolean;
   initialBalanceHbar?: number;
@@ -29,13 +30,24 @@ export async function POST(request: NextRequest) {
     const {
       accountId,
       projectId,
-      threshold,
+      threshold: rawThreshold,
       signerPublicKeys,
+      includeOperator,
       includePassiveAgents,
       includeValidatorAgent,
       initialBalanceHbar,
       memo,
     } = body;
+
+    // Ensure threshold is a number (form may send string from number input)
+    const threshold =
+      typeof rawThreshold === 'number' && !Number.isNaN(rawThreshold)
+        ? rawThreshold
+        : typeof rawThreshold === 'string'
+          ? parseInt(rawThreshold, 10)
+          : undefined;
+    const thresholdValid =
+      typeof threshold === 'number' && threshold >= 1 && !Number.isNaN(threshold);
 
     if (!accountId || !accountId.match(/^\d+\.\d+\.\d+$/)) {
       return NextResponse.json(
@@ -56,16 +68,17 @@ export async function POST(request: NextRequest) {
     }
 
     const useConfigurable =
-      typeof threshold === 'number' && Array.isArray(signerPublicKeys);
+      thresholdValid && Array.isArray(signerPublicKeys);
 
     let thresholdAccountId: string;
     let memberPublicKeyStrings: string[] | undefined;
 
-    if (useConfigurable) {
+    if (useConfigurable && thresholdValid && threshold != null) {
       const result = await createConfigurableThresholdList({
         connectedAccountId: accountId,
         threshold,
         signerPublicKeys: signerPublicKeys.filter((k) => k?.trim()),
+        includeOperator: includeOperator !== false,
         includePassiveAgents: !!includePassiveAgents,
         includeValidatorAgent: !!includeValidatorAgent,
         initialBalanceHbar,

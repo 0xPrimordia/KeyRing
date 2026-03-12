@@ -2,79 +2,150 @@
 
 import { useWallet } from '../../providers/WalletProvider';
 import { useAccount } from 'wagmi';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import VerificationModal from '../../components/VerificationModal';
 import Header from '@/components/Header';
 import Image from 'next/image';
 import DynamicGradientCard from '@/components/DynamicGradientCard';
 
 
 export default function SignersPage() {
-  const { connectWallet, isConnected, isInitializing, connection } = useWallet();
+  const router = useRouter();
+  const { connectWallet, isConnected, connection, getPublicKey, publicKey } = useWallet();
   const { isConnected: isEthConnected, address: ethAddress } = useAccount();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-  const [isCheckingVerification, setIsCheckingVerification] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
-  // Check verification status when wallet is connected
+  const accountId = connection?.type === 'hedera' ? connection.accountId : null;
+  const walletAddress = connection?.type === 'base' ? connection.address : (ethAddress ?? null);
+  const lookupId = accountId ?? walletAddress;
+
+  // Check registration status when wallet is connected
   useEffect(() => {
-    const checkVerification = async () => {
-      const accountToCheck = connection?.accountId || ethAddress;
-      
-      if (!accountToCheck) {
-        setIsVerified(false);
+    const checkRegistration = async () => {
+      if (!lookupId) {
+        setIsRegistered(false);
         return;
       }
-
-      setIsCheckingVerification(true);
+      setIsChecking(true);
       try {
-        const response = await fetch(`/api/signers/lookup?account=${accountToCheck}`);
-        if (response.ok) {
-          const data = await response.json();
-          setIsVerified(data.verified === true);
-        } else {
-          setIsVerified(false);
-        }
-      } catch (error) {
-        console.error('Failed to check verification status:', error);
-        setIsVerified(false);
+        const body = walletAddress ? { walletAddress } : { accountId };
+        const response = await fetch('/api/signers/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await response.json();
+        setIsRegistered(response.ok && data.success === true);
+      } catch {
+        setIsRegistered(false);
       } finally {
-        setIsCheckingVerification(false);
+        setIsChecking(false);
       }
     };
 
     if (isConnected || isEthConnected) {
-      checkVerification();
+      checkRegistration();
     }
-  }, [isConnected, isEthConnected, connection?.accountId, ethAddress]);
+  }, [isConnected, isEthConnected, lookupId, walletAddress, accountId]);
 
-  const handleStartVerification = async () => {
-    // Check if we have an ETH connection via RainbowKit
-    
-    if (isEthConnected) {
-      // ETH wallet connected, go directly to verify page
-      window.location.href = '/verify';
-      return;
-    }
-    
-    if (!isConnected) {
+  const handleBecomeSigner = async () => {
+    if (!isConnected && !isEthConnected) {
       setIsConnecting(true);
       try {
-        // Default to Hedera connection for this flow
-        const walletData = await connectWallet('hedera');
-        if (walletData) {
-          // Successfully connected, now show modal
-          setIsModalOpen(true);
+        let walletData = await connectWallet('hedera');
+        if (!walletData) walletData = await connectWallet('base');
+        if (!walletData) {
+          alert('Please connect your wallet using the header');
+          return;
+        }
+        // Connection established - state will update, user can click again or we proceed
+        // Use walletData directly for immediate registration
+        const connAccountId = walletData.type === 'hedera' ? walletData.accountId : null;
+        const connAddress = walletData.type === 'base' ? walletData.address : null;
+        if (connAccountId || connAddress) {
+          setIsConnecting(true);
+          try {
+            if (connAddress) {
+              const res = await fetch('/api/signers/ethereum', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ wallet_address: connAddress }),
+              });
+              const data = await res.json();
+              if (!data.success && !data.signer) throw new Error(data.error || 'Registration failed');
+            } else if (connAccountId) {
+              const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+              const mirrorUrl = network === 'mainnet' ? 'https://mainnet.mirrornode.hedera.com' : 'https://testnet.mirrornode.hedera.com';
+              const res = await fetch(`${mirrorUrl}/api/v1/accounts/${connAccountId}`);
+              const acc = await res.json();
+              const currentPublicKey = acc.key?.key ?? (await getPublicKey(connAccountId));
+              if (!currentPublicKey) throw new Error('Could not obtain public key');
+              const regRes = await fetch('/api/signers/hedera', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_id: connAccountId, public_key: currentPublicKey }),
+              });
+              const regData = await regRes.json();
+              if (!regData.success && !regData.signer) throw new Error(regData.error || 'Registration failed');
+            }
+            router.push('/signer-dashboard');
+          } catch (error) {
+            console.error('Registration failed:', error);
+            alert(error instanceof Error ? error.message : 'Registration failed');
+          } finally {
+            setIsConnecting(false);
+          }
         }
       } catch (error) {
         console.error('Failed to connect wallet:', error);
+        alert('Failed to connect wallet');
       } finally {
         setIsConnecting(false);
       }
-    } else {
-      // Already connected, show modal directly
-      setIsModalOpen(true);
+      return;
+    }
+
+    if (!lookupId) return;
+
+    setIsConnecting(true);
+    try {
+      if (walletAddress) {
+        const res = await fetch('/api/signers/ethereum', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet_address: walletAddress }),
+        });
+        const data = await res.json();
+        if (!data.success && !data.signer) throw new Error(data.error || 'Registration failed');
+      } else if (accountId) {
+        let currentPublicKey = publicKey;
+        if (!currentPublicKey) currentPublicKey = await getPublicKey(accountId);
+        if (!currentPublicKey) {
+          const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+          const mirrorUrl = network === 'mainnet' ? 'https://mainnet.mirrornode.hedera.com' : 'https://testnet.mirrornode.hedera.com';
+          const res = await fetch(`${mirrorUrl}/api/v1/accounts/${accountId}`);
+          const acc = await res.json();
+          currentPublicKey = acc.key?.key ?? null;
+        }
+        if (!currentPublicKey) throw new Error('Could not obtain public key');
+        const res = await fetch('/api/signers/hedera', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account_id: accountId, public_key: currentPublicKey }),
+        });
+        const data = await res.json();
+        if (!data.success && !data.signer) throw new Error(data.error || 'Registration failed');
+      } else {
+        throw new Error('Please connect your wallet first');
+      }
+      router.push('/signer-dashboard');
+    } catch (error) {
+      console.error('Registration failed:', error);
+      alert(error instanceof Error ? error.message : 'Registration failed');
+    } finally {
+      setIsConnecting(false);
     }
   };
   return (
@@ -100,30 +171,31 @@ export default function SignersPage() {
             <h1 className="mb-6">Get Rewarded for Securing Web3</h1>
             <h3 className="mb-8">Secure Web3 projects, ensure transparency, and earn rewards as a verified signer on Keyring. Help projects decentralize early, ship fast, and build trust in the ecosystem.</h3>
             
-            {isVerified ? (
+            {isRegistered ? (
               <div
-                className="inline-flex items-center gap-2 text-black text-xl px-8 py-3 rounded-lg cursor-default"
+                className="inline-flex items-center gap-2 text-black text-xl px-8 py-3 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                 style={{
                   background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
                   border: '3px solid #8CCBBA'
                 }}
+                onClick={() => router.push('/signer-dashboard')}
               >
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                Verified
+                Go to Dashboard
               </div>
             ) : (
               <button
-                onClick={handleStartVerification}
-                disabled={isConnecting || isCheckingVerification}
+                onClick={handleBecomeSigner}
+                disabled={isConnecting || isChecking}
                 className="text-black text-xl px-8 py-3 rounded-lg hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
                   border: '3px solid #8CCBBA'
                 }}
               >
-                {isConnecting || isCheckingVerification ? 'Loading...' : 'Become A Signer'}
+                {isConnecting || isChecking ? 'Loading...' : 'Become A Signer'}
               </button>
             )}
           </div>
@@ -200,8 +272,8 @@ export default function SignersPage() {
                   >
                     1
                   </div>
-                  <h4 className="font-semibold text-foreground mb-2">Apply & Verify</h4>
-                  <p className="text-sm text-white font-krub">Complete KYC through Entrust and create your signer profile</p>
+                  <h4 className="font-semibold text-foreground mb-2">Register</h4>
+                  <p className="text-sm text-white font-krub">Connect your wallet and register as a signer to participate in boost transactions</p>
                 </div>
               </DynamicGradientCard>
             </div>
@@ -279,36 +351,30 @@ export default function SignersPage() {
         {/* Bottom CTA Button */}
         <div className="mt-16 text-center">
           <button
-            onClick={handleStartVerification}
-            disabled={isVerified || isCheckingVerification}
+            onClick={isRegistered ? () => router.push('/signer-dashboard') : handleBecomeSigner}
+            disabled={isConnecting || isChecking}
             className="inline-block text-black text-xl px-8 py-3 rounded-lg hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: 'linear-gradient(to right, #8CCBBA, #408FC7)',
               border: '3px solid #8CCBBA'
             }}
           >
-            {isCheckingVerification ? (
+            {isChecking ? (
               'Checking...'
-            ) : isVerified ? (
+            ) : isRegistered ? (
               <span className="flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                You are verified
+                Go to Dashboard
               </span>
             ) : (
-              'Become A Signer'
+              isConnecting ? 'Connecting & Registering...' : 'Become A Signer'
             )}
           </button>
         </div>
 
       </div>
-
-      {/* Verification Modal */}
-      <VerificationModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
     </div>
   );
 }

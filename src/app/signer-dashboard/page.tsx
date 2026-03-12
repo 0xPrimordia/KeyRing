@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 import { Buffer } from 'buffer';
 import Header from '../../components/Header';
 import { useWallet } from '../../providers/WalletProvider';
@@ -55,7 +56,7 @@ interface RejectionInfo {
 
 export default function SignerDashboard() {
   const router = useRouter();
-  const { isConnected, connection, connectWallet: connectWalletProvider, dAppConnector } = useWallet();
+  const { isConnected, connection, connectWallet: connectWalletProvider, dAppConnector, getPublicKey, publicKey } = useWallet();
   const [pendingSchedules, setPendingSchedules] = useState<PendingSchedule[]>([]);
   const [accountMetadata, setAccountMetadata] = useState<AccountMetadata | null>(null);
   const [rewardBalance, setRewardBalance] = useState<{
@@ -70,12 +71,16 @@ export default function SignerDashboard() {
   const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
   const [claimingRewards, setClaimingRewards] = useState(false);
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'suspended' | 'revoked' | null>(null);
   const [rejections, setRejections] = useState<Record<string, RejectionInfo>>({});
   const [rejectedByMeIds, setRejectedByMeIds] = useState<Set<string>>(new Set());
   const [validatorReviews, setValidatorReviews] = useState<Record<string, { riskLevel?: string; recommendation?: string }>>({});
 
-  // Get account ID from connection
+  // Get account ID (Hedera) or wallet address (Ethereum) from connection
+  const { address: ethAddress } = useAccount();
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
+  const walletAddress = connection?.type === 'base' ? connection.address : (ethAddress ?? null);
+  const lookupId = accountId ?? walletAddress;
   
   // Get network configuration
   const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
@@ -97,12 +102,12 @@ export default function SignerDashboard() {
 
   // Check registration status when wallet connects
   useEffect(() => {
-    if (accountId) {
+    if (lookupId) {
       checkRegistrationStatus();
     }
-  }, [accountId]);
+  }, [lookupId]);
 
-  // Load data only if registered
+  // Load data only if registered (Hedera account required for Mirror Node / boost data)
   useEffect(() => {
     if (accountId && isRegistered === true) {
       loadAccountMetadata();
@@ -117,26 +122,32 @@ export default function SignerDashboard() {
     try {
       setLoading(true);
       setError(null);
-      await connectWalletProvider('hedera');
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect wallet');
+      let result = await connectWalletProvider('hedera');
+      if (!result) result = await connectWalletProvider('base');
+      if (!result) setError('Please connect your wallet using the header');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
     } finally {
       setLoading(false);
     }
   }
 
   async function checkRegistrationStatus() {
-    if (!accountId) return;
+    if (!lookupId) return;
 
     try {
-      console.log('[DASHBOARD] Checking registration status for:', accountId);
+      console.log('[DASHBOARD] Checking registration status for:', lookupId);
+      
+      const body = walletAddress
+        ? { walletAddress }
+        : { accountId };
       
       const response = await fetch('/api/signers/lookup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ accountId }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -144,14 +155,17 @@ export default function SignerDashboard() {
       if (response.ok && data.success) {
         console.log('[DASHBOARD] Account is registered:', data.signer);
         setIsRegistered(true);
+        setVerificationStatus((data.signer?.verificationStatus as 'pending' | 'verified' | 'suspended' | 'revoked') ?? null);
       } else {
         console.log('[DASHBOARD] Account is not registered');
         setIsRegistered(false);
+        setVerificationStatus(null);
       }
     } catch (err: any) {
       console.error('[DASHBOARD] Error checking registration:', err);
       // If there's an error, assume not registered to be safe
       setIsRegistered(false);
+      setVerificationStatus(null);
     }
   }
 
@@ -792,8 +806,8 @@ export default function SignerDashboard() {
     router.push(`/signer-dashboard/schedule/${scheduleId}`);
   }
 
-  // Show connect screen if no Hedera account
-  if (!accountId) {
+  // Show connect screen if no wallet connected
+  if (!lookupId) {
     return (
       <div className="min-h-screen">
         <Header />
@@ -813,7 +827,7 @@ export default function SignerDashboard() {
               disabled={loading}
               className="w-full bg-primary hover:bg-primary-dark disabled:bg-muted text-white font-semibold py-3 px-6 rounded-lg transition-colors"
             >
-              {loading ? 'Connecting...' : 'Connect HashPack Wallet'}
+              {loading ? 'Connecting...' : 'Connect Wallet'}
             </button>
 
             {error && (
@@ -844,7 +858,7 @@ export default function SignerDashboard() {
     );
   }
 
-  // Show verification prompt if account is not registered
+  // Show Become A Signer prompt if account is not registered
   if (isRegistered === false) {
     return (
       <div className="min-h-screen">
@@ -858,22 +872,66 @@ export default function SignerDashboard() {
                 </svg>
               </div>
               <h1 className="text-3xl font-bold mb-2">
-                Account Not Registered
+                Become A Signer
               </h1>
               <p className="text-muted-foreground mb-2">
-                Your account <span className="font-mono text-primary">{accountId}</span> is not registered with KeyRing.
+                Your wallet <span className="font-mono text-primary">{lookupId}</span> is not yet registered.
               </p>
               <p className="text-muted-foreground">
-                Please complete the verification process to become a registered signer.
+                Register now to participate in boost transactions. Complete KYC from your dashboard when you&apos;re ready for real projects.
               </p>
             </div>
 
             <button
-              onClick={() => router.push('/verify')}
-              className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              onClick={async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                  if (walletAddress) {
+                    const res = await fetch('/api/signers/ethereum', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ wallet_address: walletAddress }),
+                    });
+                    const data = await res.json();
+                    if (!data.success && !data.signer) throw new Error(data.error || 'Registration failed');
+                  } else if (accountId) {
+                    let currentPublicKey = publicKey;
+                    if (!currentPublicKey) currentPublicKey = await getPublicKey(accountId);
+                    if (!currentPublicKey) {
+                      const res = await fetch(`${mirrorNodeUrl}/api/v1/accounts/${accountId}`);
+                      const acc = await res.json();
+                      currentPublicKey = acc.key?.key ?? null;
+                    }
+                    if (!currentPublicKey) throw new Error('Could not obtain public key');
+                    const res = await fetch('/api/signers/hedera', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ account_id: accountId, public_key: currentPublicKey }),
+                    });
+                    const data = await res.json();
+                    if (!data.success && !data.signer) throw new Error(data.error || 'Registration failed');
+                  } else {
+                    throw new Error('Wallet not connected');
+                  }
+                  await checkRegistrationStatus();
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : 'Registration failed');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
             >
-              Go to Verification
+              {loading ? 'Registering...' : 'Become A Signer'}
             </button>
+
+            {error && (
+              <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -900,6 +958,38 @@ export default function SignerDashboard() {
             </svg>
           </button>
         </div>
+
+        {/* Ethereum-only: prompt to connect Hedera for boost transactions */}
+        {walletAddress && !accountId && isRegistered && (
+          <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <p className="text-sm text-blue-200/90">
+              Connect your Hedera (HashPack) wallet to participate in boost transactions and view pending schedules.
+            </p>
+          </div>
+        )}
+
+        {/* KYC Completion Alert - shown when user is registered but verification is pending */}
+        {verificationStatus === 'pending' && (
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-400 mb-1">Complete KYC for Real Projects</h3>
+                <p className="text-sm text-amber-200/90 mb-3">
+                  You can participate in boost transactions now. Complete identity verification to qualify for real projects with greater rewards.
+                </p>
+                <button
+                  onClick={() => router.push('/verify')}
+                  className="text-sm font-medium text-amber-400 hover:text-amber-300 underline"
+                >
+                  Complete KYC Verification →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Success Message */}
         {successMessage && (

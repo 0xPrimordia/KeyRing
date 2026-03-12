@@ -34,6 +34,7 @@ export interface CreateThresholdListConfig {
   connectedAccountId: string;
   threshold: number;
   signerPublicKeys: string[];
+  includeOperator?: boolean;
   includePassiveAgents: boolean;
   includeValidatorAgent?: boolean;
   initialBalanceHbar?: number;
@@ -90,8 +91,12 @@ export async function createConfigurableThresholdList(
       );
     }
 
-    // 2. Build key list: connected + signers + (optional) passive agents
-    const allKeyStrings: string[] = [connectedPublicKey, ...config.signerPublicKeys];
+    // 2. Build key list: (optional) connected + signers + (optional) passive agents + (optional) validator
+    const allKeyStrings: string[] = [];
+    if (config.includeOperator !== false) {
+      allKeyStrings.push(connectedPublicKey);
+    }
+    allKeyStrings.push(...config.signerPublicKeys);
 
     if (config.includePassiveAgents) {
       const passive1 = process.env.PASSIVE_AGENT_1_PUBLIC_KEY?.trim();
@@ -141,6 +146,10 @@ export async function createConfigurableThresholdList(
     if (!accountId) {
       throw new Error('Failed to create account - no account ID returned');
     }
+
+    console.log(
+      `[createConfigurableThresholdList] Created account ${accountId} with threshold ${config.threshold} of ${allKeyStrings.length} keys`
+    );
 
     return {
       accountId: accountId.toString(),

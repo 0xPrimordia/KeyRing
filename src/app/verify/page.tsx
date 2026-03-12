@@ -374,6 +374,57 @@ function VerifyPageContent() {
     }
   };
 
+  const registerAndContinue = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const ethAddr = isEthConnected ? ethAddress : (connection?.type === 'base' ? connection?.address : null);
+      if (ethAddr) {
+        const response = await fetch('/api/signers/ethereum', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet_address: ethAddr }),
+        });
+        const data = await response.json();
+        if (!data.success && !data.signer) {
+          throw new Error(data.error || 'Registration failed');
+        }
+      } else if (accountId) {
+        let currentPublicKey = publicKey || existingSigner?.publicKey;
+        if (!currentPublicKey) currentPublicKey = await getPublicKey(accountId);
+        if (!currentPublicKey) {
+          const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+          const mirrorUrl = network === 'mainnet' ? 'https://mainnet.mirrornode.hedera.com' : 'https://testnet.mirrornode.hedera.com';
+          const res = await fetch(`${mirrorUrl}/api/v1/accounts/${accountId}`);
+          const acc = await res.json();
+          currentPublicKey = acc.key?.key ?? null;
+        }
+        if (!currentPublicKey) {
+          throw new Error('Could not obtain public key. Please try connecting your wallet again.');
+        }
+        const response = await fetch('/api/signers/hedera', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account_id: accountId, public_key: currentPublicKey }),
+        });
+        const data = await response.json();
+        if (!data.success && !data.signer) {
+          throw new Error(data.error || 'Registration failed');
+        }
+      } else {
+        throw new Error('Wallet not connected');
+      }
+
+      router.push('/signer-dashboard');
+    } catch (err) {
+      console.error('Error registering:', err);
+      setError(err instanceof Error ? err.message : 'Failed to register. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const startVerification = async () => {
     try {
       setIsLoading(true);
@@ -549,7 +600,7 @@ function VerifyPageContent() {
           <p className="text-gray-400 mb-6">{error}</p>
           <div className="space-y-3">
             <button
-              onClick={startVerification}
+              onClick={() => (existingSigner?.verificationStatus === 'pending' ? startVerification() : registerAndContinue())}
               className="w-full bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
             >
               Try Again
@@ -576,10 +627,9 @@ function VerifyPageContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <h3 className="text-sm font-semibold text-blue-400 mb-1">Privacy-Preserving Verification</h3>
+                <h3 className="text-sm font-semibold text-blue-400 mb-1">KeyRing Signer Registration</h3>
                 <p className="text-xs text-blue-300">
-                  Your identity documents are processed by Sumsub for verification only. 
-                  KeyRing receives verification status and your verified name, but never stores your documents or personal details.
+                  Register to participate in boost transactions. Complete KYC from your dashboard when you&apos;re ready for real projects with greater rewards.
                 </p>
               </div>
             </div>
@@ -762,17 +812,37 @@ function VerifyPageContent() {
                   </div>
                 )}
               </div>
-            ) : !hasStarted ? (
-              // Start verification button
+            ) : !existingSigner ? (
+              // New user: register and go to dashboard (no KYC required)
               <div className="text-center py-12">
                 <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-foreground mb-4">Ready to Verify Your Identity</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-4">Register as a KeyRing Signer</h2>
                 <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                  Click below to start the verification process. You&apos;ll be guided through document upload and identity confirmation.
+                  Create your signer account to participate in boost transactions. Complete KYC from your dashboard when you&apos;re ready for real projects with greater rewards.
+                </p>
+                <button
+                  onClick={registerAndContinue}
+                  disabled={isLoading}
+                  className="w-full bg-primary text-background px-8 py-4 rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Registering...' : 'Register & Go to Dashboard'}
+                </button>
+              </div>
+            ) : existingSigner.verificationStatus === 'pending' && !hasStarted ? (
+              // Existing pending user: offer KYC completion
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-foreground mb-4">Complete KYC for Real Projects</h2>
+                <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                  You&apos;re registered. Complete identity verification to qualify for real projects with greater rewards.
                 </p>
                 <div className="space-y-3 max-w-md mx-auto">
                   <button
@@ -780,12 +850,35 @@ function VerifyPageContent() {
                     disabled={isLoading}
                     className="w-full bg-primary text-background px-8 py-4 rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? 'Starting...' : 'Start Identity Verification'}
+                    {isLoading ? 'Starting...' : 'Complete KYC Verification'}
+                  </button>
+                  <button
+                    onClick={() => router.push('/signer-dashboard')}
+                    className="w-full bg-muted hover:bg-muted/80 text-foreground px-8 py-4 rounded-lg font-semibold border border-border transition-colors"
+                  >
+                    Go to Dashboard
                   </button>
                 </div>
               </div>
+            ) : existingSigner.verificationStatus === 'verified' ? (
+              // Already verified - go to dashboard
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">Already Verified</h3>
+                <p className="text-gray-400 mb-6">Your account is verified. Go to your dashboard to participate.</p>
+                <button
+                  onClick={() => router.push('/signer-dashboard')}
+                  className="w-full bg-primary text-background px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
             ) : accessToken ? (
-              // Show Sumsub WebSDK React Component with overlay button
+              // Show Sumsub WebSDK (KYC completion for pending users)
               <div className="relative">
                 <SumsubWebSdk
                   accessToken={accessToken}
@@ -829,9 +922,10 @@ function VerifyPageContent() {
           </div>
         </div>
 
-        {/* Help Section */}
+        {/* Help Section - for KYC flow */}
+        {(existingSigner?.verificationStatus === 'pending' || hasStarted) && (
         <div className="mt-8 bg-gray-800 rounded-lg border border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">What You&apos;ll Need</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">What You&apos;ll Need for KYC</h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h4 className="font-semibold text-foreground mb-2">📄 Government-Issued ID</h4>
@@ -851,7 +945,9 @@ function VerifyPageContent() {
             </div>
           </div>
         </div>
+        )}
       </div>
+    </div>
   );
 }
 

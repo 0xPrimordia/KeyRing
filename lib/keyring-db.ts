@@ -51,8 +51,10 @@ export class KeyRingDB {
         return { success: false, error: error.message };
       }
 
-      // Add onboarding reward
-      await this.addReward(signer.id, 'onboarding', 100);
+      // Add verification reward when registering with Sumsub (HCS-11 profile creation after KYC)
+      if (data.verificationProvider === 'sumsub' && data.sumsubReviewResult === 'GREEN') {
+        await this.addVerificationRewardIfNew(signer.id, 10);
+      }
 
       return { success: true, signer };
     } catch (error: unknown) {
@@ -73,13 +75,17 @@ export class KeyRingDB {
     isTestnet?: boolean;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
+      // Verified only when KYC (Sumsub) data is present with GREEN result; otherwise pending for boost-only access
+      const hasKyc = !!data.sumsubApplicantId;
+      const verificationStatus = hasKyc && data.sumsubReviewResult === 'GREEN' ? 'verified' : 'pending';
+
       const signerData: KeyringSignerInsert = {
         account_type: 'ethereum',
         wallet_address: data.walletAddress,
         code_name: data.codeName,
-        verification_status: 'verified', // Auto-verify for MVP
+        verification_status: verificationStatus,
         verification_provider: data.verificationProvider || 'sumsub',
-        verification_date: new Date().toISOString(),
+        verification_date: hasKyc ? new Date().toISOString() : null,
         sumsub_applicant_id: data.sumsubApplicantId || null,
         sumsub_review_result: data.sumsubReviewResult || null,
         is_testnet: data.isTestnet ?? false,
@@ -96,12 +102,57 @@ export class KeyRingDB {
         return { success: false, error: error.message };
       }
 
-      // Add onboarding reward
-      await this.addReward(signer.id, 'onboarding', 100);
+      // Add verification reward only when Sumsub KYC completed with GREEN
+      if (hasKyc && data.sumsubReviewResult === 'GREEN') {
+        await this.addVerificationRewardIfNew(signer.id, 10);
+      }
 
       return { success: true, signer };
     } catch (error: unknown) {
       console.error('Error registering Ethereum signer:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Register a Hedera signer without KYC (for boost-only access).
+   * Sets verification_status to 'pending'. User can complete KYC later for real projects.
+   */
+  static async registerHederaSignerWithoutKyc(data: {
+    accountId: string;
+    publicKey: string;
+    codeName: string;
+    isTestnet?: boolean;
+  }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
+    try {
+      const signerData: KeyringSignerInsert = {
+        account_type: 'hedera',
+        account_id: data.accountId,
+        public_key: data.publicKey,
+        profile_topic_id: '',
+        code_name: data.codeName,
+        verification_status: 'pending',
+        verification_provider: 'sumsub',
+        verification_date: null,
+        sumsub_applicant_id: null,
+        sumsub_review_result: null,
+        is_testnet: data.isTestnet ?? false,
+      };
+
+      const { data: signer, error } = await supabase
+        .from('keyring_signers')
+        .insert(signerData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error registering Hedera signer without KYC:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, signer };
+    } catch (error: unknown) {
+      console.error('Error in registerHederaSignerWithoutKyc:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -476,6 +527,18 @@ export class KeyRingDB {
     } catch (error: unknown) {
       console.error('Error registering threshold list:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Add verification (onboarding) reward only if signer doesn't already have one.
+   * Prevents double-adding when both store-verification and webhook fire.
+   */
+  static async addVerificationRewardIfNew(signerId: string, amount: number = 10): Promise<void> {
+    const { rewards } = await this.getSignerRewards(signerId);
+    const hasOnboarding = rewards?.some(r => r.reward_type === 'onboarding') ?? false;
+    if (!hasOnboarding) {
+      await this.addReward(signerId, 'onboarding', amount);
     }
   }
 

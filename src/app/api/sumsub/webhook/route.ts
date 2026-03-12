@@ -146,6 +146,9 @@ async function handleApplicantReviewed(webhookData: SumsubWebhookData) {
           status: verificationStatus,
           verifiedName,
         });
+        if (verificationStatus === 'verified') {
+          await KeyRingDB.addVerificationRewardIfNew(existingSigner.id, 10);
+        }
       } else {
         console.error('Failed to update signer verification:', updateResult.error);
       }

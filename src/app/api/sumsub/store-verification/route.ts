@@ -73,6 +73,9 @@ export async function POST(request: NextRequest) {
 
       if (updateResult.success) {
         console.log('[API] Updated existing signer with Sumsub data:', existingSigner.id);
+        if (reviewResult === 'GREEN') {
+          await KeyRingDB.addVerificationRewardIfNew(existingSigner.id, 10);
+        }
         return NextResponse.json({
           success: true,
           signer: { ...existingSigner, public_key: publicKey || existingSigner.public_key },
@@ -97,6 +100,9 @@ export async function POST(request: NextRequest) {
 
       if (dbResult.success) {
         console.log('[API] Created signer record:', dbResult.signer?.id, publicKey ? '(with public key)' : '(no public key)');
+        if (reviewResult === 'GREEN' && dbResult.signer) {
+          await KeyRingDB.addVerificationRewardIfNew(dbResult.signer.id, 10);
+        }
         return NextResponse.json({
           success: true,
           signer: dbResult.signer,
