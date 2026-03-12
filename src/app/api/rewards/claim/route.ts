@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const pendingRewards = rewardsResult.rewards.filter((r: any) => r.status === 'pending');
+    const pendingRewards = rewardsResult.rewards.filter((r: { status?: string }) => r.status === 'pending');
     
     if (pendingRewards.length === 0) {
       return NextResponse.json({
@@ -37,77 +37,71 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const totalAmount = pendingRewards.reduce((sum: number, r: any) => sum + parseFloat(r.amount), 0);
+    const byCurrency = (currency: string) =>
+      pendingRewards.filter((r: { currency?: string }) => (r.currency || 'KYRNG') === currency);
+    const keyringRewards = byCurrency('KYRNG');
+    const lynxRewards = byCurrency('LYNX');
+    const keyringAmount = keyringRewards.reduce((s: number, r: { amount?: number }) => s + parseFloat(String(r.amount || 0)), 0);
+    const lynxAmount = lynxRewards.reduce((s: number, r: { amount?: number }) => s + parseFloat(String(r.amount || 0)), 0);
 
-    console.log('[API] Total pending rewards:', totalAmount, 'LYNX');
+    console.log('[API] Pending rewards:', { keyring: keyringAmount, lynx: lynxAmount });
 
-    // Determine network and credentials
     const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
-    const operatorAccountId = network === 'mainnet' 
+    const operatorAccountId = network === 'mainnet'
       ? process.env.HEDERA_MAINNET_ACCOUNT_ID!
       : process.env.HEDERA_TESTNET_ACCOUNT_ID!;
     const operatorPrivateKey = network === 'mainnet'
       ? process.env.HEDERA_MAINNET_PRIVATE_KEY!
       : process.env.HEDERA_TESTNET_PRIVATE_KEY!;
     const kyrngTokenId = network === 'mainnet'
-      ? process.env.NEXT_PUBLIC_MAINNET_KYRNG!
-      : process.env.NEXT_PUBLIC_TESTNET_KYRNG!;
+      ? process.env.NEXT_PUBLIC_MAINNET_KYRNG
+      : process.env.NEXT_PUBLIC_TESTNET_KYRNG;
+    const lynxTokenId = network === 'mainnet'
+      ? process.env.NEXT_PUBLIC_MAINNET_LYNX
+      : process.env.NEXT_PUBLIC_TESTNET_LYNX;
 
     if (!operatorAccountId || !operatorPrivateKey) {
-      console.error('[API] Missing operator credentials');
-      return NextResponse.json({
-        error: 'Server configuration error'
-      }, { status: 500 });
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    if (!kyrngTokenId) {
-      console.error('[API] Missing LYNX token ID');
-      return NextResponse.json({
-        error: 'LYNX token not configured'
-      }, { status: 500 });
+    if (keyringAmount > 0 && !kyrngTokenId) {
+      return NextResponse.json({ error: 'Keyring token not configured' }, { status: 500 });
+    }
+    if (lynxAmount > 0 && !lynxTokenId) {
+      return NextResponse.json({ error: 'LYNX token not configured' }, { status: 500 });
     }
 
-    // Initialize Hedera client
-    const client = network === 'mainnet' 
-      ? Client.forMainnet()
-      : Client.forTestnet();
-    
+    const client = network === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
     client.setOperator(operatorAccountId, operatorPrivateKey);
 
-    console.log('[API] Transferring', totalAmount, 'LYNX to', accountId);
+    const transactionIds: string[] = [];
+    const decimals = 100000000;
 
-    // Transfer LYNX tokens
-    // Note: Token amounts need to be in the smallest unit (considering decimals)
-    // Assuming KYRNG has 8 decimals like most Hedera tokens
-    const amountInSmallestUnit = Math.floor(totalAmount * 100000000); // 8 decimals
-
-    let transferTx;
-    try {
-      transferTx = await new TransferTransaction()
+    if (keyringAmount > 0 && kyrngTokenId) {
+      const amountInSmallestUnit = Math.floor(keyringAmount * decimals);
+      const transferTx = await new TransferTransaction()
         .addTokenTransfer(TokenId.fromString(kyrngTokenId), AccountId.fromString(operatorAccountId), -amountInSmallestUnit)
         .addTokenTransfer(TokenId.fromString(kyrngTokenId), AccountId.fromString(accountId), amountInSmallestUnit)
         .execute(client);
-
       const receipt = await transferTx.getReceipt(client);
-
-      if (receipt.status.toString() !== 'SUCCESS') {
-        throw new Error('Token transfer failed');
-      }
-    } catch (transferError: any) {
-      // Check if it's a token association error
-      if (transferError.message?.includes('TOKEN_NOT_ASSOCIATED')) {
-        return NextResponse.json({
-          error: 'Token not associated with account. Please associate the LYNX token first.',
-          code: 'TOKEN_NOT_ASSOCIATED'
-        }, { status: 400 });
-      }
-      throw transferError;
+      if (receipt.status.toString() !== 'SUCCESS') throw new Error('Keyring transfer failed');
+      transactionIds.push(transferTx.transactionId.toString());
+      console.log('[API] Keyring transfer successful:', transferTx.transactionId.toString());
     }
 
-    console.log('[API] Transfer successful:', transferTx.transactionId.toString());
+    if (lynxAmount > 0 && lynxTokenId) {
+      const amountInSmallestUnit = Math.floor(lynxAmount * decimals);
+      const transferTx = await new TransferTransaction()
+        .addTokenTransfer(TokenId.fromString(lynxTokenId), AccountId.fromString(operatorAccountId), -amountInSmallestUnit)
+        .addTokenTransfer(TokenId.fromString(lynxTokenId), AccountId.fromString(accountId), amountInSmallestUnit)
+        .execute(client);
+      const receipt = await transferTx.getReceipt(client);
+      if (receipt.status.toString() !== 'SUCCESS') throw new Error('LYNX transfer failed');
+      transactionIds.push(transferTx.transactionId.toString());
+      console.log('[API] LYNX transfer successful:', transferTx.transactionId.toString());
+    }
 
-    // Update all pending rewards to 'paid'
-    const rewardIds = pendingRewards.map((r: any) => r.id);
+    const rewardIds = pendingRewards.map((r: { id?: string }) => r.id);
     console.log('[API] Updating rewards to paid status:', rewardIds);
     
     let successCount = 0;
@@ -130,8 +124,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      amount: totalAmount,
-      transactionId: transferTx.transactionId.toString(),
+      amount: keyringAmount + lynxAmount,
+      keyring: keyringAmount,
+      lynx: lynxAmount,
+      transactionId: transactionIds[0] ?? '',
+      transactionIds,
       rewardsPaid: rewardIds.length
     });
 

@@ -60,10 +60,9 @@ export default function SignerDashboard() {
   const [pendingSchedules, setPendingSchedules] = useState<PendingSchedule[]>([]);
   const [accountMetadata, setAccountMetadata] = useState<AccountMetadata | null>(null);
   const [rewardBalance, setRewardBalance] = useState<{
-    total: number;
-    pending: number;
-    paid: number;
-  }>({ total: 0, pending: 0, paid: 0 });
+    lynx: { pending: number; paid: number };
+    keyring: { pending: number; paid: number };
+  }>({ lynx: { pending: 0, paid: 0 }, keyring: { pending: 0, paid: 0 } });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -282,7 +281,7 @@ export default function SignerDashboard() {
       
       if (!response.ok) {
         console.warn('[DASHBOARD] Could not load rewards, showing zero balance');
-        setRewardBalance({ total: 0, pending: 0, paid: 0 });
+        setRewardBalance({ lynx: { pending: 0, paid: 0 }, keyring: { pending: 0, paid: 0 } });
         return;
       }
 
@@ -290,24 +289,24 @@ export default function SignerDashboard() {
       
       if (data.success) {
         const rewards = data.rewards || [];
-        const total = rewards.reduce((sum: number, r: any) => sum + parseFloat(r.amount), 0);
-        const pending = rewards
-          .filter((r: any) => r.status === 'pending')
-          .reduce((sum: number, r: any) => sum + parseFloat(r.amount), 0);
-        const paid = rewards
-          .filter((r: any) => r.status === 'paid')
-          .reduce((sum: number, r: any) => sum + parseFloat(r.amount), 0);
-
-        setRewardBalance({ total, pending, paid });
-        console.log('[DASHBOARD] Reward balance loaded:', { total, pending, paid });
+        const byCurrency = (currency: string) => {
+          const filtered = rewards.filter((r: { currency?: string }) => (r.currency || 'KYRNG') === currency);
+          return {
+            pending: filtered.filter((r: { status?: string }) => r.status === 'pending').reduce((s: number, r: { amount?: number }) => s + parseFloat(String(r.amount || 0)), 0),
+            paid: filtered.filter((r: { status?: string }) => r.status === 'paid').reduce((s: number, r: { amount?: number }) => s + parseFloat(String(r.amount || 0)), 0),
+          };
+        };
+        setRewardBalance({
+          lynx: byCurrency('LYNX'),
+          keyring: byCurrency('KYRNG'),
+        });
+        console.log('[DASHBOARD] Reward balance loaded:', { lynx: byCurrency('LYNX'), keyring: byCurrency('KYRNG') });
       } else {
-        // Show zero balance if API fails
-        setRewardBalance({ total: 0, pending: 0, paid: 0 });
+        setRewardBalance({ lynx: { pending: 0, paid: 0 }, keyring: { pending: 0, paid: 0 } });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading reward balance:', err);
-      // Show zero balance on error
-      setRewardBalance({ total: 0, pending: 0, paid: 0 });
+      setRewardBalance({ lynx: { pending: 0, paid: 0 }, keyring: { pending: 0, paid: 0 } });
     }
   }
 
@@ -343,7 +342,8 @@ export default function SignerDashboard() {
       return;
     }
 
-    if (rewardBalance.pending <= 0) {
+    const totalPending = rewardBalance.lynx.pending + rewardBalance.keyring.pending;
+    if (totalPending <= 0) {
       setError('No pending rewards to claim');
       return;
     }
@@ -435,7 +435,7 @@ export default function SignerDashboard() {
       console.log('[DASHBOARD] Rewards claimed successfully:', data);
 
       // Show success message
-      setSuccessMessage(`Successfully claimed ${data.amount} LYNX! Transaction ID: ${data.transactionId}`);
+      setSuccessMessage(`Successfully claimed rewards! Transaction ID: ${data.transactionId}`);
       setError(null);
 
       // Reload reward balance from database to reflect the 'paid' status
@@ -1045,27 +1045,47 @@ export default function SignerDashboard() {
           }}
         >
           <div className="bg-background rounded-2xl p-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-5">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center overflow-hidden">
-                  <img 
-                    src="/lynx.png" 
-                    alt="Lynx" 
-                    className="w-14 h-14 object-contain"
-                  />
+            <div className="flex items-center justify-between flex-wrap gap-6">
+              <div className="flex items-center gap-8">
+                {/* Keyring Rewards */}
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center overflow-hidden p-2">
+                    <img 
+                      src="/key_ring_logo_lock_v1.svg" 
+                      alt="Keyring" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Keyring</h3>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-3xl font-bold text-teal">
+                        {rewardBalance.keyring.pending.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">LYNX Rewards</h3>
-                  <div className="flex items-baseline space-x-2.5">
-                    <span className="text-5xl font-bold text-teal">
-                      {rewardBalance.pending.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-xl text-muted-foreground font-semibold">LYNX</span>
+                {/* LYNX Rewards */}
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl flex items-center justify-center overflow-hidden">
+                    <img 
+                      src="/lynx.png" 
+                      alt="Lynx" 
+                      className="w-12 h-12 object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">LYNX</h3>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-3xl font-bold text-teal">
+                        {rewardBalance.lynx.pending.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              {rewardBalance.pending > 0 ? (
+              {(rewardBalance.lynx.pending > 0 || rewardBalance.keyring.pending > 0) ? (
                 <button
                   onClick={claimRewards}
                   disabled={claimingRewards}
@@ -1079,7 +1099,7 @@ export default function SignerDashboard() {
                 </button>
               ) : (
                 <p className="text-muted-foreground">
-                  Sign your first transaction to earn rewards
+                  Sign transactions to earn Keyring & LYNX rewards
                 </p>
               )}
             </div>
@@ -1450,7 +1470,7 @@ export default function SignerDashboard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal mt-0.5">→</span>
-                    <span>Earn LYNX rewards for each transaction you sign</span>
+                    <span>Earn Keyring & LYNX rewards for each transaction you sign</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal mt-0.5">→</span>

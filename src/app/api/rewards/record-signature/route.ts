@@ -32,37 +32,44 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Add transaction_review reward (0.5-1 LYNX)
-    const amount = parseFloat((Math.random() * 0.5 + 0.5).toFixed(2));
-    const rewardResult = await KeyRingDB.addReward(
+    // Add transaction_review rewards: 5 LYNX + 50 Keyring
+    const lynxResult = await KeyRingDB.addReward(
       signer.id,
       'transaction_review',
-      amount,
+      5,
       'LYNX',
-      transactionId, // signature_transaction_id
-      scheduleId // schedule_id
+      transactionId,
+      scheduleId
+    );
+    const keyringResult = await KeyRingDB.addReward(
+      signer.id,
+      'transaction_review',
+      50,
+      'KYRNG',
+      transactionId,
+      scheduleId
     );
 
-    if (!rewardResult.success) {
-      console.error('[API] Failed to create reward:', rewardResult.error);
+    if (!lynxResult.success || !keyringResult.success) {
+      console.error('[API] Failed to create reward:', lynxResult.error || keyringResult.error);
       return NextResponse.json({
         success: false,
         error: 'Failed to record reward'
       }, { status: 500 });
     }
 
-    console.log('[API] Signature reward recorded successfully:', {
+    console.log('[API] Signature rewards recorded successfully:', {
       signerId: signer.id,
-      rewardId: rewardResult.reward?.id,
-      amount,
+      lynx: 5,
+      keyring: 50,
       transactionId
     });
 
     return NextResponse.json({
       success: true,
       reward: {
-        amount,
-        currency: 'LYNX',
+        lynx: 5,
+        keyring: 50,
         transactionId,
         scheduleId
       }

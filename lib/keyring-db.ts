@@ -53,7 +53,7 @@ export class KeyRingDB {
 
       // Add verification reward when registering with Sumsub (HCS-11 profile creation after KYC)
       if (data.verificationProvider === 'sumsub' && data.sumsubReviewResult === 'GREEN') {
-        await this.addVerificationRewardIfNew(signer.id, 10);
+        await this.addVerificationRewardIfNew(signer.id, 100, 'KYRNG');
       }
 
       return { success: true, signer };
@@ -102,9 +102,12 @@ export class KeyRingDB {
         return { success: false, error: error.message };
       }
 
-      // Add verification reward only when Sumsub KYC completed with GREEN
+      // Add registration reward (20 Keyring)
+      await this.addReward(signer.id, 'onboarding', 20, 'KYRNG');
+
+      // Add verification reward (100 Keyring) when Sumsub KYC completed with GREEN
       if (hasKyc && data.sumsubReviewResult === 'GREEN') {
-        await this.addVerificationRewardIfNew(signer.id, 10);
+        await this.addVerificationRewardIfNew(signer.id, 100, 'KYRNG');
       }
 
       return { success: true, signer };
@@ -149,6 +152,9 @@ export class KeyRingDB {
         console.error('Database error registering Hedera signer without KYC:', error);
         return { success: false, error: error.message };
       }
+
+      // Add registration reward (20 Keyring)
+      await this.addReward(signer.id, 'onboarding', 20, 'KYRNG');
 
       return { success: true, signer };
     } catch (error: unknown) {
@@ -195,6 +201,9 @@ export class KeyRingDB {
         console.error('Database error registering incomplete signer:', error);
         return { success: false, error: error.message };
       }
+
+      // Add registration reward (20 Keyring)
+      await this.addReward(signer.id, 'onboarding', 20, 'KYRNG');
 
       console.log('Created incomplete signer record:', signer.id);
       return { success: true, signer };
@@ -531,14 +540,14 @@ export class KeyRingDB {
   }
 
   /**
-   * Add verification (onboarding) reward only if signer doesn't already have one.
+   * Add KYC verification reward (100 Keyring) only if signer doesn't already have one.
    * Prevents double-adding when both store-verification and webhook fire.
    */
-  static async addVerificationRewardIfNew(signerId: string, amount: number = 10): Promise<void> {
+  static async addVerificationRewardIfNew(signerId: string, amount: number = 100, currency: string = 'KYRNG'): Promise<void> {
     const { rewards } = await this.getSignerRewards(signerId);
-    const hasOnboarding = rewards?.some(r => r.reward_type === 'onboarding') ?? false;
-    if (!hasOnboarding) {
-      await this.addReward(signerId, 'onboarding', amount);
+    const hasVerificationReward = rewards?.some(r => r.reward_type === 'onboarding' && r.amount >= 100 && r.currency === 'KYRNG') ?? false;
+    if (!hasVerificationReward) {
+      await this.addReward(signerId, 'onboarding', amount, currency);
     }
   }
 
