@@ -22,6 +22,7 @@
     "test:threshold": "tsx utils/testThresholdListTransaction.ts",
     "threshold:account": "tsx utils/createThresholdListAccount.ts",
     "threshold:topic": "tsx utils/createThresholdListTopic.ts",
+    "mainnet:topics": "tsx utils/createMainnetTopics.ts",
     "demo:transactions": "tsx utils/generateDemoTransactions.ts",
     "test:codenames": "tsx utils/test-codename-generator.ts",
     "db:setup": "tsx utils/setup-database.ts",

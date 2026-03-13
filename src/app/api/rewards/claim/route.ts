@@ -101,12 +101,14 @@ export async function POST(request: NextRequest) {
       console.log('[API] LYNX transfer successful:', transferTx.transactionId.toString());
     }
 
-    const rewardIds = pendingRewards.map((r: { id?: string }) => r.id);
+    const rewardIds = pendingRewards
+      .map((r: { id?: string }) => r.id)
+      .filter((id): id is string => id != null);
     console.log('[API] Updating rewards to paid status:', rewardIds);
-    
+
     let successCount = 0;
     let failCount = 0;
-    
+
     for (const rewardId of rewardIds) {
       console.log('[API] Updating reward:', rewardId);
       const result = await KeyRingDB.updateRewardStatus(rewardId, 'paid');

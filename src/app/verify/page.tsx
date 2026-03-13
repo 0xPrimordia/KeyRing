@@ -391,8 +391,8 @@ function VerifyPageContent() {
           throw new Error(data.error || 'Registration failed');
         }
       } else if (accountId) {
-        let currentPublicKey = publicKey || existingSigner?.publicKey;
-        if (!currentPublicKey) currentPublicKey = await getPublicKey(accountId);
+        let currentPublicKey: string | null | undefined = publicKey || existingSigner?.publicKey;
+        if (!currentPublicKey) currentPublicKey = await getPublicKey(accountId as string);
         if (!currentPublicKey) {
           const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
           const mirrorUrl = network === 'mainnet' ? 'https://mainnet.mirrornode.hedera.com' : 'https://testnet.mirrornode.hedera.com';
@@ -946,7 +946,6 @@ function VerifyPageContent() {
           </div>
         </div>
         )}
-      </div>
     </div>
   );
 }

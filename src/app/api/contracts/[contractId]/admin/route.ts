@@ -65,7 +65,7 @@ export async function GET(
         ? 'https://hashscan.io/mainnet'
         : 'https://hashscan.io/testnet';
 
-    let adminDisplay: string;
+    let adminDisplay: string = 'Unknown';
     let isThresholdListAdmin = false;
 
     if (!adminKey) {

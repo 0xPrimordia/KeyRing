@@ -117,33 +117,27 @@ export type Database = {
       keyring_threshold_lists: {
         Row: {
           id: string
-          project_id: string
-          list_topic_id: string
+          project_id: string | null
+          hcs_topic_id: string
           threshold_account_id: string
-          required_signatures: number
-          total_signers: number
           status: 'active' | 'inactive' | 'suspended'
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          project_id: string
-          list_topic_id: string
+          project_id?: string | null
+          hcs_topic_id: string
           threshold_account_id: string
-          required_signatures: number
-          total_signers: number
           status?: 'active' | 'inactive' | 'suspended'
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          project_id?: string
-          list_topic_id?: string
+          project_id?: string | null
+          hcs_topic_id?: string
           threshold_account_id?: string
-          required_signatures?: number
-          total_signers?: number
           status?: 'active' | 'inactive' | 'suspended'
           created_at?: string
           updated_at?: string
