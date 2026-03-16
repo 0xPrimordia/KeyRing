@@ -114,6 +114,8 @@ export async function GET(request: NextRequest) {
         owners,
         topic_message_id,
         admin_threshold_account_id,
+        migration_threshold_account_id,
+        migration_schedule_id,
         contracts,
         keyring_threshold_lists (
           id,
@@ -142,6 +144,8 @@ export async function GET(request: NextRequest) {
         contractHashscanUrl?: string;
         contracts?: string[];
         adminThresholdAccountId?: string;
+        migrationThresholdAccountId?: string;
+        migrationScheduleId?: string;
         thresholdLists: Array<{
           id: string;
           hcsTopicId: string;
@@ -182,6 +186,8 @@ export async function GET(request: NextRequest) {
         : undefined;
 
       const adminThresholdAccountId = (dbMatch as { admin_threshold_account_id?: string } | undefined)?.admin_threshold_account_id;
+      const migrationThresholdAccountId = (dbMatch as { migration_threshold_account_id?: string } | undefined)?.migration_threshold_account_id;
+      const migrationScheduleId = (dbMatch as { migration_schedule_id?: string } | undefined)?.migration_schedule_id;
 
       projectMap.set(key, {
         id: dbMatch?.id || hcs.transactionId,
@@ -196,6 +202,8 @@ export async function GET(request: NextRequest) {
         contractHashscanUrl: hashscanUrl || undefined,
         contracts: dbContracts && dbContracts.length > 0 ? dbContracts : undefined,
         adminThresholdAccountId: adminThresholdAccountId ?? undefined,
+        migrationThresholdAccountId: migrationThresholdAccountId ?? undefined,
+        migrationScheduleId: migrationScheduleId ?? undefined,
         thresholdLists: lists.map((l) => ({
           id: l.id,
           hcsTopicId: l.hcs_topic_id,

@@ -34,6 +34,8 @@ interface OperatorProject {
   contractHashscanUrl?: string;
   contracts?: string[];
   adminThresholdAccountId?: string;
+  migrationThresholdAccountId?: string;
+  migrationScheduleId?: string;
   thresholdLists: ThresholdList[];
 }
 
@@ -152,6 +154,43 @@ export default function ProjectDashboardPage() {
     };
     fetchCreatedSchedules();
   }, [isOperator, accountId]);
+
+  // Poll migration status when projects have pending migrations (90s interval - switch takes several minutes)
+  useEffect(() => {
+    if (!isOperator || !accountId) return;
+    const projectsWithMigration = projects.filter(
+      (p) =>
+        /^[0-9a-f-]{36}$/i.test(p.id) &&
+        p.migrationScheduleId &&
+        p.migrationThresholdAccountId
+    );
+    if (projectsWithMigration.length === 0) return;
+
+    const pollMigration = async () => {
+      for (const proj of projectsWithMigration) {
+        try {
+          const res = await fetch(
+            `/api/projects/migration-status?projectId=${encodeURIComponent(proj.id)}`
+          );
+          const data = await res.json();
+          if (data.success && data.completed) {
+            const refreshRes = await fetch(
+              `/api/operator/projects?accountId=${encodeURIComponent(accountId)}`
+            );
+            const refreshData = await refreshRes.json();
+            if (refreshData.success) setProjects(refreshData.projects || []);
+            return;
+          }
+        } catch {
+          // Ignore poll errors
+        }
+      }
+    };
+
+    pollMigration();
+    const interval = setInterval(pollMigration, 90_000);
+    return () => clearInterval(interval);
+  }, [isOperator, accountId, projects]);
 
   const handleScheduleReviewTrigger = async (scheduleId: string) => {
     if (!scheduleId || !scheduleId.match(/^\d+\.\d+\.\d+$/)) return;
@@ -368,6 +407,55 @@ export default function ProjectDashboardPage() {
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300">
             {error}
+          </div>
+        )}
+
+        {projects.some(
+          (p) => p.migrationScheduleId && p.migrationThresholdAccountId
+        ) && (
+          <div className="mb-6 rounded-xl bg-indigo-500/10 border border-indigo-500/30 overflow-hidden">
+            <div className="px-4 py-3">
+              <h2 className="font-semibold text-indigo-200">
+                Migrating to new admin list
+              </h2>
+              <p className="text-xs text-indigo-200/70 mt-0.5">
+                A setAdmin schedule is pending. Status is polled every 90 seconds.
+              </p>
+              <ul className="mt-3 space-y-2">
+                {projects
+                  .filter(
+                    (p) =>
+                      p.migrationScheduleId && p.migrationThresholdAccountId
+                  )
+                  .map((p) => (
+                    <li
+                      key={p.id}
+                      className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
+                    >
+                      <span className="font-medium text-foreground">
+                        {p.companyName}
+                      </span>
+                      <span className="text-gray-400">
+                        Schedule:{' '}
+                        <a
+                          href={`${explorerBase}/schedule/${p.migrationScheduleId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-indigo-300 hover:text-indigo-200"
+                        >
+                          {p.migrationScheduleId}
+                        </a>
+                      </span>
+                      <span className="text-gray-400">
+                        New list:{' '}
+                        <span className="font-mono text-indigo-300">
+                          {p.migrationThresholdAccountId}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </div>
         )}
 

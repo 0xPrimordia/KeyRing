@@ -20,6 +20,7 @@ import {
   TopicMessageSubmitTransaction,
   Timestamp,
 } from '@hashgraph/sdk';
+import { KeyRingDB } from '../../../../lib/keyring-db';
 
 function getOperatorCredentials(): { accountId: string; privateKey: string } {
   const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
@@ -142,6 +143,14 @@ export async function POST(request: NextRequest) {
     const topicTxResponse = await topicMsg.execute(client);
     await topicTxResponse.getReceipt(client);
     client.close();
+
+    // When projectId is provided, record the pending migration so the UI can show status
+    if (projectId && /^[0-9a-f-]{36}$/i.test(projectId)) {
+      await KeyRingDB.updateProject(projectId, {
+        migrationThresholdAccountId: newAdminThresholdAccountId,
+        migrationScheduleId: scheduleId.toString(),
+      });
+    }
 
     return NextResponse.json({
       success: true,

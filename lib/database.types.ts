@@ -84,6 +84,8 @@ export type Database = {
           owners: string[] | null
           topic_message_id: string | null
           admin_threshold_account_id: string | null
+          migration_threshold_account_id: string | null
+          migration_schedule_id: string | null
           contracts: string[] | null
           created_at: string
           updated_at: string
@@ -96,6 +98,8 @@ export type Database = {
           owners?: string[] | null
           topic_message_id?: string | null
           admin_threshold_account_id?: string | null
+          migration_threshold_account_id?: string | null
+          migration_schedule_id?: string | null
           contracts?: string[] | null
           created_at?: string
           updated_at?: string
@@ -108,6 +112,8 @@ export type Database = {
           owners?: string[] | null
           topic_message_id?: string | null
           admin_threshold_account_id?: string | null
+          migration_threshold_account_id?: string | null
+          migration_schedule_id?: string | null
           contracts?: string[] | null
           created_at?: string
           updated_at?: string

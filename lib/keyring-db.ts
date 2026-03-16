@@ -476,6 +476,9 @@ export class KeyRingDB {
     publicRecordUrl?: string;
     owners?: string[];
     topicMessageId?: string;
+    adminThresholdAccountId?: string | null;
+    migrationThresholdAccountId?: string | null;
+    migrationScheduleId?: string | null;
   }): Promise<{ success: boolean; project?: KeyringProject; error?: string }> {
     try {
       const dbUpdates: Partial<Database['public']['Tables']['keyring_projects']['Update']> = {
@@ -487,6 +490,9 @@ export class KeyRingDB {
       if (updates.publicRecordUrl !== undefined) dbUpdates.public_record_url = updates.publicRecordUrl || null;
       if (updates.owners !== undefined) dbUpdates.owners = updates.owners || null;
       if (updates.topicMessageId !== undefined) dbUpdates.topic_message_id = updates.topicMessageId || null;
+      if (updates.adminThresholdAccountId !== undefined) dbUpdates.admin_threshold_account_id = updates.adminThresholdAccountId || null;
+      if (updates.migrationThresholdAccountId !== undefined) dbUpdates.migration_threshold_account_id = updates.migrationThresholdAccountId || null;
+      if (updates.migrationScheduleId !== undefined) dbUpdates.migration_schedule_id = updates.migrationScheduleId || null;
 
       const { data: project, error } = await supabase
         .from('keyring_projects')
