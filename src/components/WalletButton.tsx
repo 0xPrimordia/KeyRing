@@ -86,7 +86,7 @@ export default function WalletButton() {
   
   // Show Hedera wallet connection if connected via WalletProvider
   if (isConnected && connection && connection.type === 'hedera') {
-    const operatorAccountId = process.env.NEXT_PUBLIC_OPERATOR_ACCOUNT_ID || '';
+    const operatorAccountId = process.env.NEXT_PUBLIC_LYNX_OPERATOR_ACCOUNT_ID || '';
     const isOperator = !!(
       operatorAccountId &&
       connection.accountId &&

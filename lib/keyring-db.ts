@@ -340,6 +340,38 @@ export class KeyRingDB {
   }
 
   /**
+   * Get random signers for threshold list creation (Hedera, with account_id).
+   * Shuffles and returns up to `count` signers from the given network.
+   * Public keys are fetched from Mirror Node when needed.
+   */
+  static async getRandomSignersForThreshold(
+    isTestnet: boolean,
+    count: number
+  ): Promise<Array<{ id: string; account_id: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('keyring_signers')
+        .select('id, account_id')
+        .eq('account_type', 'hedera')
+        .eq('is_testnet', isTestnet)
+        .not('account_id', 'is', null)
+        .in('verification_status', ['verified', 'pending']);
+
+      if (error) {
+        console.error('Error fetching signers for threshold:', error);
+        return [];
+      }
+
+      const signers = (data || []).filter((s): s is { id: string; account_id: string } => !!s.account_id);
+      const shuffled = [...signers].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, count);
+    } catch (error) {
+      console.error('Error in getRandomSignersForThreshold:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get all verified signers for threshold list creation
    */
   static async getVerifiedSigners(publicKeys: string[]): Promise<KeyringSigner[]> {

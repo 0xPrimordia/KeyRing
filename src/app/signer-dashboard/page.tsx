@@ -81,11 +81,14 @@ export default function SignerDashboard() {
   const walletAddress = connection?.type === 'base' ? connection.address : (ethAddress ?? null);
   const lookupId = accountId ?? walletAddress;
   
-  // Get network configuration
+  // Get network configuration (must match NEXT_PUBLIC_HEDERA_NETWORK for mainnet migration)
   const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
   const mirrorNodeUrl = network === 'mainnet'
     ? 'https://mainnet.mirrornode.hedera.com'
     : 'https://testnet.mirrornode.hedera.com';
+  const explorerBase = network === 'mainnet'
+    ? 'https://hashscan.io/mainnet'
+    : 'https://hashscan.io/testnet';
   
   // Debug wallet state
   useEffect(() => {
@@ -1280,7 +1283,7 @@ export default function SignerDashboard() {
                         <p className="text-muted-foreground">
                           <span className="font-semibold">Account ID:</span>{' '}
                           <a 
-                            href={`https://hashscan.io/testnet/account/${thresholdListId}`}
+                            href={`${explorerBase}/account/${thresholdListId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-mono hover:text-teal transition-colors"
@@ -1358,7 +1361,7 @@ export default function SignerDashboard() {
                                 <p className="text-muted-foreground">
                                   <span className="font-semibold">Schedule ID:</span>{' '}
                                   <a 
-                                    href={`https://hashscan.io/testnet/schedule/${schedule.schedule_id}`}
+                                    href={`${explorerBase}/schedule/${schedule.schedule_id}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="font-mono hover:text-teal transition-colors"

@@ -14,7 +14,11 @@ import * as path from "path";
 
 dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 
-const THRESHOLD_LIST_ACCOUNT = process.env.THRESHOLD_LIST_ACCOUNT_TESTNET;
+const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+const isMainnet = network === 'mainnet';
+const THRESHOLD_LIST_ACCOUNT = isMainnet
+  ? process.env.THRESHOLD_LIST_ACCOUNT_MAINNET
+  : process.env.THRESHOLD_LIST_ACCOUNT_TESTNET;
 const BOOST_PROJECT_CONTRACT_ID = process.env.BOOST_PROJECT_CONTRACT_ID;
 
 // Transaction type enum matching contract
@@ -98,17 +102,29 @@ const TRANSACTIONS = [
 ];
 
 async function createScheduledTransaction(): Promise<void> {
-  const client = Client.forTestnet();
-  
-  const operatorId = process.env.HEDERA_TESTNET_ACCOUNT_ID;
-  const operatorKey = process.env.HEDERA_TESTNET_PRIVATE_KEY;
-  
+  const client = isMainnet ? Client.forMainnet() : Client.forTestnet();
+
+  const operatorId = isMainnet
+    ? process.env.HEDERA_MAINNET_ACCOUNT_ID
+    : process.env.HEDERA_TESTNET_ACCOUNT_ID;
+  const operatorKey = isMainnet
+    ? process.env.HEDERA_MAINNET_PRIVATE_KEY
+    : process.env.HEDERA_TESTNET_PRIVATE_KEY;
+
   if (!operatorId || !operatorKey) {
-    throw new Error("Please set HEDERA_TESTNET_ACCOUNT_ID and HEDERA_TESTNET_PRIVATE_KEY");
+    throw new Error(
+      isMainnet
+        ? "Please set HEDERA_MAINNET_ACCOUNT_ID and HEDERA_MAINNET_PRIVATE_KEY"
+        : "Please set HEDERA_TESTNET_ACCOUNT_ID and HEDERA_TESTNET_PRIVATE_KEY"
+    );
   }
-  
+
   if (!THRESHOLD_LIST_ACCOUNT) {
-    throw new Error("Please set THRESHOLD_LIST_ACCOUNT_TESTNET in .env.local");
+    throw new Error(
+      isMainnet
+        ? "Please set THRESHOLD_LIST_ACCOUNT_MAINNET in .env.local"
+        : "Please set THRESHOLD_LIST_ACCOUNT_TESTNET in .env.local"
+    );
   }
   
   if (!BOOST_PROJECT_CONTRACT_ID) {
@@ -158,7 +174,7 @@ async function createScheduledTransaction(): Promise<void> {
     const scheduleId = scheduleReceipt.scheduleId;
       
       console.log(`   ✅ Schedule ID: ${scheduleId}`);
-      console.log(`   🔗 https://hashscan.io/testnet/schedule/${scheduleId}`);
+      console.log(`   🔗 ${isMainnet ? 'https://hashscan.io/mainnet' : 'https://hashscan.io/testnet'}/schedule/${scheduleId}`);
       
       // Wait between transactions
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -178,8 +194,9 @@ async function createScheduledTransaction(): Promise<void> {
     console.log(`   npm run boost:sign <SCHEDULE_ID>\n`);
     
     console.log("🔗 Monitor:");
-    console.log(`   Threshold List: https://hashscan.io/testnet/account/${THRESHOLD_LIST_ACCOUNT}`);
-    console.log(`   Contract: https://hashscan.io/testnet/contract/${BOOST_PROJECT_CONTRACT_ID}\n`);
+    const explorerBase = isMainnet ? 'https://hashscan.io/mainnet' : 'https://hashscan.io/testnet';
+    console.log(`   Threshold List: ${explorerBase}/account/${THRESHOLD_LIST_ACCOUNT}`);
+    console.log(`   Contract: ${explorerBase}/contract/${BOOST_PROJECT_CONTRACT_ID}\n`);
     
   } catch (error) {
     console.error("❌ Error:", error);

@@ -6,11 +6,25 @@ import { createThresholdListTopic } from '../../../../../utils/createThresholdLi
 
 export const dynamic = 'force-dynamic';
 
+async function fetchPublicKeyFromMirrorNode(accountId: string, network: string): Promise<string> {
+  const mirrorNodeUrl =
+    network === 'mainnet'
+      ? 'https://mainnet.mirrornode.hedera.com'
+      : 'https://testnet.mirrornode.hedera.com';
+  const res = await fetch(`${mirrorNodeUrl}/api/v1/accounts/${accountId}`);
+  if (!res.ok) throw new Error(`Failed to fetch account ${accountId}: ${res.status}`);
+  const data = await res.json();
+  const key = data.key?.key;
+  if (!key) throw new Error(`No ED25519 public key for account ${accountId}`);
+  return key;
+}
+
 interface CreateRequestBody {
   accountId?: string;
   projectId?: string;
   threshold?: number | string;
   signerPublicKeys?: string[];
+  signerCount?: number;
   includeOperator?: boolean;
   includePassiveAgents?: boolean;
   includeValidatorAgent?: boolean;
@@ -32,6 +46,7 @@ export async function POST(request: NextRequest) {
       projectId,
       threshold: rawThreshold,
       signerPublicKeys,
+      signerCount,
       includeOperator,
       includePassiveAgents,
       includeValidatorAgent,
@@ -56,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const operatorAccountId = process.env.NEXT_PUBLIC_OPERATOR_ACCOUNT_ID;
+    const operatorAccountId = process.env.NEXT_PUBLIC_LYNX_OPERATOR_ACCOUNT_ID;
     if (!operatorAccountId || accountId !== operatorAccountId) {
       return NextResponse.json(
         {
@@ -67,17 +82,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+    const isTestnet = network === 'testnet';
+
+    let resolvedSignerPublicKeys: string[] | undefined;
+    if (signerCount != null && typeof signerCount === 'number' && signerCount >= 1) {
+      const signers = await KeyRingDB.getRandomSignersForThreshold(isTestnet, signerCount);
+      if (signers.length < signerCount) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Only ${signers.length} signers available, requested ${signerCount}`,
+          },
+          { status: 400 }
+        );
+      }
+      const publicKeys: string[] = [];
+      for (const s of signers) {
+        try {
+          const pk = await fetchPublicKeyFromMirrorNode(s.account_id, network);
+          publicKeys.push(pk);
+        } catch (err) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Failed to fetch public key for ${s.account_id}: ${err instanceof Error ? err.message : 'Unknown error'}`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+      resolvedSignerPublicKeys = publicKeys;
+    } else if (Array.isArray(signerPublicKeys) && signerPublicKeys.length > 0) {
+      resolvedSignerPublicKeys = signerPublicKeys.filter((k) => k?.trim());
+    }
+
     const useConfigurable =
-      thresholdValid && Array.isArray(signerPublicKeys);
+      thresholdValid && resolvedSignerPublicKeys && resolvedSignerPublicKeys.length > 0;
 
     let thresholdAccountId: string;
     let memberPublicKeyStrings: string[] | undefined;
 
-    if (useConfigurable && thresholdValid && threshold != null) {
+    if (useConfigurable && thresholdValid && threshold != null && resolvedSignerPublicKeys) {
       const result = await createConfigurableThresholdList({
         connectedAccountId: accountId,
         threshold,
-        signerPublicKeys: signerPublicKeys.filter((k) => k?.trim()),
+        signerPublicKeys: resolvedSignerPublicKeys,
         includeOperator: includeOperator !== false,
         includePassiveAgents: !!includePassiveAgents,
         includeValidatorAgent: !!includeValidatorAgent,

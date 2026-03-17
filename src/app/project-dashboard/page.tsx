@@ -67,7 +67,7 @@ export default function ProjectDashboardPage() {
   const [setAdminSuccess, setSetAdminSuccess] = useState<string | null>(null);
 
   const operatorAccountId =
-    process.env.NEXT_PUBLIC_OPERATOR_ACCOUNT_ID || '';
+    process.env.NEXT_PUBLIC_LYNX_OPERATOR_ACCOUNT_ID || '';
   const accountId =
     connection?.type === 'hedera' ? connection.accountId : null;
   const isOperator = !!(
@@ -244,7 +244,7 @@ export default function ProjectDashboardPage() {
           projectId:
             createFormProject.id !== 'standalone' ? createFormProject.id : undefined,
           threshold: Number(formData.threshold),
-          signerPublicKeys: formData.signerPublicKeys,
+          signerCount: formData.signerCount,
           includeOperator: formData.includeOperator,
           includePassiveAgents: formData.includePassiveAgents,
           includeValidatorAgent: formData.includeValidatorAgent,

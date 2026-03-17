@@ -58,11 +58,14 @@ export default function ScheduleDetailsPage() {
   const { connection, dAppConnector } = useWallet();
   const accountId = connection?.type === 'hedera' ? connection.accountId : null;
 
-  // Get network configuration
+  // Get network configuration (must match NEXT_PUBLIC_HEDERA_NETWORK for mainnet migration)
   const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
   const mirrorNodeUrl = network === 'mainnet'
     ? 'https://mainnet.mirrornode.hedera.com'
     : 'https://testnet.mirrornode.hedera.com';
+  const explorerBase = network === 'mainnet'
+    ? 'https://hashscan.io/mainnet'
+    : 'https://hashscan.io/testnet';
 
   const [schedule, setSchedule] = useState<ScheduleDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -775,7 +778,7 @@ export default function ScheduleDetailsPage() {
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Dev Account</label>
                           <a
-                            href={`https://hashscan.io/testnet/account/${schedule.creator_account_id}`}
+                            href={`${explorerBase}/account/${schedule.creator_account_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-mono transition-colors"
@@ -794,7 +797,7 @@ export default function ScheduleDetailsPage() {
                             {transactionInfo.details.accounts.map((account: string, idx: number) => (
                               <a
                                 key={idx}
-                                href={`https://hashscan.io/testnet/account/${account}`}
+                                href={`${explorerBase}/account/${account}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-mono transition-colors"
@@ -1353,7 +1356,7 @@ export default function ScheduleDetailsPage() {
                 </h2>
                 <div className="space-y-2">
                 <a
-                  href={`https://hashscan.io/testnet/schedule/${schedule.schedule_id}`}
+                  href={`${explorerBase}/schedule/${schedule.schedule_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                     className="block text-sm text-primary hover:text-primary-dark font-semibold bg-muted/30 hover:bg-muted/40 p-3 rounded-xl transition-colors"
