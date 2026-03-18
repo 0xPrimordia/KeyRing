@@ -136,19 +136,17 @@ export default function ScheduleDetailsPage() {
         setAgentRejection(null);
       }
 
-      // Load agent validator review from PROJECT_VALIDATOR_TOPIC (when agent signed)
+      // Load validator review from PROJECT_VALIDATOR_TOPIC
       try {
-        const valRes = await fetch('/api/validator-reviews');
+        const valRes = await fetch(`/api/validator-reviews?scheduleId=${scheduleId}`);
         if (valRes.ok) {
           const valData = await valRes.json();
-          if (valData.success && valData.data?.[scheduleId]) {
-            setAgentValidator(valData.data[scheduleId]);
-          } else {
-            setAgentValidator(null);
+          if (valData.success && valData.review) {
+            setAgentValidator(valData.review);
           }
         }
       } catch {
-        setAgentValidator(null);
+        // silent fail
       }
 
     } catch (err: any) {

@@ -347,16 +347,8 @@ function SignerDashboard() {
   }
 
   async function loadValidatorReviews() {
-    try {
-      const response = await fetch('/api/validator-reviews');
-      if (!response.ok) return;
-      const data = await response.json();
-      if (data.success && data.data) {
-        setValidatorReviews(data.data);
-      }
-    } catch (err) {
-      console.error('[DASHBOARD] Error loading validator reviews:', err);
-    }
+    // Validator reviews are loaded per-schedule on the detail page.
+    // No bulk load needed for the dashboard list view.
   }
 
   async function claimRewards() {

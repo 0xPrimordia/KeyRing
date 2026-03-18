@@ -1,138 +1,77 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-export interface ValidatorReviewInfo {
-  scheduleId: string;
-  reviewer: string;
-  functionName?: string;
-  recommendation: string;
-  riskLevel?: string;
-  timestamp?: string;
-  consensusTimestamp?: string;
-}
 
 /**
- * GET /api/validator-reviews
- * Fetches agent validator reviews from PROJECT_VALIDATOR_TOPIC (HCS-2).
- * Returns a map of scheduleId -> validator review for schedules the agent has signed.
+ * GET /api/validator-reviews?scheduleId=0.0.xxxxx
+ * Fetches validator agent reviews from PROJECT_VALIDATOR_TOPIC via Mirror Node.
+ * Filters messages for the given scheduleId and returns the review if found.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const scheduleId = request.nextUrl.searchParams.get('scheduleId');
     const validatorTopicId = process.env.PROJECT_VALIDATOR_TOPIC;
+
     if (!validatorTopicId || validatorTopicId.trim() === '') {
-      return NextResponse.json({
-        success: true,
-        data: {} as Record<string, ValidatorReviewInfo>,
-      });
+      return NextResponse.json({ success: true, review: null });
     }
 
     const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
-    const mirrorNodeUrl =
-      network === 'mainnet'
-        ? 'https://mainnet.mirrornode.hedera.com'
-        : 'https://testnet.mirrornode.hedera.com';
+    const mirrorNodeUrl = network === 'mainnet'
+      ? 'https://mainnet.mirrornode.hedera.com'
+      : 'https://testnet.mirrornode.hedera.com';
 
-    const url = `${mirrorNodeUrl}/api/v1/topics/${validatorTopicId}/messages?limit=100&order=desc`;
-    const response = await fetch(url);
+    const res = await fetch(
+      `${mirrorNodeUrl}/api/v1/topics/${validatorTopicId}/messages?limit=100&order=desc`
+    );
 
-    if (!response.ok) {
-      throw new Error(`Mirror node request failed: ${response.status}`);
+    if (!res.ok) {
+      throw new Error(`Mirror Node request failed: ${res.status}`);
     }
 
-    const data = await response.json();
+    const data = await res.json();
     const messages = data.messages || [];
 
-    const reviews: Record<string, ValidatorReviewInfo> = {};
-
-    // Group chunked messages by initial_transaction_id for reassembly
-    const chunkedByTx = new Map<string, typeof messages>();
-    const standaloneMessages: typeof messages = [];
-
-    for (const message of messages) {
-      const chunkInfo = message.chunk_info;
-      if (chunkInfo?.total > 1) {
-        const init = chunkInfo.initial_transaction_id;
-        const txKey = init
-          ? `${init.account_id}@${init.transaction_valid_start}.${init.nonce ?? 0}`
-          : String(chunkInfo.number);
-        if (!chunkedByTx.has(txKey)) {
-          chunkedByTx.set(txKey, []);
-        }
-        chunkedByTx.get(txKey)!.push(message);
-      } else {
-        standaloneMessages.push(message);
-      }
-    }
-
-    function parseAndAddReview(payload: string, consensusTimestamp: string) {
+    for (const msg of messages) {
       try {
-        const parsed = JSON.parse(payload);
-        const scheduleId =
-          parsed.scheduleId ||
-          parsed.metadata?.schedule_id ||
-          parsed.t_id;
-        if (!scheduleId) return;
+        const decoded = Buffer.from(msg.message, 'base64').toString('utf-8');
 
-        const metadata = parsed.metadata || parsed;
-        reviews[scheduleId] = {
-          scheduleId,
-          reviewer: metadata.reviewer || metadata.signer || parsed.reviewer || 'Validator Agent',
-          functionName: metadata.functionName || metadata.function_name,
-          recommendation:
-            metadata.recommendation ||
-            metadata.reviewDescription ||
-            metadata.review_description ||
-            parsed.recommendation ||
-            'Validated by agent',
-          riskLevel: metadata.riskLevel || metadata.risk_level,
-          timestamp: metadata.timestamp || parsed.timestamp,
-          consensusTimestamp,
-        };
+        if (scheduleId && !decoded.includes(scheduleId)) continue;
+
+        const parsed = JSON.parse(decoded);
+
+        if (!parsed.reviewDescription) continue;
+
+        const matchedScheduleId = parsed.scheduleId || scheduleId;
+        if (scheduleId && matchedScheduleId !== scheduleId) continue;
+
+        let riskLevel = parsed.riskLevel;
+        if (!riskLevel) {
+          const match = parsed.reviewDescription.match(/RiskLevel:\s*(low|medium|high|critical)/i);
+          if (match) riskLevel = match[1].toLowerCase();
+        }
+
+        return NextResponse.json({
+          success: true,
+          review: {
+            scheduleId: matchedScheduleId,
+            reviewer: parsed.reviewer || 'Validator Agent',
+            functionName: parsed.functionName,
+            recommendation: parsed.reviewDescription,
+            riskLevel,
+            timestamp: parsed.timestamp,
+          },
+        });
       } catch {
-        // Skip malformed messages
+        // skip unparseable
       }
     }
 
-    // Process reassembled chunked messages
-    for (const chunks of chunkedByTx.values()) {
-      chunks.sort(
-        (a: { chunk_info: { number: number } }, b: { chunk_info: { number: number } }) =>
-          (a.chunk_info?.number ?? 1) - (b.chunk_info?.number ?? 1)
-      );
-      const combined = chunks
-        .map((m: { message: string }) =>
-          Buffer.from(m.message, 'base64').toString('utf-8')
-        )
-        .join('');
-      const lastChunk = chunks[chunks.length - 1];
-      parseAndAddReview(combined, lastChunk.consensus_timestamp);
-    }
-
-    // Process non-chunked messages
-    for (const message of standaloneMessages) {
-      const decoded = Buffer.from(message.message, 'base64').toString('utf-8');
-      parseAndAddReview(decoded, message.consensus_timestamp);
-    }
-
-    return NextResponse.json(
-      { success: true, data: reviews },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
-      }
-    );
+    return NextResponse.json({ success: true, review: null });
   } catch (error) {
     console.error('[API] Error fetching validator reviews:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch validator reviews',
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Failed to fetch' },
       { status: 500 }
     );
   }
