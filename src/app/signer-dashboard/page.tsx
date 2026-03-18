@@ -489,6 +489,9 @@ export default function SignerDashboard() {
       const lynxOperator = process.env.NEXT_PUBLIC_LYNX_OPERATOR_ACCOUNT_ID;
       if (lynxOperator) accountsToQuery.add(lynxOperator);
 
+      const lynxContractOperator = process.env.NEXT_PUBLIC_LYNX_CONTRACT_OPERATOR_ACCOUNT_ID;
+      if (lynxContractOperator) accountsToQuery.add(lynxContractOperator);
+
       // Find threshold lists containing the signer's public key
       try {
         const thresholdRes = await fetch(`/api/signers/threshold-lists-for-account?accountId=${accountId}`);
