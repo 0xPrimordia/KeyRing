@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { Buffer } from 'buffer';
 import Header from '../../components/Header';
@@ -56,6 +56,7 @@ interface RejectionInfo {
 
 export default function SignerDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isConnected, connection, connectWallet: connectWalletProvider, dAppConnector, getPublicKey, publicKey } = useWallet();
   const [pendingSchedules, setPendingSchedules] = useState<PendingSchedule[]>([]);
   const [accountMetadata, setAccountMetadata] = useState<AccountMetadata | null>(null);
@@ -90,6 +91,17 @@ export default function SignerDashboard() {
     ? 'https://hashscan.io/mainnet'
     : 'https://hashscan.io/testnet';
   
+  // Show confirmation alert when redirected after signing
+  useEffect(() => {
+    const signedScheduleId = searchParams.get('signed');
+    if (signedScheduleId) {
+      setSuccessMessage(`Transaction signed successfully! Schedule ${signedScheduleId} — rewards recorded.`);
+      router.replace('/signer-dashboard', { scroll: false });
+      const timer = setTimeout(() => setSuccessMessage(null), 12000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, router]);
+
   // Debug wallet state
   useEffect(() => {
     console.log('Dashboard wallet state:', { 
@@ -1417,40 +1429,6 @@ export default function SignerDashboard() {
                               </div>
                             </div>
 
-                            {rejection && (
-                              <div className="mt-3 pt-3 border-t border-red-500/30 bg-red-500/5 -mx-5 px-5 py-3 rounded-b-xl">
-                                <div className="flex items-start gap-3">
-                                  <div className="flex-shrink-0 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 font-bold">
-                                    !
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="text-sm font-semibold text-red-400">Agent Rejection</span>
-                                      {rejection.riskLevel && (
-                                        <span className={`text-xs px-2 py-0.5 rounded font-semibold uppercase ${
-                                          rejection.riskLevel === 'critical' ? 'bg-red-600/80 text-white' :
-                                          rejection.riskLevel === 'high' ? 'bg-orange-600/80 text-white' :
-                                          'bg-amber-600/80 text-white'
-                                        }`}>
-                                          {rejection.riskLevel} Risk
-                                        </span>
-                                      )}
-                                    </div>
-                                    {rejection.functionName && (
-                                      <div className="text-xs text-muted-foreground mb-1">
-                                        Function: <code className="bg-muted/60 px-1 py-0.5 rounded">{rejection.functionName}</code>
-                                      </div>
-                                    )}
-                                    <p className="text-sm text-red-200/90 leading-relaxed">
-                                      {rejection.reason}
-                                    </p>
-                                    <div className="text-xs text-muted-foreground mt-2">
-                                      Rejected by: {rejection.reviewer}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         );
                       })}

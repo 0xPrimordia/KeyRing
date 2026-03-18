@@ -401,9 +401,8 @@ export default function ScheduleDetailsPage() {
         }
       }
 
-      // Reload schedule after signing
-      await loadScheduleDetails();
-      setError(null);
+      // Redirect to dashboard with confirmation
+      router.push(`/signer-dashboard?signed=${scheduleId}`);
 
     } catch (err: any) {
       console.error('[DETAIL] Error signing schedule:', err);
