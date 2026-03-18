@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { Buffer } from 'buffer';
@@ -54,7 +54,15 @@ interface RejectionInfo {
   consensusTimestamp?: string;
 }
 
-export default function SignerDashboard() {
+export default function SignerDashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignerDashboard />
+    </Suspense>
+  );
+}
+
+function SignerDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isConnected, connection, connectWallet: connectWalletProvider, dAppConnector, getPublicKey, publicKey } = useWallet();
