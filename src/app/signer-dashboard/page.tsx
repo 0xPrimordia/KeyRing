@@ -481,29 +481,48 @@ export default function SignerDashboard() {
 
       console.log('[DASHBOARD] My public key:', myPublicKey);
 
-      // List of known project operator accounts to query
-      // TODO: This could come from a config or database in production
-      const projectOperators = [
-        '0.0.4337514', // Main test operator
-        // Add more project operators as needed
-      ];
+      // Discover accounts to query for schedules:
+      // 1. The Lynx operator account (creates schedules)
+      // 2. Threshold list accounts this signer belongs to (payer on schedules)
+      const accountsToQuery = new Set<string>();
+
+      const lynxOperator = process.env.NEXT_PUBLIC_LYNX_OPERATOR_ACCOUNT_ID;
+      if (lynxOperator) accountsToQuery.add(lynxOperator);
+
+      // Find threshold lists containing the signer's public key
+      try {
+        const thresholdRes = await fetch(`/api/signers/threshold-lists-for-account?accountId=${accountId}`);
+        if (thresholdRes.ok) {
+          const thresholdData = await thresholdRes.json();
+          const lists: string[] = thresholdData.thresholdAccountIds || [];
+          for (const id of lists) accountsToQuery.add(id);
+        }
+      } catch {
+        // Continue with operator-only query
+      }
+
+      if (accountsToQuery.size === 0) {
+        console.warn('[DASHBOARD] No operator or threshold accounts to query');
+        setPendingSchedules([]);
+        return;
+      }
 
       const allPendingSchedules: PendingSchedule[] = [];
+      const seenScheduleIds = new Set<string>();
 
-      // Query schedules created by each project operator
-      for (const operatorId of projectOperators) {
-        console.log('[DASHBOARD] Querying schedules from operator:', operatorId);
-        
+      for (const queryAccountId of accountsToQuery) {
+        console.log('[DASHBOARD] Querying schedules from:', queryAccountId);
+
         const response = await fetch(
-          `${mirrorNodeUrl}/api/v1/schedules?account.id=${operatorId}&order=desc&limit=50`
+          `${mirrorNodeUrl}/api/v1/schedules?account.id=${queryAccountId}&order=desc&limit=50`
         );
 
         if (!response.ok) continue;
 
-      const data = await response.json();
+        const data = await response.json();
         const schedules = data.schedules || [];
 
-        console.log(`[DASHBOARD] Found ${schedules.length} schedules from ${operatorId}`);
+        console.log(`[DASHBOARD] Found ${schedules.length} schedules from ${queryAccountId}`);
 
         // Filter and check each schedule
         for (const schedule of schedules) {
@@ -615,7 +634,8 @@ export default function SignerDashboard() {
               }
             }
 
-            if (requiresMySignature) {
+            if (requiresMySignature && !seenScheduleIds.has(schedule.schedule_id)) {
+              seenScheduleIds.add(schedule.schedule_id);
               allPendingSchedules.push(schedule);
             }
 
