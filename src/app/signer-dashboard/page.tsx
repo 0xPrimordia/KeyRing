@@ -363,56 +363,53 @@ export default function SignerDashboard() {
 
       console.log('[DASHBOARD] Claiming rewards for:', accountId);
 
-      // Get network-specific token ID
-      const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
-      const kyrngTokenId = network === 'mainnet'
+      const rewardNetwork = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
+      const kyrngTokenId = rewardNetwork === 'mainnet'
         ? process.env.NEXT_PUBLIC_MAINNET_KYRNG
         : process.env.NEXT_PUBLIC_TESTNET_KYRNG;
+      const lynxTokenId = rewardNetwork === 'mainnet'
+        ? process.env.NEXT_PUBLIC_MAINNET_LYNX
+        : process.env.NEXT_PUBLIC_TESTNET_LYNX;
 
-      if (!kyrngTokenId) {
-        throw new Error('LYNX token ID not configured');
+      const tokensToAssociate: string[] = [];
+
+      const rewardTokens = [
+        { id: kyrngTokenId, name: 'Keyring', hasPending: rewardBalance.keyring.pending > 0 },
+        { id: lynxTokenId, name: 'LYNX', hasPending: rewardBalance.lynx.pending > 0 },
+      ];
+
+      for (const token of rewardTokens) {
+        if (!token.id || !token.hasPending) continue;
+
+        const res = await fetch(
+          `${mirrorNodeUrl}/api/v1/accounts/${accountId}/tokens?token.id=${token.id}`
+        );
+        const data = await res.json();
+        const associated = data.tokens && data.tokens.length > 0;
+        console.log(`[DASHBOARD] ${token.name} (${token.id}) association:`, associated);
+
+        if (!associated) tokensToAssociate.push(token.id);
       }
 
-      console.log('[DASHBOARD] Checking token association for:', kyrngTokenId);
+      if (tokensToAssociate.length > 0) {
+        console.log('[DASHBOARD] Associating tokens:', tokensToAssociate);
 
-      // Check if LYNX token is associated with the account
-      const tokenBalanceResponse = await fetch(
-        `${mirrorNodeUrl}/api/v1/accounts/${accountId}/tokens?token.id=${kyrngTokenId}`
-      );
-
-      const tokenData = await tokenBalanceResponse.json();
-      const isAssociated = tokenData.tokens && tokenData.tokens.length > 0;
-
-      console.log('[DASHBOARD] Token association status:', isAssociated);
-
-      // If not associated, request association from user's wallet
-      if (!isAssociated) {
-        console.log('[DASHBOARD] Token not associated, requesting association...');
-        
         const { TokenAssociateTransaction, TokenId } = await import('@hashgraph/sdk');
-        
-        // Get signer from dAppConnector
         const signer = dAppConnector.getSigner(AccountId.fromString(accountId));
-        
+
         const associateTx = new TokenAssociateTransaction()
           .setAccountId(accountId)
-          .setTokenIds([TokenId.fromString(kyrngTokenId)]);
+          .setTokenIds(tokensToAssociate.map((id) => TokenId.fromString(id)));
 
-        console.log('[DASHBOARD] Requesting token association signature from wallet...');
-
-        // Execute with signer
         const frozenAssociateTx = await associateTx.freezeWithSigner(signer);
         const associateResponse = await frozenAssociateTx.executeWithSigner(signer);
 
         const associateTransactionId = associateResponse.transactionId?.toString();
-        
         if (!associateTransactionId) {
           throw new Error('Token association failed or was rejected');
         }
 
         console.log('[DASHBOARD] Token association successful:', associateTransactionId);
-        
-        // Wait a moment for the mirror node to update
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
