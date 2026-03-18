@@ -195,9 +195,8 @@ export default function ScheduleDetailsPage() {
 
   async function fetchTopicMessages(topicId: string) {
     try {
-      console.log('[REJECTIONS] Fetching messages from topic:', topicId);
+      console.log('[HCS] Fetching messages from topic:', topicId);
 
-      // Fetch messages from Mirror Node REST API
       const response = await fetch(
         `${mirrorNodeUrl}/api/v1/topics/${topicId}/messages?limit=100&order=desc`
       );
@@ -207,40 +206,72 @@ export default function ScheduleDetailsPage() {
       }
 
       const data = await response.json();
-      console.log('[REJECTIONS] Topic messages response:', data);
 
       if (data.messages && data.messages.length > 0) {
-        // Parse messages and filter for this schedule
         const messages: HCSMessage[] = [];
-        
+        let foundValidatorReview: typeof agentValidator = null;
+
         for (const msg of data.messages) {
           try {
-            // Decode base64 message
             const messageString = Buffer.from(msg.message, 'base64').toString('utf8');
-            console.log('[REJECTIONS] Decoded message:', messageString);
 
-            // Check if message is related to this schedule
-            if (messageString.includes(scheduleId)) {
-              messages.push({
-                consensusTimestamp: msg.consensus_timestamp,
-                message: messageString,
-                sequenceNumber: msg.sequence_number,
-                runningHash: msg.running_hash
-              });
+            if (!messageString.includes(scheduleId)) continue;
+
+            const parsed = JSON.parse(messageString);
+
+            // Validator agent review: has reviewDescription but no type:'rejection'
+            if (parsed.reviewDescription && parsed.type !== 'rejection' && !foundValidatorReview) {
+              let riskLevel = parsed.riskLevel;
+              if (!riskLevel) {
+                const match = parsed.reviewDescription.match(/RiskLevel:\s*(low|medium|high|critical)/i);
+                if (match) riskLevel = match[1].toLowerCase();
+              }
+              foundValidatorReview = {
+                scheduleId: parsed.scheduleId || scheduleId,
+                reviewer: parsed.reviewer || 'Validator Agent',
+                functionName: parsed.functionName,
+                recommendation: parsed.reviewDescription,
+                riskLevel,
+                timestamp: parsed.timestamp,
+              };
+              console.log('[HCS] Found validator review on threshold topic:', foundValidatorReview);
             }
-          } catch (e) {
-            console.error('[REJECTIONS] Error parsing message:', e);
+
+            // Signer rejections and other messages
+            messages.push({
+              consensusTimestamp: msg.consensus_timestamp,
+              message: messageString,
+              sequenceNumber: msg.sequence_number,
+              runningHash: msg.running_hash,
+            });
+          } catch {
+            // Non-JSON messages -- still include if they mention the schedule
+            try {
+              const raw = Buffer.from(msg.message, 'base64').toString('utf8');
+              if (raw.includes(scheduleId)) {
+                messages.push({
+                  consensusTimestamp: msg.consensus_timestamp,
+                  message: raw,
+                  sequenceNumber: msg.sequence_number,
+                  runningHash: msg.running_hash,
+                });
+              }
+            } catch {
+              // skip
+            }
           }
         }
 
-        console.log('[REJECTIONS] Filtered messages for this schedule:', messages);
         setHcsMessages(messages);
-      } else {
-        console.log('[REJECTIONS] No messages found on topic');
-      }
 
+        // If we found a validator review on the threshold topic, use it
+        // (only if the global topic didn't already provide one)
+        if (foundValidatorReview) {
+          setAgentValidator((prev) => prev ?? foundValidatorReview);
+        }
+      }
     } catch (err: any) {
-      console.error('[REJECTIONS] Error fetching topic messages:', err);
+      console.error('[HCS] Error fetching topic messages:', err);
     }
   }
 
