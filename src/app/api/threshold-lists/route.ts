@@ -1,34 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabase';
-
-const getMirrorNodeUrl = () => {
-  const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
-  return network === 'mainnet'
-    ? 'https://mainnet.mirrornode.hedera.com'
-    : 'https://testnet.mirrornode.hedera.com';
-};
-
-async function getThresholdFromMirrorNode(
-  accountId: string
-): Promise<{ threshold: number; totalKeys: number }> {
-  try {
-    const res = await fetch(
-      `${getMirrorNodeUrl()}/api/v1/accounts/${accountId}`
-    );
-    if (!res.ok) return { threshold: 0, totalKeys: 0 };
-    const data = await res.json();
-    if (data.key?._type === 'KeyList') {
-      const keys = data.key.keys || [];
-      return {
-        threshold: data.key.threshold ?? keys.length,
-        totalKeys: keys.length,
-      };
-    }
-    return { threshold: 0, totalKeys: 0 };
-  } catch {
-    return { threshold: 0, totalKeys: 0 };
-  }
-}
+import { getThresholdFromMirrorNode } from '../../../../lib/mirror-node';
 
 export async function GET() {
   try {

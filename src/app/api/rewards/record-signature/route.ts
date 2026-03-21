@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
 import { supabase } from '../../../../../lib/supabase';
-
-function getMirrorNodeUrl(): string {
-  const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
-  return network === 'mainnet'
-    ? 'https://mainnet.mirrornode.hedera.com'
-    : 'https://testnet.mirrornode.hedera.com';
-}
+import { getMirrorNodeUrl, fetchScheduleFromMirrorNode } from '../../../../../lib/mirror-node';
 
 async function verifySignatureOnChain(
   scheduleId: string,
@@ -111,6 +105,79 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[API] Signature rewards recorded:', { signerId: signer.id, lynx: 5, keyring: 50 });
+
+    // Upsert schedule into history if not already tracked
+    try {
+      const { data: existing } = await supabase
+        .from('keyring_schedule_history')
+        .select('id')
+        .eq('schedule_id', scheduleId)
+        .maybeSingle();
+
+      if (!existing) {
+        const mirrorSchedule = await fetchScheduleFromMirrorNode(scheduleId);
+        if (mirrorSchedule) {
+          const sigCount = mirrorSchedule.signatures?.length ?? 0;
+          let status: 'pending' | 'executed' | 'expired' | 'deleted' = 'pending';
+          let executedAt: string | null = null;
+
+          if (mirrorSchedule.executed_timestamp) {
+            status = 'executed';
+            const ts = parseFloat(mirrorSchedule.executed_timestamp);
+            executedAt = new Date(ts * 1000).toISOString();
+          } else if (mirrorSchedule.deleted) {
+            status = 'deleted';
+          }
+
+          let expirationTime: string | null = null;
+          if (mirrorSchedule.expiration_time) {
+            const expSec = parseFloat(mirrorSchedule.expiration_time);
+            if (!isNaN(expSec)) {
+              expirationTime = new Date(expSec * 1000).toISOString();
+              if (status === 'pending' && Date.now() > expSec * 1000) {
+                status = 'expired';
+              }
+            }
+          }
+
+          await supabase.from('keyring_schedule_history').insert({
+            schedule_id: scheduleId,
+            project_name: 'Lynx',
+            memo: mirrorSchedule.memo || null,
+            payer_account_id: mirrorSchedule.payer_account_id || null,
+            creator_account_id: mirrorSchedule.creator_account_id || null,
+            status,
+            expiration_time: expirationTime,
+            executed_at: executedAt,
+            signature_count: sigCount,
+          });
+          console.log('[API] Schedule added to history:', scheduleId);
+        }
+      } else {
+        // Update signature count from Mirror Node
+        const mirrorSchedule = await fetchScheduleFromMirrorNode(scheduleId);
+        if (mirrorSchedule) {
+          const sigCount = mirrorSchedule.signatures?.length ?? 0;
+          let status: 'pending' | 'executed' | 'expired' | 'deleted' = 'pending';
+          let executedAt: string | null = null;
+
+          if (mirrorSchedule.executed_timestamp) {
+            status = 'executed';
+            const ts = parseFloat(mirrorSchedule.executed_timestamp);
+            executedAt = new Date(ts * 1000).toISOString();
+          } else if (mirrorSchedule.deleted) {
+            status = 'deleted';
+          }
+
+          await supabase
+            .from('keyring_schedule_history')
+            .update({ signature_count: sigCount, status, executed_at: executedAt })
+            .eq('id', existing.id);
+        }
+      }
+    } catch (historyErr) {
+      console.error('[API] Error updating schedule history (non-fatal):', historyErr);
+    }
 
     return NextResponse.json({
       success: true,

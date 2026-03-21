@@ -64,6 +64,21 @@ interface Project {
   threshold_lists_count?: number;
 }
 
+interface ScheduleHistoryItem {
+  id: string;
+  schedule_id: string;
+  project_name: string;
+  memo: string | null;
+  payer_account_id: string | null;
+  creator_account_id: string | null;
+  status: 'pending' | 'executed' | 'expired' | 'deleted';
+  expiration_time: string | null;
+  executed_at: string | null;
+  signature_count: number;
+  threshold_required: number;
+  created_at: string;
+}
+
 // Helper function to get status styling
 const getStatusStyling = (status: 'pending' | 'verified' | 'suspended' | 'revoked') => {
   switch (status) {
@@ -85,6 +100,7 @@ export default function RegistryPage() {
   const [signers, setSigners] = useState<Signer[]>([]);
   const [thresholdLists, setThresholdLists] = useState<ThresholdList[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [scheduleHistory, setScheduleHistory] = useState<ScheduleHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,6 +135,16 @@ export default function RegistryPage() {
           
           if (data.success) {
             setProjects(data.projects);
+            setError(null);
+          } else {
+            setError(data.error);
+          }
+        } else if (activeTab === 'schedules') {
+          const response = await fetch('/api/schedule-history');
+          const data = await response.json();
+          
+          if (data.success) {
+            setScheduleHistory(data.schedules);
             setError(null);
           } else {
             setError(data.error);
@@ -195,6 +221,16 @@ export default function RegistryPage() {
                 }`}
               >
                 Projects
+              </button>
+              <button 
+                onClick={() => setActiveTab('schedules')}
+                className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+                  activeTab === 'schedules'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-400 hover:text-foreground hover:border-gray-300'
+                }`}
+              >
+                Schedule History
               </button>
             </nav>
           </div>
@@ -385,7 +421,7 @@ export default function RegistryPage() {
             </table>
           </div>
         </div>
-        ) : (
+        ) : activeTab === 'lists' ? (
           /* Multi-Sig Lists Section */
           <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-700">
@@ -447,6 +483,108 @@ export default function RegistryPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Schedule History Section */
+          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-foreground">Schedule History</h3>
+              <p className="text-sm text-gray-400 mt-1">Pending and completed scheduled transactions</p>
+            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+                <span className="text-gray-400">Loading schedule history...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <span className="text-red-400">{error}</span>
+              </div>
+            ) : scheduleHistory.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-gray-400 mb-2">No schedule history found</div>
+                <p className="text-sm text-gray-500">Schedules will appear here once signers begin signing transactions.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Schedule ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Project
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Memo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Signatures
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Expiration
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Created
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {scheduleHistory.map((schedule) => (
+                      <tr key={schedule.id} className="hover:bg-gray-700 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Link
+                            href={`/signer-dashboard/schedule/${schedule.schedule_id}`}
+                            className="text-sm font-mono text-primary hover:text-primary/80 transition-colors"
+                          >
+                            {schedule.schedule_id}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-foreground">{schedule.project_name}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-300 truncate block max-w-[200px]" title={schedule.memo || ''}>
+                            {schedule.memo || '—'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            schedule.status === 'executed'
+                              ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                              : schedule.status === 'pending'
+                              ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                              : schedule.status === 'expired'
+                              ? 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
+                              : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                          }`}>
+                            {schedule.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-300">
+                            {schedule.signature_count}
+                            {schedule.threshold_required > 0 && ` / ${schedule.threshold_required}`}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          {schedule.expiration_time
+                            ? new Date(schedule.expiration_time).toLocaleDateString()
+                            : '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          {new Date(schedule.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

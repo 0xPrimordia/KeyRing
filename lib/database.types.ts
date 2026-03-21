@@ -250,6 +250,57 @@ export type Database = {
           }
         ]
       }
+      keyring_schedule_history: {
+        Row: {
+          id: string
+          schedule_id: string
+          project_name: string
+          memo: string | null
+          payer_account_id: string | null
+          creator_account_id: string | null
+          threshold_account_id: string | null
+          status: 'pending' | 'executed' | 'expired' | 'deleted'
+          expiration_time: string | null
+          executed_at: string | null
+          signature_count: number
+          threshold_required: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          schedule_id: string
+          project_name?: string
+          memo?: string | null
+          payer_account_id?: string | null
+          creator_account_id?: string | null
+          threshold_account_id?: string | null
+          status?: 'pending' | 'executed' | 'expired' | 'deleted'
+          expiration_time?: string | null
+          executed_at?: string | null
+          signature_count?: number
+          threshold_required?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          schedule_id?: string
+          project_name?: string
+          memo?: string | null
+          payer_account_id?: string | null
+          creator_account_id?: string | null
+          threshold_account_id?: string | null
+          status?: 'pending' | 'executed' | 'expired' | 'deleted'
+          expiration_time?: string | null
+          executed_at?: string | null
+          signature_count?: number
+          threshold_required?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       keyring_whitelist: {
         Row: {
           id: string
