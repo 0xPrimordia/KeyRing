@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
 import { supabase } from '../../../../../lib/supabase';
-import { getMirrorNodeUrl } from '../../../../../lib/mirror-node';
+import { getMirrorNodeUrl, fetchScheduleFromMirrorNode } from '../../../../../lib/mirror-node';
 import { reassembleHcsMessages } from '../../../../../lib/hcs-messages';
 
 function sleep(ms: number) {
@@ -105,27 +105,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Record rewards: 5 LYNX + 50 KYRNG (same as signing)
-    const lynxResult = await KeyRingDB.addReward(
-      signer.id, 'transaction_rejection', 5, 'LYNX', undefined, scheduleId
-    );
+    // Check if this is a boost schedule (KYRNG only) or a project schedule (LYNX + KYRNG)
+    const scheduleData = await fetchScheduleFromMirrorNode(scheduleId);
+    const isBoost = scheduleData?.memo?.startsWith('Boost:') ?? false;
+
+    let lynxAmount = 0;
+    if (!isBoost) {
+      const lynxResult = await KeyRingDB.addReward(
+        signer.id, 'transaction_rejection', 5, 'LYNX', undefined, scheduleId
+      );
+      if (!lynxResult.success) {
+        console.error('[API] Failed to create LYNX rejection reward:', lynxResult.error);
+      } else {
+        lynxAmount = 5;
+      }
+    }
+
     const keyringResult = await KeyRingDB.addReward(
       signer.id, 'transaction_rejection', 50, 'KYRNG', undefined, scheduleId
     );
 
-    if (!lynxResult.success || !keyringResult.success) {
-      console.error('[API] Failed to create rejection reward:', lynxResult.error || keyringResult.error);
+    if (!keyringResult.success) {
+      console.error('[API] Failed to create KYRNG rejection reward:', keyringResult.error);
       return NextResponse.json(
         { success: false, error: 'Failed to record reward' },
         { status: 500 }
       );
     }
 
-    console.log('[API] Rejection rewards recorded:', { signerId: signer.id, lynx: 5, keyring: 50 });
+    console.log('[API] Rejection rewards recorded:', { signerId: signer.id, lynx: lynxAmount, keyring: 50, isBoost });
 
     return NextResponse.json({
       success: true,
-      reward: { lynx: 5, keyring: 50, scheduleId },
+      reward: { lynx: lynxAmount, keyring: 50, scheduleId },
     });
   } catch (error) {
     console.error('[API] Failed to record rejection reward:', error);

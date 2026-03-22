@@ -107,23 +107,35 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // Record rewards: 5 LYNX + 50 KYRNG
-    const lynxResult = await KeyRingDB.addReward(
-      signer.id, 'transaction_review', 5, 'LYNX', transactionId, scheduleId
-    );
+    // Check if this is a boost schedule (KYRNG only) or a project schedule (LYNX + KYRNG)
+    const scheduleData = await fetchScheduleFromMirrorNode(scheduleId);
+    const isBoost = scheduleData?.memo?.startsWith('Boost:') ?? false;
+
+    let lynxAmount = 0;
+    if (!isBoost) {
+      const lynxResult = await KeyRingDB.addReward(
+        signer.id, 'transaction_review', 5, 'LYNX', transactionId, scheduleId
+      );
+      if (!lynxResult.success) {
+        console.error('[API] Failed to create LYNX reward:', lynxResult.error);
+      } else {
+        lynxAmount = 5;
+      }
+    }
+
     const keyringResult = await KeyRingDB.addReward(
       signer.id, 'transaction_review', 50, 'KYRNG', transactionId, scheduleId
     );
 
-    if (!lynxResult.success || !keyringResult.success) {
-      console.error('[API] Failed to create reward:', lynxResult.error || keyringResult.error);
+    if (!keyringResult.success) {
+      console.error('[API] Failed to create KYRNG reward:', keyringResult.error);
       return NextResponse.json({
         success: false,
         error: 'Failed to record reward',
       }, { status: 500 });
     }
 
-    console.log('[API] Signature rewards recorded:', { signerId: signer.id, lynx: 5, keyring: 50 });
+    console.log('[API] Signature rewards recorded:', { signerId: signer.id, lynx: lynxAmount, keyring: 50, isBoost });
 
     // Upsert schedule into history if not already tracked
     try {
@@ -200,7 +212,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      reward: { lynx: 5, keyring: 50, transactionId, scheduleId },
+      reward: { lynx: lynxAmount, keyring: 50, transactionId, scheduleId },
     });
   } catch (error) {
     console.error('[API] Failed to record signature reward:', error);
