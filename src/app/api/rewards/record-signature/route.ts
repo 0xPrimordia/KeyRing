@@ -80,13 +80,13 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // DB dedup: check if this signer already has a transaction_review reward for this schedule
+    // DB dedup: block if signer already has any reward for this schedule (approval or rejection)
     const { count, error: countErr } = await supabase
       .from('keyring_rewards')
       .select('*', { count: 'exact', head: true })
       .eq('signer_id', signer.id)
       .eq('schedule_id', scheduleId)
-      .eq('reward_type', 'transaction_review');
+      .in('reward_type', ['transaction_review', 'transaction_rejection']);
 
     if (!countErr && (count ?? 0) > 0) {
       console.log('[API] Duplicate reward blocked:', { signerId: signer.id, scheduleId });

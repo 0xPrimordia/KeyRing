@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { reassembleHcsMessages } from '../../../../lib/hcs-messages';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/validator-reviews?scheduleId=0.0.xxxxx
  * Fetches validator agent reviews from PROJECT_VALIDATOR_TOPIC via Mirror Node.
- * Filters messages for the given scheduleId and returns the review if found.
+ * Handles chunked HCS messages by reassembling them before parsing.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -30,15 +31,14 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await res.json();
-    const messages = data.messages || [];
+    const reassembled = reassembleHcsMessages(data.messages || []);
 
-    for (const msg of messages) {
+    for (const msg of reassembled) {
+      const payload = msg.payload;
       try {
-        const decoded = Buffer.from(msg.message, 'base64').toString('utf-8');
+        if (scheduleId && !payload.includes(scheduleId)) continue;
 
-        if (scheduleId && !decoded.includes(scheduleId)) continue;
-
-        const parsed = JSON.parse(decoded);
+        const parsed = JSON.parse(payload);
 
         if (!parsed.reviewDescription) continue;
 

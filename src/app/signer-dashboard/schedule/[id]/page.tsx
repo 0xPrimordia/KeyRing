@@ -331,8 +331,30 @@ export default function ScheduleDetailsPage() {
       console.log('[REJECTIONS] Rejection posted successfully');
       setShowRejectForm(false);
       setRejectionFeedback('');
-      
-      // Reload messages to show the new rejection (wait for mirror node to process)
+
+      // Record rejection reward
+      try {
+        const rewardResponse = await fetch('/api/rewards/record-rejection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accountId,
+            scheduleId,
+            topicId: thresholdListData.hcs_topic_id,
+          }),
+        });
+
+        const rewardData = await rewardResponse.json();
+        if (rewardData.success) {
+          console.log('[REJECTIONS] Rejection reward recorded:', rewardData.reward);
+        } else {
+          console.warn('[REJECTIONS] Rejection reward failed:', rewardData.error);
+        }
+      } catch (rewardErr) {
+        console.error('[REJECTIONS] Error recording rejection reward:', rewardErr);
+      }
+
+      // Reload messages to show the new rejection
       setTimeout(() => {
         if (thresholdListData?.hcs_topic_id) {
           fetchTopicMessages(thresholdListData.hcs_topic_id);

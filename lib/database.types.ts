@@ -204,7 +204,7 @@ export type Database = {
         Row: {
           id: string
           signer_id: string
-          reward_type: 'onboarding' | 'list_addition' | 'transaction_review'
+          reward_type: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection'
           amount: number
           currency: string
           transaction_id: string | null
@@ -217,7 +217,7 @@ export type Database = {
         Insert: {
           id?: string
           signer_id: string
-          reward_type: 'onboarding' | 'list_addition' | 'transaction_review'
+          reward_type: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection'
           amount: number
           currency?: string
           transaction_id?: string | null
@@ -230,7 +230,7 @@ export type Database = {
         Update: {
           id?: string
           signer_id?: string
-          reward_type?: 'onboarding' | 'list_addition' | 'transaction_review'
+          reward_type?: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection'
           amount?: number
           currency?: string
           transaction_id?: string | null

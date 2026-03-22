@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../../../lib/supabase';
+import { reassembleHcsMessages } from '../../../../../lib/hcs-messages';
 
 interface HCS2ProjectMessage {
   p: string;
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    const messages = data.messages || [];
+    const reassembled = reassembleHcsMessages(data.messages || []);
 
     // Parse HCS-2 messages and filter for this operator's projects (t_id matches)
     const hcsProjects: Array<{
@@ -79,18 +80,17 @@ export async function GET(request: NextRequest) {
       metadata: Record<string, unknown>;
     }> = [];
 
-    for (const msg of messages) {
+    for (const { payload, consensusTimestamp } of reassembled) {
       try {
-        const decoded = Buffer.from(msg.message, 'base64').toString('utf-8');
-        const parsed = JSON.parse(decoded) as HCS2ProjectMessage;
+        const parsed = JSON.parse(payload) as HCS2ProjectMessage;
 
         if (parsed.p !== 'hcs-2' || parsed.op !== 'register') continue;
         if (parsed.t_id !== accountId) continue;
 
         const meta = parsed.metadata || {};
         hcsProjects.push({
-          transactionId: msg.transaction_id || '',
-          consensusTimestamp: msg.consensus_timestamp || '',
+          transactionId: '',
+          consensusTimestamp,
           companyName: meta.company_name || 'Unknown',
           legalEntityName: meta.legal_entity_name || meta.company_name || 'Unknown',
           publicRecordUrl: meta.public_record_url,

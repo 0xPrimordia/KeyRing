@@ -594,7 +594,7 @@ export class KeyRingDB {
    */
   static async addReward(
     signerId: string, 
-    rewardType: 'onboarding' | 'list_addition' | 'transaction_review', 
+    rewardType: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection', 
     amount: number,
     currency: string = 'KYRNG',
     signatureTransactionId?: string,

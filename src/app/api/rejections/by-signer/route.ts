@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { reassembleHcsMessages } from '../../../../../lib/hcs-messages';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -73,12 +74,11 @@ export async function POST(request: NextRequest) {
         if (!res.ok) return;
 
         const data = await res.json();
-        const messages = data.messages || [];
+        const reassembled = reassembleHcsMessages(data.messages || []);
 
-        for (const msg of messages) {
+        for (const { payload } of reassembled) {
           try {
-            const decoded = Buffer.from(msg.message, 'base64').toString('utf-8');
-            const parsed = JSON.parse(decoded);
+            const parsed = JSON.parse(payload);
 
             const scheduleId =
               parsed.scheduleId ?? parsed.metadata?.schedule_id ?? parsed.schedule_id ?? parsed.t_id;
@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
             const signer = parsed.signer ?? parsed.reviewer ?? parsed.metadata?.signer ?? parsed.metadata?.reviewer;
             if (signer !== accountId) continue;
 
-            // Human format: type === 'rejection'; agent format: reviewer field
             rejectedIds.add(String(scheduleId));
           } catch {
             // Skip malformed messages
