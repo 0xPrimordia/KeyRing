@@ -29,8 +29,14 @@ export declare namespace BoostProject {
     timestamp: BigNumberish;
     creator: AddressLike;
     executed: boolean;
+    cancelled: boolean;
     description: string;
     approvalsNeeded: BigNumberish;
+    txType: BigNumberish;
+    targetToken: AddressLike;
+    amount: BigNumberish;
+    recipient: AddressLike;
+    expirationTime: BigNumberish;
   };
 
   export type BoostTransactionStructOutput = [
@@ -38,15 +44,27 @@ export declare namespace BoostProject {
     timestamp: bigint,
     creator: string,
     executed: boolean,
+    cancelled: boolean,
     description: string,
-    approvalsNeeded: bigint
+    approvalsNeeded: bigint,
+    txType: bigint,
+    targetToken: string,
+    amount: bigint,
+    recipient: string,
+    expirationTime: bigint
   ] & {
     id: bigint;
     timestamp: bigint;
     creator: string;
     executed: boolean;
+    cancelled: boolean;
     description: string;
     approvalsNeeded: bigint;
+    txType: bigint;
+    targetToken: string;
+    amount: bigint;
+    recipient: string;
+    expirationTime: bigint;
   };
 }
 
@@ -54,20 +72,33 @@ export interface BoostProjectInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "approvalCount"
+      | "approvalRewardPoints"
       | "approveTransaction"
       | "boostCounter"
+      | "cancelTransaction"
       | "createBoostTransaction"
-      | "getApprovalCount"
-      | "getApprovalStatus"
+      | "createTransaction"
       | "getBoostCounter"
+      | "getSignerAction"
+      | "getSignerStats"
       | "getSigners"
       | "getTotalTransactions"
       | "getTransaction"
-      | "hasApproved"
+      | "getTransactionApprovers"
+      | "getTransactionRejectors"
+      | "getTransactionVotes"
       | "isSigner"
+      | "isTransactionActive"
       | "nextTransactionId"
       | "operator"
+      | "rejectTransaction"
+      | "rejectionCount"
+      | "rejectionRewardPoints"
       | "requiredApprovals"
+      | "signerActions"
+      | "signerApprovals"
+      | "signerPoints"
+      | "signerRejections"
       | "signers"
       | "transactions"
   ): FunctionFragment;
@@ -75,15 +106,22 @@ export interface BoostProjectInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "BoostIncremented"
+      | "RewardPointsEarned"
       | "SignerAdded"
       | "TransactionApproved"
+      | "TransactionCancelled"
       | "TransactionCreated"
       | "TransactionExecuted"
+      | "TransactionRejected"
   ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "approvalCount",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "approvalRewardPoints",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "approveTransaction",
@@ -94,20 +132,35 @@ export interface BoostProjectInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "cancelTransaction",
+    values: [BigNumberish, string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "createBoostTransaction",
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: "getApprovalCount",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getApprovalStatus",
-    values: [BigNumberish, AddressLike]
+    functionFragment: "createTransaction",
+    values: [
+      string,
+      BigNumberish,
+      AddressLike,
+      BigNumberish,
+      AddressLike,
+      BigNumberish
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "getBoostCounter",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getSignerAction",
+    values: [BigNumberish, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getSignerStats",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "getSigners",
@@ -122,12 +175,24 @@ export interface BoostProjectInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "hasApproved",
-    values: [BigNumberish, AddressLike]
+    functionFragment: "getTransactionApprovers",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getTransactionRejectors",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getTransactionVotes",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "isSigner",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isTransactionActive",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "nextTransactionId",
@@ -135,8 +200,36 @@ export interface BoostProjectInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "operator", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "rejectTransaction",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "rejectionCount",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "rejectionRewardPoints",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "requiredApprovals",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "signerActions",
+    values: [BigNumberish, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "signerApprovals",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "signerPoints",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "signerRejections",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "signers",
@@ -152,6 +245,10 @@ export interface BoostProjectInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "approvalRewardPoints",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "approveTransaction",
     data: BytesLike
   ): Result;
@@ -160,19 +257,27 @@ export interface BoostProjectInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "cancelTransaction",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "createBoostTransaction",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getApprovalCount",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getApprovalStatus",
+    functionFragment: "createTransaction",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "getBoostCounter",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getSignerAction",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getSignerStats",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getSigners", data: BytesLike): Result;
@@ -185,17 +290,57 @@ export interface BoostProjectInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "hasApproved",
+    functionFragment: "getTransactionApprovers",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getTransactionRejectors",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getTransactionVotes",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "isSigner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "isTransactionActive",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "nextTransactionId",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "operator", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "rejectTransaction",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "rejectionCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "rejectionRewardPoints",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "requiredApprovals",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "signerActions",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "signerApprovals",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "signerPoints",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "signerRejections",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "signers", data: BytesLike): Result;
@@ -227,6 +372,34 @@ export namespace BoostIncrementedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace RewardPointsEarnedEvent {
+  export type InputTuple = [
+    signer: AddressLike,
+    transactionId: BigNumberish,
+    approved: boolean,
+    points: BigNumberish,
+    totalPoints: BigNumberish
+  ];
+  export type OutputTuple = [
+    signer: string,
+    transactionId: bigint,
+    approved: boolean,
+    points: bigint,
+    totalPoints: bigint
+  ];
+  export interface OutputObject {
+    signer: string;
+    transactionId: bigint;
+    approved: boolean;
+    points: bigint;
+    totalPoints: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace SignerAddedEvent {
   export type InputTuple = [signer: AddressLike, timestamp: BigNumberish];
   export type OutputTuple = [signer: string, timestamp: bigint];
@@ -245,19 +418,44 @@ export namespace TransactionApprovedEvent {
     transactionId: BigNumberish,
     signer: AddressLike,
     timestamp: BigNumberish,
-    currentApprovals: BigNumberish
+    currentApprovals: BigNumberish,
+    pointsEarned: BigNumberish
   ];
   export type OutputTuple = [
     transactionId: bigint,
     signer: string,
     timestamp: bigint,
-    currentApprovals: bigint
+    currentApprovals: bigint,
+    pointsEarned: bigint
   ];
   export interface OutputObject {
     transactionId: bigint;
     signer: string;
     timestamp: bigint;
     currentApprovals: bigint;
+    pointsEarned: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace TransactionCancelledEvent {
+  export type InputTuple = [
+    transactionId: BigNumberish,
+    timestamp: BigNumberish,
+    reason: string
+  ];
+  export type OutputTuple = [
+    transactionId: bigint,
+    timestamp: bigint,
+    reason: string
+  ];
+  export interface OutputObject {
+    transactionId: bigint;
+    timestamp: bigint;
+    reason: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -271,21 +469,30 @@ export namespace TransactionCreatedEvent {
     creator: AddressLike,
     timestamp: BigNumberish,
     description: string,
-    approvalsNeeded: BigNumberish
+    txType: BigNumberish,
+    approvalsNeeded: BigNumberish,
+    targetToken: AddressLike,
+    amount: BigNumberish
   ];
   export type OutputTuple = [
     transactionId: bigint,
     creator: string,
     timestamp: bigint,
     description: string,
-    approvalsNeeded: bigint
+    txType: bigint,
+    approvalsNeeded: bigint,
+    targetToken: string,
+    amount: bigint
   ];
   export interface OutputObject {
     transactionId: bigint;
     creator: string;
     timestamp: bigint;
     description: string;
+    txType: bigint;
     approvalsNeeded: bigint;
+    targetToken: string;
+    amount: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -297,17 +504,48 @@ export namespace TransactionExecutedEvent {
   export type InputTuple = [
     transactionId: BigNumberish,
     timestamp: BigNumberish,
-    finalApprovals: BigNumberish
+    finalApprovals: BigNumberish,
+    approvers: AddressLike[]
   ];
   export type OutputTuple = [
     transactionId: bigint,
     timestamp: bigint,
-    finalApprovals: bigint
+    finalApprovals: bigint,
+    approvers: string[]
   ];
   export interface OutputObject {
     transactionId: bigint;
     timestamp: bigint;
     finalApprovals: bigint;
+    approvers: string[];
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace TransactionRejectedEvent {
+  export type InputTuple = [
+    transactionId: BigNumberish,
+    signer: AddressLike,
+    timestamp: BigNumberish,
+    currentRejections: BigNumberish,
+    pointsEarned: BigNumberish
+  ];
+  export type OutputTuple = [
+    transactionId: bigint,
+    signer: string,
+    timestamp: bigint,
+    currentRejections: bigint,
+    pointsEarned: bigint
+  ];
+  export interface OutputObject {
+    transactionId: bigint;
+    signer: string;
+    timestamp: bigint;
+    currentRejections: bigint;
+    pointsEarned: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -360,6 +598,8 @@ export interface BoostProject extends BaseContract {
 
   approvalCount: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
 
+  approvalRewardPoints: TypedContractMethod<[], [bigint], "view">;
+
   approveTransaction: TypedContractMethod<
     [transactionId: BigNumberish],
     [void],
@@ -368,25 +608,50 @@ export interface BoostProject extends BaseContract {
 
   boostCounter: TypedContractMethod<[], [bigint], "view">;
 
+  cancelTransaction: TypedContractMethod<
+    [transactionId: BigNumberish, reason: string],
+    [void],
+    "nonpayable"
+  >;
+
   createBoostTransaction: TypedContractMethod<
     [description: string],
     [bigint],
     "nonpayable"
   >;
 
-  getApprovalCount: TypedContractMethod<
-    [transactionId: BigNumberish],
+  createTransaction: TypedContractMethod<
+    [
+      description: string,
+      txType: BigNumberish,
+      targetToken: AddressLike,
+      amount: BigNumberish,
+      recipient: AddressLike,
+      expirationDuration: BigNumberish
+    ],
+    [bigint],
+    "nonpayable"
+  >;
+
+  getBoostCounter: TypedContractMethod<[], [bigint], "view">;
+
+  getSignerAction: TypedContractMethod<
+    [transactionId: BigNumberish, signer: AddressLike],
     [bigint],
     "view"
   >;
 
-  getApprovalStatus: TypedContractMethod<
-    [transactionId: BigNumberish, signer: AddressLike],
-    [boolean],
+  getSignerStats: TypedContractMethod<
+    [signer: AddressLike],
+    [
+      [bigint, bigint, bigint] & {
+        points: bigint;
+        approvals: bigint;
+        rejections: bigint;
+      }
+    ],
     "view"
   >;
-
-  getBoostCounter: TypedContractMethod<[], [bigint], "view">;
 
   getSigners: TypedContractMethod<[], [string[]], "view">;
 
@@ -398,32 +663,91 @@ export interface BoostProject extends BaseContract {
     "view"
   >;
 
-  hasApproved: TypedContractMethod<
-    [arg0: BigNumberish, arg1: AddressLike],
-    [boolean],
+  getTransactionApprovers: TypedContractMethod<
+    [transactionId: BigNumberish],
+    [string[]],
+    "view"
+  >;
+
+  getTransactionRejectors: TypedContractMethod<
+    [transactionId: BigNumberish],
+    [string[]],
+    "view"
+  >;
+
+  getTransactionVotes: TypedContractMethod<
+    [transactionId: BigNumberish],
+    [[bigint, bigint] & { approvals: bigint; rejections: bigint }],
     "view"
   >;
 
   isSigner: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
+  isTransactionActive: TypedContractMethod<
+    [transactionId: BigNumberish],
+    [boolean],
+    "view"
+  >;
+
   nextTransactionId: TypedContractMethod<[], [bigint], "view">;
 
   operator: TypedContractMethod<[], [string], "view">;
 
+  rejectTransaction: TypedContractMethod<
+    [transactionId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  rejectionCount: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
+
+  rejectionRewardPoints: TypedContractMethod<[], [bigint], "view">;
+
   requiredApprovals: TypedContractMethod<[], [bigint], "view">;
+
+  signerActions: TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [bigint],
+    "view"
+  >;
+
+  signerApprovals: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+
+  signerPoints: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+
+  signerRejections: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
   signers: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
   transactions: TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [bigint, bigint, string, boolean, string, bigint] & {
+      [
+        bigint,
+        bigint,
+        string,
+        boolean,
+        boolean,
+        string,
+        bigint,
+        bigint,
+        string,
+        bigint,
+        string,
+        bigint
+      ] & {
         id: bigint;
         timestamp: bigint;
         creator: string;
         executed: boolean;
+        cancelled: boolean;
         description: string;
         approvalsNeeded: bigint;
+        txType: bigint;
+        targetToken: string;
+        amount: bigint;
+        recipient: string;
+        expirationTime: bigint;
       }
     ],
     "view"
@@ -437,27 +761,61 @@ export interface BoostProject extends BaseContract {
     nameOrSignature: "approvalCount"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
   getFunction(
+    nameOrSignature: "approvalRewardPoints"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "approveTransaction"
   ): TypedContractMethod<[transactionId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "boostCounter"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
+    nameOrSignature: "cancelTransaction"
+  ): TypedContractMethod<
+    [transactionId: BigNumberish, reason: string],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "createBoostTransaction"
   ): TypedContractMethod<[description: string], [bigint], "nonpayable">;
   getFunction(
-    nameOrSignature: "getApprovalCount"
-  ): TypedContractMethod<[transactionId: BigNumberish], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "getApprovalStatus"
+    nameOrSignature: "createTransaction"
   ): TypedContractMethod<
-    [transactionId: BigNumberish, signer: AddressLike],
-    [boolean],
-    "view"
+    [
+      description: string,
+      txType: BigNumberish,
+      targetToken: AddressLike,
+      amount: BigNumberish,
+      recipient: AddressLike,
+      expirationDuration: BigNumberish
+    ],
+    [bigint],
+    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "getBoostCounter"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getSignerAction"
+  ): TypedContractMethod<
+    [transactionId: BigNumberish, signer: AddressLike],
+    [bigint],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getSignerStats"
+  ): TypedContractMethod<
+    [signer: AddressLike],
+    [
+      [bigint, bigint, bigint] & {
+        points: bigint;
+        approvals: bigint;
+        rejections: bigint;
+      }
+    ],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getSigners"
   ): TypedContractMethod<[], [string[]], "view">;
@@ -472,15 +830,24 @@ export interface BoostProject extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "hasApproved"
+    nameOrSignature: "getTransactionApprovers"
+  ): TypedContractMethod<[transactionId: BigNumberish], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getTransactionRejectors"
+  ): TypedContractMethod<[transactionId: BigNumberish], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getTransactionVotes"
   ): TypedContractMethod<
-    [arg0: BigNumberish, arg1: AddressLike],
-    [boolean],
+    [transactionId: BigNumberish],
+    [[bigint, bigint] & { approvals: bigint; rejections: bigint }],
     "view"
   >;
   getFunction(
     nameOrSignature: "isSigner"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "isTransactionActive"
+  ): TypedContractMethod<[transactionId: BigNumberish], [boolean], "view">;
   getFunction(
     nameOrSignature: "nextTransactionId"
   ): TypedContractMethod<[], [bigint], "view">;
@@ -488,8 +855,33 @@ export interface BoostProject extends BaseContract {
     nameOrSignature: "operator"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "rejectTransaction"
+  ): TypedContractMethod<[transactionId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "rejectionCount"
+  ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "rejectionRewardPoints"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "requiredApprovals"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "signerActions"
+  ): TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [bigint],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "signerApprovals"
+  ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "signerPoints"
+  ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "signerRejections"
+  ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
   getFunction(
     nameOrSignature: "signers"
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
@@ -498,13 +890,32 @@ export interface BoostProject extends BaseContract {
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [bigint, bigint, string, boolean, string, bigint] & {
+      [
+        bigint,
+        bigint,
+        string,
+        boolean,
+        boolean,
+        string,
+        bigint,
+        bigint,
+        string,
+        bigint,
+        string,
+        bigint
+      ] & {
         id: bigint;
         timestamp: bigint;
         creator: string;
         executed: boolean;
+        cancelled: boolean;
         description: string;
         approvalsNeeded: bigint;
+        txType: bigint;
+        targetToken: string;
+        amount: bigint;
+        recipient: string;
+        expirationTime: bigint;
       }
     ],
     "view"
@@ -516,6 +927,13 @@ export interface BoostProject extends BaseContract {
     BoostIncrementedEvent.InputTuple,
     BoostIncrementedEvent.OutputTuple,
     BoostIncrementedEvent.OutputObject
+  >;
+  getEvent(
+    key: "RewardPointsEarned"
+  ): TypedContractEvent<
+    RewardPointsEarnedEvent.InputTuple,
+    RewardPointsEarnedEvent.OutputTuple,
+    RewardPointsEarnedEvent.OutputObject
   >;
   getEvent(
     key: "SignerAdded"
@@ -532,6 +950,13 @@ export interface BoostProject extends BaseContract {
     TransactionApprovedEvent.OutputObject
   >;
   getEvent(
+    key: "TransactionCancelled"
+  ): TypedContractEvent<
+    TransactionCancelledEvent.InputTuple,
+    TransactionCancelledEvent.OutputTuple,
+    TransactionCancelledEvent.OutputObject
+  >;
+  getEvent(
     key: "TransactionCreated"
   ): TypedContractEvent<
     TransactionCreatedEvent.InputTuple,
@@ -544,6 +969,13 @@ export interface BoostProject extends BaseContract {
     TransactionExecutedEvent.InputTuple,
     TransactionExecutedEvent.OutputTuple,
     TransactionExecutedEvent.OutputObject
+  >;
+  getEvent(
+    key: "TransactionRejected"
+  ): TypedContractEvent<
+    TransactionRejectedEvent.InputTuple,
+    TransactionRejectedEvent.OutputTuple,
+    TransactionRejectedEvent.OutputObject
   >;
 
   filters: {
@@ -558,6 +990,17 @@ export interface BoostProject extends BaseContract {
       BoostIncrementedEvent.OutputObject
     >;
 
+    "RewardPointsEarned(address,uint256,bool,uint256,uint256)": TypedContractEvent<
+      RewardPointsEarnedEvent.InputTuple,
+      RewardPointsEarnedEvent.OutputTuple,
+      RewardPointsEarnedEvent.OutputObject
+    >;
+    RewardPointsEarned: TypedContractEvent<
+      RewardPointsEarnedEvent.InputTuple,
+      RewardPointsEarnedEvent.OutputTuple,
+      RewardPointsEarnedEvent.OutputObject
+    >;
+
     "SignerAdded(address,uint256)": TypedContractEvent<
       SignerAddedEvent.InputTuple,
       SignerAddedEvent.OutputTuple,
@@ -569,7 +1012,7 @@ export interface BoostProject extends BaseContract {
       SignerAddedEvent.OutputObject
     >;
 
-    "TransactionApproved(uint256,address,uint256,uint256)": TypedContractEvent<
+    "TransactionApproved(uint256,address,uint256,uint256,uint256)": TypedContractEvent<
       TransactionApprovedEvent.InputTuple,
       TransactionApprovedEvent.OutputTuple,
       TransactionApprovedEvent.OutputObject
@@ -580,7 +1023,18 @@ export interface BoostProject extends BaseContract {
       TransactionApprovedEvent.OutputObject
     >;
 
-    "TransactionCreated(uint256,address,uint256,string,uint256)": TypedContractEvent<
+    "TransactionCancelled(uint256,uint256,string)": TypedContractEvent<
+      TransactionCancelledEvent.InputTuple,
+      TransactionCancelledEvent.OutputTuple,
+      TransactionCancelledEvent.OutputObject
+    >;
+    TransactionCancelled: TypedContractEvent<
+      TransactionCancelledEvent.InputTuple,
+      TransactionCancelledEvent.OutputTuple,
+      TransactionCancelledEvent.OutputObject
+    >;
+
+    "TransactionCreated(uint256,address,uint256,string,uint8,uint256,address,uint256)": TypedContractEvent<
       TransactionCreatedEvent.InputTuple,
       TransactionCreatedEvent.OutputTuple,
       TransactionCreatedEvent.OutputObject
@@ -591,7 +1045,7 @@ export interface BoostProject extends BaseContract {
       TransactionCreatedEvent.OutputObject
     >;
 
-    "TransactionExecuted(uint256,uint256,uint256)": TypedContractEvent<
+    "TransactionExecuted(uint256,uint256,uint256,address[])": TypedContractEvent<
       TransactionExecutedEvent.InputTuple,
       TransactionExecutedEvent.OutputTuple,
       TransactionExecutedEvent.OutputObject
@@ -600,6 +1054,17 @@ export interface BoostProject extends BaseContract {
       TransactionExecutedEvent.InputTuple,
       TransactionExecutedEvent.OutputTuple,
       TransactionExecutedEvent.OutputObject
+    >;
+
+    "TransactionRejected(uint256,address,uint256,uint256,uint256)": TypedContractEvent<
+      TransactionRejectedEvent.InputTuple,
+      TransactionRejectedEvent.OutputTuple,
+      TransactionRejectedEvent.OutputObject
+    >;
+    TransactionRejected: TypedContractEvent<
+      TransactionRejectedEvent.InputTuple,
+      TransactionRejectedEvent.OutputTuple,
+      TransactionRejectedEvent.OutputObject
     >;
   };
 }

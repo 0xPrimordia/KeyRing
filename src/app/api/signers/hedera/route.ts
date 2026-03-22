@@ -52,6 +52,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fire-and-forget: trigger boost onboarding
+    const baseUrl = request.nextUrl.origin;
+    fetch(`${baseUrl}/api/onboarding/boost`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId: account_id, publicKey: public_key }),
+    }).catch((err) => console.error('[HEDERA-SIGNER] Boost trigger failed:', err));
+
     return NextResponse.json({
       success: true,
       message: 'Hedera signer registered. Complete KYC from dashboard to qualify for real projects.',

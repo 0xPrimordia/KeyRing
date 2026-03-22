@@ -617,28 +617,30 @@ function SignerDashboard() {
                 const acctData = await acctResponse.json();
                 const key = acctData.key;
 
-                // Check if this is a KeyList (ProtobufEncoded)
-                if (key?._type === 'ProtobufEncoded' && key.key) {
-                  const keyHex = key.key;
-                  
-                  // Check if my public key is in this KeyList
-                  if (keyHex.includes(myPublicKey)) {
-                    console.log('[DASHBOARD] Found my key in threshold list:', acctId);
-                    
-                    // Check if I've already signed this schedule
-                    const mySignature = schedule.signatures?.find((sig: any) => {
-                      // Compare public key prefix (base64 encoded)
-                      const sigKeyHex = Buffer.from(sig.public_key_prefix, 'base64').toString('hex');
-                      return myPublicKey.includes(sigKeyHex) || sigKeyHex.includes(myPublicKey.slice(0, 40));
-                    });
+                let keyContainsMyKey = false;
 
-                    if (!mySignature) {
-                      requiresMySignature = true;
-                      console.log('[DASHBOARD] Schedule requires my signature:', schedule.schedule_id);
-                      break;
-                    } else {
-                      console.log('[DASHBOARD] Already signed schedule:', schedule.schedule_id);
-                    }
+                if (key?._type === 'ED25519' && key.key) {
+                  keyContainsMyKey = key.key === myPublicKey;
+                } else if (key?._type === 'ProtobufEncoded' && key.key) {
+                  keyContainsMyKey = key.key.includes(myPublicKey);
+                } else if (key?._type === 'KeyList' && key.keys) {
+                  keyContainsMyKey = key.keys.some((k: { key?: string }) => k.key === myPublicKey);
+                }
+
+                if (keyContainsMyKey) {
+                  console.log('[DASHBOARD] Found my key in threshold list:', acctId);
+
+                  const mySignature = schedule.signatures?.find((sig: { public_key_prefix?: string }) => {
+                    const sigKeyHex = Buffer.from(sig.public_key_prefix || '', 'base64').toString('hex');
+                    return myPublicKey.includes(sigKeyHex) || sigKeyHex.includes(myPublicKey.slice(0, 40));
+                  });
+
+                  if (!mySignature) {
+                    requiresMySignature = true;
+                    console.log('[DASHBOARD] Schedule requires my signature:', schedule.schedule_id);
+                    break;
+                  } else {
+                    console.log('[DASHBOARD] Already signed schedule:', schedule.schedule_id);
                   }
                 }
               } catch (err) {

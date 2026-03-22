@@ -178,6 +178,14 @@ export async function POST(request: NextRequest) {
           signerId: dbResult.signer?.id,
           keyringId: dbResult.signer?.code_name
         });
+
+        // Fire-and-forget: trigger boost onboarding
+        const baseUrl = request.nextUrl.origin;
+        fetch(`${baseUrl}/api/onboarding/boost`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accountId, publicKey }),
+        }).catch((err) => console.error('[API] Boost trigger failed:', err));
       }
 
       // Fetch the complete profile data including UAID
