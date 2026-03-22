@@ -3,6 +3,31 @@ import { KeyRingDB } from '../../../../../lib/keyring-db';
 import { supabase } from '../../../../../lib/supabase';
 import { getMirrorNodeUrl, fetchScheduleFromMirrorNode } from '../../../../../lib/mirror-node';
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function checkSignatureOnMirrorNode(
+  scheduleId: string,
+  publicKey: string
+): Promise<boolean> {
+  const mirrorNodeUrl = getMirrorNodeUrl();
+  const scheduleRes = await fetch(`${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`);
+  if (!scheduleRes.ok) return false;
+  const scheduleData = await scheduleRes.json();
+
+  const signatures: Array<{ public_key_prefix?: string }> = scheduleData.signatures || [];
+  return signatures.some((sig) => {
+    if (!sig.public_key_prefix) return false;
+    try {
+      const sigKeyHex = Buffer.from(sig.public_key_prefix, 'base64').toString('hex');
+      return sigKeyHex.includes(publicKey) || publicKey.includes(sigKeyHex.slice(0, 40));
+    } catch {
+      return false;
+    }
+  });
+}
+
 async function verifySignatureOnChain(
   scheduleId: string,
   accountId: string
@@ -15,25 +40,19 @@ async function verifySignatureOnChain(
   const publicKey = accountData.key?.key;
   if (!publicKey) return { verified: false, error: 'Could not resolve account public key' };
 
-  const scheduleRes = await fetch(`${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`);
-  if (!scheduleRes.ok) return { verified: false, error: 'Could not fetch schedule from Mirror Node' };
-  const scheduleData = await scheduleRes.json();
-
-  const signatures: Array<{ public_key_prefix?: string }> = scheduleData.signatures || [];
-
-  const signed = signatures.some((sig) => {
-    if (!sig.public_key_prefix) return false;
-    try {
-      const sigKeyHex = Buffer.from(sig.public_key_prefix, 'base64').toString('hex');
-      return sigKeyHex.includes(publicKey) || publicKey.includes(sigKeyHex.slice(0, 40));
-    } catch {
-      return false;
+  // Mirror Node can take several seconds to index a new signature.
+  // Retry up to 3 times with increasing delays.
+  const delays = [0, 4000, 6000];
+  for (const delay of delays) {
+    if (delay > 0) {
+      console.log(`[API] Signature not found yet, retrying in ${delay}ms...`);
+      await sleep(delay);
     }
-  });
+    const found = await checkSignatureOnMirrorNode(scheduleId, publicKey);
+    if (found) return { verified: true };
+  }
 
-  return signed
-    ? { verified: true }
-    : { verified: false, error: 'Signature not found on schedule' };
+  return { verified: false, error: 'Signature not found on schedule after retries' };
 }
 
 /**

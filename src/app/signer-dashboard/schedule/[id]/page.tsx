@@ -403,34 +403,32 @@ export default function ScheduleDetailsPage() {
 
       console.log('[DETAIL] Transaction response:', txResponse);
 
-      // Get transaction receipt
-      const signTransactionId = txResponse.transactionId?.toString();
-      console.log('[DETAIL] Sign transaction ID:', signTransactionId);
+      const signTransactionId = txResponse?.transactionId?.toString() || '';
+      console.log('[DETAIL] Sign transaction ID:', signTransactionId || '(none returned by wallet)');
 
-      // Record reward
-      if (signTransactionId) {
-        try {
-          const rewardResponse = await fetch('/api/rewards/record-signature', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              accountId,
-              scheduleId,
-              transactionId: signTransactionId
-            })
-          });
+      // Record reward BEFORE redirecting — always attempt regardless of transactionId
+      try {
+        const rewardResponse = await fetch('/api/rewards/record-signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accountId,
+            scheduleId,
+            transactionId: signTransactionId || null
+          })
+        });
 
-          const rewardData = await rewardResponse.json();
-          
-          if (rewardData.success) {
-            console.log('[DETAIL] Reward recorded:', rewardData.reward);
-          }
-        } catch (rewardErr) {
-          console.error('[DETAIL] Error recording reward:', rewardErr);
+        const rewardData = await rewardResponse.json();
+        
+        if (rewardData.success) {
+          console.log('[DETAIL] Reward recorded:', rewardData.reward);
+        } else {
+          console.warn('[DETAIL] Reward recording failed:', rewardData.error);
         }
+      } catch (rewardErr) {
+        console.error('[DETAIL] Error recording reward:', rewardErr);
       }
 
-      // Redirect to dashboard with confirmation
       router.push(`/signer-dashboard?signed=${scheduleId}`);
 
     } catch (err: any) {
