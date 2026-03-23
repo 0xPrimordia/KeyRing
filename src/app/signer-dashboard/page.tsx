@@ -480,7 +480,8 @@ function SignerDashboard() {
         `${mirrorNodeUrl}/api/v1/accounts/${accountId}`
       );
       const myAccountData = await myAccountResponse.json();
-      const myPublicKey = myAccountData.key?._type === 'ED25519' ? myAccountData.key.key : null;
+      const keyType = myAccountData.key?._type;
+      const myPublicKey = (keyType === 'ED25519' || keyType === 'ECDSA_SECP256K1') ? myAccountData.key.key : null;
 
       if (!myPublicKey) {
         console.error('[DASHBOARD] Could not retrieve public key');
@@ -619,7 +620,7 @@ function SignerDashboard() {
 
                 let keyContainsMyKey = false;
 
-                if (key?._type === 'ED25519' && key.key) {
+                if ((key?._type === 'ED25519' || key?._type === 'ECDSA_SECP256K1') && key.key) {
                   keyContainsMyKey = key.key === myPublicKey;
                 } else if (key?._type === 'ProtobufEncoded' && key.key) {
                   keyContainsMyKey = key.key.includes(myPublicKey);

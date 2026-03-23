@@ -52,7 +52,12 @@ export async function POST(request: NextRequest) {
     client.setOperator(operatorId, privateKey);
     client.setDefaultMaxTransactionFee(new Hbar(5));
 
-    const userPublicKey = PublicKey.fromStringED25519(publicKey);
+    let userPublicKey: PublicKey;
+    try {
+      userPublicKey = PublicKey.fromStringED25519(publicKey);
+    } catch {
+      userPublicKey = PublicKey.fromStringECDSA(publicKey);
+    }
 
     // 1. Create 1-of-1 threshold account with user's key
     console.log('[BOOST] Creating threshold account...');
