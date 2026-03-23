@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Header from '../../components/Header';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 interface Signer {
@@ -99,6 +99,14 @@ const getStatusStyling = (status: 'pending' | 'verified' | 'suspended' | 'revoke
 const VALID_TABS = ['signers', 'lists', 'projects', 'schedules'] as const;
 
 export default function RegistryPage() {
+  return (
+    <Suspense>
+      <RegistryContent />
+    </Suspense>
+  );
+}
+
+function RegistryContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tabParam = searchParams.get('tab');
