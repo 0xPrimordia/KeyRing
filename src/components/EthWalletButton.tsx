@@ -75,13 +75,16 @@ export default function EthWalletButton() {
             {(() => {
               if (!connected) {
                 return (
-                  <button
-                    onClick={openConnectModal}
-                    className="text-base text-black bg-white px-8 py-3 rounded-lg hover:opacity-80 transition-opacity leading-relaxed"
-                    style={{ paddingTop: '0.875rem' }}
-                  >
-                    Connect Ethereum
-                  </button>
+                  <div className="flex flex-col items-center">
+                    <button
+                      disabled
+                      className="text-base text-black/40 bg-white/50 px-8 py-3 rounded-lg cursor-not-allowed leading-relaxed"
+                      style={{ paddingTop: '0.875rem' }}
+                    >
+                      Connect Ethereum
+                    </button>
+                    <span className="text-xs text-muted-foreground mt-1">Coming soon</span>
+                  </div>
                 );
               }
 

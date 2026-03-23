@@ -144,16 +144,17 @@ export default function WalletButton() {
               Connect Hedera
             </div>
           </button>
-          <button
-            onClick={handleConnectBase}
-            disabled={isConnecting}
-            className="w-full px-4 py-3 text-left text-sm text-foreground hover:bg-gray-700 transition-colors disabled:opacity-50"
+          <div
+            className="w-full px-4 py-3 text-left text-sm text-muted-foreground cursor-not-allowed opacity-50"
           >
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-              Connect Ethereum
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-blue-500/50 rounded-full mr-3"></div>
+                Connect Ethereum
+              </div>
+              <span className="text-xs italic">Soon</span>
             </div>
-          </button>
+          </div>
         </div>
       )}
     </div>
