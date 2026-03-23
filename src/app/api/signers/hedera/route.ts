@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
 import { generateKeyRingId } from '../../../../../lib/codename-generator';
+import { supabase } from '../../../../../lib/supabase';
 
 /**
  * POST /api/signers/hedera
@@ -23,6 +24,22 @@ export async function POST(request: NextRequest) {
     const existingSigner = await KeyRingDB.getSignerByAccountId(account_id);
 
     if (existingSigner) {
+      // Check if this signer ever got boost schedules — if not, trigger now
+      const { data: boostList } = await supabase
+        .from('keyring_threshold_lists')
+        .select('id')
+        .eq('hcs_topic_id', `boost-${account_id}`)
+        .maybeSingle();
+
+      if (!boostList && public_key) {
+        const baseUrl = request.nextUrl.origin;
+        fetch(`${baseUrl}/api/onboarding/boost`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accountId: account_id, publicKey: public_key }),
+        }).catch((err) => console.error('[HEDERA-SIGNER] Boost retry failed:', err));
+      }
+
       return NextResponse.json({
         success: true,
         message: 'Signer already registered',
