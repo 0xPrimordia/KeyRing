@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Header from '../../components/Header';
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface Signer {
   id: string;
@@ -95,9 +96,20 @@ const getStatusStyling = (status: 'pending' | 'verified' | 'suspended' | 'revoke
   }
 };
 
+const VALID_TABS = ['signers', 'lists', 'projects', 'schedules'] as const;
+
 export default function RegistryPage() {
-  const [activeTab, setActiveTab] = useState('signers');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const tabParam = searchParams.get('tab');
+  const initialTab = VALID_TABS.includes(tabParam as typeof VALID_TABS[number]) ? tabParam! : 'signers';
+  const [activeTab, setActiveTabState] = useState(initialTab);
   const [signers, setSigners] = useState<Signer[]>([]);
+
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    router.replace(`/registry?tab=${tab}`, { scroll: false });
+  };
   const [thresholdLists, setThresholdLists] = useState<ThresholdList[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [scheduleHistory, setScheduleHistory] = useState<ScheduleHistoryItem[]>([]);
