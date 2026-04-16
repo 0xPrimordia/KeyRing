@@ -3,10 +3,13 @@ import { HCS11Client } from '@hashgraphonline/standards-sdk';
 import { AccountUpdateTransaction, AccountId } from '@hashgraph/sdk';
 import { KeyRingDB } from '../../../../lib/keyring-db';
 import { generateKeyRingId, getDisplayName } from '../../../../lib/codename-generator';
+import { getReferralCodeFromRequest } from '../../../../lib/referral-from-request';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, publicKey, sumsubData, existingSignerId } = await request.json();
+    const body = await request.json();
+    const { accountId, publicKey, sumsubData, existingSignerId } = body;
+    const referralCode = getReferralCodeFromRequest(request, body.referral_code);
 
     if (!accountId || !publicKey) {
       return NextResponse.json({ 
@@ -163,6 +166,7 @@ export async function POST(request: NextRequest) {
             codeName: keyringId,
             verificationProvider: verificationProvider,
             isTestnet,
+            referralCode,
             ...(sumsubData && {
               sumsubApplicantId: sumsubData.applicantId,
               sumsubReviewResult: sumsubData.reviewResult,

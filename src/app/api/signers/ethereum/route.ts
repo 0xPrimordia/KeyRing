@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
 import { generateKeyRingId } from '../../../../../lib/codename-generator';
+import { getReferralCodeFromRequest } from '../../../../../lib/referral-from-request';
 
 /**
  * POST /api/signers/ethereum
@@ -12,6 +13,7 @@ export async function POST(request: NextRequest) {
     const wallet_address = body.wallet_address;
     const sumsub_applicant_id = body.sumsub_applicant_id;
     const sumsub_review_result = body.sumsub_review_result;
+    const referralCode = getReferralCodeFromRequest(request, body.referral_code);
 
     if (!wallet_address || !/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
       return NextResponse.json(
@@ -31,6 +33,7 @@ export async function POST(request: NextRequest) {
           account_type: existingSigner.account_type,
           wallet_address: existingSigner.wallet_address,
           code_name: existingSigner.code_name,
+          referral_code: existingSigner.referral_code,
           verification_status: existingSigner.verification_status,
           created_at: existingSigner.created_at,
         },
@@ -47,6 +50,7 @@ export async function POST(request: NextRequest) {
       sumsubApplicantId: sumsub_applicant_id,
       sumsubReviewResult: sumsub_review_result || 'GREEN',
       isTestnet,
+      referralCode,
     });
 
     if (!result.success) {
@@ -67,6 +71,7 @@ export async function POST(request: NextRequest) {
         account_type: result.signer?.account_type,
         wallet_address: result.signer?.wallet_address,
         code_name: result.signer?.code_name,
+        referral_code: result.signer?.referral_code,
         verification_status: result.signer?.verification_status,
         created_at: result.signer?.created_at
       }
@@ -133,6 +138,7 @@ export async function GET(request: NextRequest) {
         account_type: signer.account_type,
         wallet_address: signer.wallet_address,
         code_name: signer.code_name,
+        referral_code: signer.referral_code,
         verification_status: signer.verification_status,
         verification_provider: signer.verification_provider,
         created_at: signer.created_at

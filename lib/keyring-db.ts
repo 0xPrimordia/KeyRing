@@ -1,5 +1,7 @@
-import { supabase } from './supabase';
+import { supabase, generateSignerId } from './supabase';
 import { Database } from './database.types';
+import { deriveReferralCodeFromSignerId } from './referral-code';
+import { REFERRAL_CODE_HEX_REGEX } from './referral-constants';
 
 type KeyringSigner = Database['public']['Tables']['keyring_signers']['Row'];
 type KeyringSignerInsert = Database['public']['Tables']['keyring_signers']['Insert'];
@@ -7,11 +9,87 @@ type KeyringProject = Database['public']['Tables']['keyring_projects']['Row'];
 type KeyringProjectInsert = Database['public']['Tables']['keyring_projects']['Insert'];
 type KeyringThresholdList = Database['public']['Tables']['keyring_threshold_lists']['Row'];
 type KeyringReward = Database['public']['Tables']['keyring_rewards']['Row'];
+type RewardType = KeyringReward['reward_type'];
 // type KeyringWhitelist = Database['public']['Tables']['keyring_whitelist']['Row']; // Unused for now
 type KeyringWhitelistInsert = Database['public']['Tables']['keyring_whitelist']['Insert'];
 
 export class KeyRingDB {
-  
+  /**
+   * Look up a signer by shareable referral code (16-char lowercase hex).
+   */
+  static async getSignerByReferralCode(code: string): Promise<KeyringSigner | null> {
+    const normalized = code.trim().toLowerCase();
+    if (!REFERRAL_CODE_HEX_REGEX.test(normalized)) {
+      return null;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('keyring_signers')
+        .select('*')
+        .eq('referral_code', normalized)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching signer by referral code:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error in getSignerByReferralCode:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Apply referral rewards once: sets referred_by on the new signer, +20 KYRNG (referee), +100 KYRNG (referrer).
+   * No-op if code missing, invalid, self-referral, or signer was already attributed.
+   */
+  static async applyReferralForNewSigner(
+    newSignerId: string,
+    referralCode?: string | null
+  ): Promise<void> {
+    if (!referralCode) {
+      return;
+    }
+    const normalized = referralCode.trim().toLowerCase();
+    if (!REFERRAL_CODE_HEX_REGEX.test(normalized)) {
+      return;
+    }
+
+    const referrer = await this.getSignerByReferralCode(normalized);
+    if (!referrer || referrer.id === newSignerId) {
+      return;
+    }
+
+    const { data: updated, error: updErr } = await supabase
+      .from('keyring_signers')
+      .update({
+        referred_by_signer_id: referrer.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', newSignerId)
+      .is('referred_by_signer_id', null)
+      .select('id')
+      .maybeSingle();
+
+    if (updErr) {
+      console.error('[Referral] Failed to set referred_by:', updErr);
+      return;
+    }
+    if (!updated) {
+      return;
+    }
+
+    const refereeReward = await this.addReward(newSignerId, 'referral_referee', 20, 'KYRNG');
+    if (!refereeReward.success) {
+      console.warn('[Referral] Failed to add referee reward:', refereeReward.error);
+    }
+    const referrerReward = await this.addReward(referrer.id, 'referral_referrer', 100, 'KYRNG');
+    if (!referrerReward.success) {
+      console.warn('[Referral] Failed to add referrer reward:', referrerReward.error);
+    }
+  }
+
   /**
    * Register a new Hedera KeyRing signer
    */
@@ -24,9 +102,14 @@ export class KeyRingDB {
     sumsubApplicantId?: string;
     sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
     isTestnet?: boolean;
+    referralCode?: string | null;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
+      const signerId = generateSignerId();
+      const referral_code = deriveReferralCodeFromSignerId(signerId);
       const signerData: KeyringSignerInsert = {
+        id: signerId,
+        referral_code,
         account_type: 'hedera',
         account_id: data.accountId,
         public_key: data.publicKey,
@@ -56,6 +139,8 @@ export class KeyRingDB {
         await this.addVerificationRewardIfNew(signer.id, 100, 'KYRNG');
       }
 
+      await this.applyReferralForNewSigner(signer.id, data.referralCode);
+
       return { success: true, signer };
     } catch (error: unknown) {
       console.error('Error registering signer:', error);
@@ -73,13 +158,18 @@ export class KeyRingDB {
     sumsubApplicantId?: string;
     sumsubReviewResult?: 'GREEN' | 'RED' | 'YELLOW';
     isTestnet?: boolean;
+    referralCode?: string | null;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       // Verified only when KYC (Sumsub) data is present with GREEN result; otherwise pending for boost-only access
       const hasKyc = !!data.sumsubApplicantId;
       const verificationStatus = hasKyc && data.sumsubReviewResult === 'GREEN' ? 'verified' : 'pending';
 
+      const signerId = generateSignerId();
+      const referral_code = deriveReferralCodeFromSignerId(signerId);
       const signerData: KeyringSignerInsert = {
+        id: signerId,
+        referral_code,
         account_type: 'ethereum',
         wallet_address: data.walletAddress,
         code_name: data.codeName,
@@ -110,6 +200,8 @@ export class KeyRingDB {
         await this.addVerificationRewardIfNew(signer.id, 100, 'KYRNG');
       }
 
+      await this.applyReferralForNewSigner(signer.id, data.referralCode);
+
       return { success: true, signer };
     } catch (error: unknown) {
       console.error('Error registering Ethereum signer:', error);
@@ -126,9 +218,14 @@ export class KeyRingDB {
     publicKey: string;
     codeName: string;
     isTestnet?: boolean;
+    referralCode?: string | null;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
+      const signerId = generateSignerId();
+      const referral_code = deriveReferralCodeFromSignerId(signerId);
       const signerData: KeyringSignerInsert = {
+        id: signerId,
+        referral_code,
         account_type: 'hedera',
         account_id: data.accountId,
         public_key: data.publicKey,
@@ -156,6 +253,8 @@ export class KeyRingDB {
       // Add registration reward (20 Keyring)
       await this.addReward(signer.id, 'onboarding', 20, 'KYRNG');
 
+      await this.applyReferralForNewSigner(signer.id, data.referralCode);
+
       return { success: true, signer };
     } catch (error: unknown) {
       console.error('Error in registerHederaSignerWithoutKyc:', error);
@@ -172,12 +271,17 @@ export class KeyRingDB {
     reviewResult: 'GREEN' | 'RED' | 'YELLOW';
     isTestnet?: boolean;
     publicKey?: string;
+    referralCode?: string | null;
   }): Promise<{ success: boolean; signer?: KeyringSigner; error?: string }> {
     try {
       const { generateKeyRingId } = await import('./codename-generator');
       const codeName = generateKeyRingId(data.accountId);
-      
+
+      const signerId = generateSignerId();
+      const referral_code = deriveReferralCodeFromSignerId(signerId);
       const signerData: KeyringSignerInsert = {
+        id: signerId,
+        referral_code,
         account_type: 'hedera',
         account_id: data.accountId,
         public_key: data.publicKey || null,
@@ -204,6 +308,8 @@ export class KeyRingDB {
 
       // Add registration reward (20 Keyring)
       await this.addReward(signer.id, 'onboarding', 20, 'KYRNG');
+
+      await this.applyReferralForNewSigner(signer.id, data.referralCode);
 
       console.log('Created incomplete signer record:', signer.id);
       return { success: true, signer };
@@ -593,8 +699,8 @@ export class KeyRingDB {
    * Add a reward for a signer
    */
   static async addReward(
-    signerId: string, 
-    rewardType: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection', 
+    signerId: string,
+    rewardType: RewardType,
     amount: number,
     currency: string = 'KYRNG',
     signatureTransactionId?: string,

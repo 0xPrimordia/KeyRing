@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
+import { getReferralCodeFromRequest } from '../../../../../lib/referral-from-request';
 
 async function fetchPublicKeyFromMirrorNode(accountId: string, network: string): Promise<string | null> {
   try {
@@ -23,7 +24,9 @@ async function fetchPublicKeyFromMirrorNode(accountId: string, network: string):
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, applicantId, reviewResult } = await request.json();
+    const body = await request.json();
+    const { accountId, applicantId, reviewResult } = body;
+    const referralCode = getReferralCodeFromRequest(request, body.referral_code);
 
     if (!accountId || !applicantId || !reviewResult) {
       return NextResponse.json({
@@ -96,6 +99,7 @@ export async function POST(request: NextRequest) {
         reviewResult,
         isTestnet,
         publicKey: publicKey || undefined,
+        referralCode,
       });
 
       if (dbResult.success) {

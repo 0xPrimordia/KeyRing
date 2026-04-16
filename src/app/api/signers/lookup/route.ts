@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       signer: {
         id: signer.id,
         codeName: signer.code_name,
+        referralCode: signer.referral_code,
         accountId: signer.account_id,
         verificationStatus: signer.verification_status,
         verificationProvider: signer.verification_provider,

@@ -80,6 +80,8 @@ function SignerDashboard() {
   const [claimingRewards, setClaimingRewards] = useState(false);
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'suspended' | 'revoked' | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
   const [rejections, setRejections] = useState<Record<string, RejectionInfo>>({});
   const [rejectedByMeIds, setRejectedByMeIds] = useState<Set<string>>(new Set());
   const [validatorReviews, setValidatorReviews] = useState<Record<string, { riskLevel?: string; recommendation?: string }>>({});
@@ -178,16 +180,19 @@ function SignerDashboard() {
         console.log('[DASHBOARD] Account is registered:', data.signer);
         setIsRegistered(true);
         setVerificationStatus((data.signer?.verificationStatus as 'pending' | 'verified' | 'suspended' | 'revoked') ?? null);
+        setReferralCode(typeof data.signer?.referralCode === 'string' ? data.signer.referralCode : null);
       } else {
         console.log('[DASHBOARD] Account is not registered');
         setIsRegistered(false);
         setVerificationStatus(null);
+        setReferralCode(null);
       }
     } catch (err: any) {
       console.error('[DASHBOARD] Error checking registration:', err);
       // If there's an error, assume not registered to be safe
       setIsRegistered(false);
       setVerificationStatus(null);
+      setReferralCode(null);
     }
   }
 
@@ -1143,6 +1148,47 @@ function SignerDashboard() {
             </div>
           </div>
         </div>
+
+        {isRegistered && referralCode && (
+          <div className="mb-8 rounded-2xl border border-border bg-card/40 p-6">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Invite signers
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Share this link. When someone joins KeyRing through it, they earn 20 bonus Keyring and you earn 100 Keyring (pending until claimed).
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <code className="flex-1 text-xs sm:text-sm font-mono bg-muted/50 rounded-lg px-3 py-2 break-all border border-border">
+                {typeof window !== 'undefined'
+                  ? `${window.location.origin}/?ref=${referralCode}`
+                  : `/?ref=${referralCode}`}
+              </code>
+              <button
+                type="button"
+                onClick={async () => {
+                  const link =
+                    typeof window !== 'undefined'
+                      ? `${window.location.origin}/?ref=${referralCode}`
+                      : '';
+                  try {
+                    await navigator.clipboard.writeText(link);
+                    setReferralCopied(true);
+                    setTimeout(() => setReferralCopied(false), 2000);
+                  } catch {
+                    setError('Could not copy link');
+                  }
+                }}
+                className="shrink-0 text-black text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                style={{
+                  background: 'linear-gradient(to right, #F1BD5C, #E77C39)',
+                  border: '2px solid #F1BD5C',
+                }}
+              >
+                {referralCopied ? 'Copied' : 'Copy link'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Settings Slide-out Panel */}
         {showSettings && accountMetadata && (

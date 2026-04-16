@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
+import { REFERRAL_CODE_HEX_REGEX } from '../../../lib/referral-constants';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useWallet } from '../../providers/WalletProvider';
 import { useAccount } from 'wagmi';
@@ -63,6 +64,13 @@ function VerifyPageContent() {
 
   // Get return URL from query params
   const returnUrl = searchParams.get('returnUrl') || '/';
+
+  const referralCodeForApi = useMemo(() => {
+    const raw = searchParams.get('ref');
+    if (!raw) return undefined;
+    const n = raw.trim().toLowerCase();
+    return REFERRAL_CODE_HEX_REGEX.test(n) ? n : undefined;
+  }, [searchParams]);
 
   // Check for existing verification on page load
   useEffect(() => {
@@ -214,7 +222,8 @@ function VerifyPageContent() {
             sumsub_review_result: reviewResult,
             verification_status: 'verified',
             verification_provider: 'sumsub',
-            join_date: new Date().toISOString()
+            join_date: new Date().toISOString(),
+            ...(referralCodeForApi ? { referral_code: referralCodeForApi } : {}),
           })
         });
 
@@ -252,7 +261,8 @@ function VerifyPageContent() {
           body: JSON.stringify({
             accountId,
             applicantId,
-            reviewResult
+            reviewResult,
+            ...(referralCodeForApi ? { referral_code: referralCodeForApi } : {}),
           })
         });
 
@@ -324,7 +334,8 @@ function VerifyPageContent() {
             applicantId: sumsubData.applicantId,
             reviewResult: sumsubData.reviewResult,
           },
-          existingSignerId: existingSigner.id // Pass existing signer ID to update instead of create
+          existingSignerId: existingSigner.id, // Pass existing signer ID to update instead of create
+          ...(referralCodeForApi ? { referral_code: referralCodeForApi } : {}),
         })
       });
       
@@ -384,7 +395,10 @@ function VerifyPageContent() {
         const response = await fetch('/api/signers/ethereum', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wallet_address: ethAddr }),
+          body: JSON.stringify({
+            wallet_address: ethAddr,
+            ...(referralCodeForApi ? { referral_code: referralCodeForApi } : {}),
+          }),
         });
         const data = await response.json();
         if (!data.success && !data.signer) {
@@ -406,7 +420,11 @@ function VerifyPageContent() {
         const response = await fetch('/api/signers/hedera', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ account_id: accountId, public_key: currentPublicKey }),
+          body: JSON.stringify({
+            account_id: accountId,
+            public_key: currentPublicKey,
+            ...(referralCodeForApi ? { referral_code: referralCodeForApi } : {}),
+          }),
         });
         const data = await response.json();
         if (!data.success && !data.signer) {

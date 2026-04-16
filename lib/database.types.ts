@@ -28,6 +28,8 @@ export type Database = {
           verified_name: string | null
           document_type: string | null
           is_testnet: boolean
+          referral_code: string
+          referred_by_signer_id: string | null
           created_at: string
           updated_at: string
         }
@@ -49,6 +51,8 @@ export type Database = {
           verified_name?: string | null
           document_type?: string | null
           is_testnet?: boolean
+          referral_code?: string
+          referred_by_signer_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -70,6 +74,8 @@ export type Database = {
           verified_name?: string | null
           document_type?: string | null
           is_testnet?: boolean
+          referral_code?: string
+          referred_by_signer_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -204,7 +210,13 @@ export type Database = {
         Row: {
           id: string
           signer_id: string
-          reward_type: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection'
+          reward_type:
+            | 'onboarding'
+            | 'list_addition'
+            | 'transaction_review'
+            | 'transaction_rejection'
+            | 'referral_referee'
+            | 'referral_referrer'
           amount: number
           currency: string
           transaction_id: string | null
@@ -217,7 +229,13 @@ export type Database = {
         Insert: {
           id?: string
           signer_id: string
-          reward_type: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection'
+          reward_type:
+            | 'onboarding'
+            | 'list_addition'
+            | 'transaction_review'
+            | 'transaction_rejection'
+            | 'referral_referee'
+            | 'referral_referrer'
           amount: number
           currency?: string
           transaction_id?: string | null
@@ -230,7 +248,13 @@ export type Database = {
         Update: {
           id?: string
           signer_id?: string
-          reward_type?: 'onboarding' | 'list_addition' | 'transaction_review' | 'transaction_rejection'
+          reward_type?:
+            | 'onboarding'
+            | 'list_addition'
+            | 'transaction_review'
+            | 'transaction_rejection'
+            | 'referral_referee'
+            | 'referral_referrer'
           amount?: number
           currency?: string
           transaction_id?: string | null

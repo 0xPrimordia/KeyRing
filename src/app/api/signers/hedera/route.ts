@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { KeyRingDB } from '../../../../../lib/keyring-db';
 import { generateKeyRingId } from '../../../../../lib/codename-generator';
 import { supabase } from '../../../../../lib/supabase';
+import { getReferralCodeFromRequest } from '../../../../../lib/referral-from-request';
 
 /**
  * POST /api/signers/hedera
@@ -12,6 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { account_id, public_key } = body;
+    const referralCode = getReferralCodeFromRequest(request, body.referral_code);
 
     if (!account_id || !public_key) {
       return NextResponse.json(
@@ -48,6 +50,7 @@ export async function POST(request: NextRequest) {
           account_type: existingSigner.account_type,
           account_id: existingSigner.account_id,
           code_name: existingSigner.code_name,
+          referral_code: existingSigner.referral_code,
           verification_status: existingSigner.verification_status,
           created_at: existingSigner.created_at,
         },
@@ -60,6 +63,7 @@ export async function POST(request: NextRequest) {
       publicKey: public_key,
       codeName,
       isTestnet,
+      referralCode,
     });
 
     if (!result.success) {
@@ -85,6 +89,7 @@ export async function POST(request: NextRequest) {
         account_type: result.signer?.account_type,
         account_id: result.signer?.account_id,
         code_name: result.signer?.code_name,
+        referral_code: result.signer?.referral_code,
         verification_status: result.signer?.verification_status,
         created_at: result.signer?.created_at,
       },
