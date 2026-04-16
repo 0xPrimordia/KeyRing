@@ -41,7 +41,7 @@ export class KeyRingDB {
   }
 
   /**
-   * Apply referral rewards once: sets referred_by on the new signer, +20 KYRNG (referee), +100 KYRNG (referrer).
+   * Apply referral rewards once: sets referred_by on the new signer, +20 KYRNG (referee), +500 KYRNG (referrer).
    * No-op if code missing, invalid, self-referral, or signer was already attributed.
    */
   static async applyReferralForNewSigner(
@@ -84,7 +84,7 @@ export class KeyRingDB {
     if (!refereeReward.success) {
       console.warn('[Referral] Failed to add referee reward:', refereeReward.error);
     }
-    const referrerReward = await this.addReward(referrer.id, 'referral_referrer', 100, 'KYRNG');
+    const referrerReward = await this.addReward(referrer.id, 'referral_referrer', 500, 'KYRNG');
     if (!referrerReward.success) {
       console.warn('[Referral] Failed to add referrer reward:', referrerReward.error);
     }

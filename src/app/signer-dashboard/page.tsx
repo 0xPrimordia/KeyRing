@@ -1155,7 +1155,7 @@ function SignerDashboard() {
               Invite signers
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Share this link. When someone joins KeyRing through it, they earn 20 bonus Keyring and you earn 100 Keyring (pending until claimed).
+              Share this link. When someone joins KeyRing through it, they earn 20 bonus Keyring and you earn 500 Keyring (pending until claimed).
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
               <code className="flex-1 text-xs sm:text-sm font-mono bg-muted/50 rounded-lg px-3 py-2 break-all border border-border">
